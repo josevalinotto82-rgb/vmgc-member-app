@@ -1,0 +1,85 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f8f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #1f2937;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    width: 320px;
+}
+
+h2 {
+    margin: 0 0 20px;
+    color: #166534;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #166534;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.error {
+    color: #b91c1c;
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.ok {
+    color: #166534;
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.link-box {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.link-box.small {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.link-box a {
+    color: #166534;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.link-box.small a {
+    color: #6b7280;
+    font-weight: normal;
+}

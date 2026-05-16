@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#166534">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneos - Villa María Golf</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f8f3;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 0 16px 40px;
+        }
+
+        .hero {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: white;
+            border-radius: 0 0 14px 14px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 18px;
+        }
+
+        .hero-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .hero-link:hover {
+            opacity: 0.96;
+        }
+
+        .escudo {
+            height: 56px;
+            width: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .escudo:hover {
+            transform: scale(1.05);
+        }
+
+        .club-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #3e5740;
+        }
+
+        .club-subtitle {
+            margin: 4px 0 0;
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        .tools {
+            display: grid;
+            grid-template-columns: 1fr 180px 180px;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tools input,
+        .tools select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+            color: #1f2937;
+            outline: none;
+        }
+
+        .tools input:focus,
+        .tools select:focus {
+            border-color: #3e5740;
+        }
+
+        .status {
+            margin-bottom: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .lista {
+            display: grid;
+            gap: 14px;
+        }
+
+        .torneo {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .torneo-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .fecha {
+            display: inline-block;
+            font-size: 13px;
+            color: #166534;
+            background: #dcfce7;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .nombre {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.25;
+            text-transform: uppercase;
+        }
+
+        .modalidad {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        .ver-btn {
+            border: none;
+            background: #166534;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .ver-btn:hover {
+            background: #14532d;
+        }
+
+        .empty {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            color: #6b7280;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        @media (max-width: 920px) {
+            .tools {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .container {
+                padding: 0 12px 32px;
+            }
+
+            .hero {
+                padding: 12px 14px;
+            }
+
+            .hero-link {
+                gap: 12px;
+            }
+
+            .escudo {
+                height: 50px;
+            }
+
+            .club-title {
+                font-size: 21px;
+            }
+
+            .club-subtitle {
+                font-size: 14px;
+            }
+
+            .torneo {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .ver-btn {
+                width: 100%;
+            }
+        }
+
+        .home-btn {
+            position: fixed;
+            top: 30px;
+            right: 27px;
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
+            background: #166534;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            transition: transform 0.15s, background 0.15s;
+        }
+
+        .home-btn:hover {
+            background: #14532d;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="home-btn" id="btnHome" title="Volver al panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 10L12 3L21 10V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10Z" stroke="white"
+                stroke-width="2" />
+        </svg>
+    </div>
+
+    <div class="container">
+
+        <div class="hero">
+            <a href="https://villamariagolf.com.ar" target="_blank" class="hero-link">
+                <img src="escudo.png" alt="Escudo Villa María Golf" class="escudo">
+                <div>
+                    <h1 class="club-title">Villa María Golf</h1>
+                    <p class="club-subtitle">Resultados de torneos</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="tools">
+            <input type="text" id="buscador" placeholder="Buscar torneo...">
+            <select id="filtroAnio">
+                <option value="">Todos los años</option>
+            </select>
+            <select id="filtroDia">
+                <option value="">Todos los días</option>
+                <option value="0">Domingo</option>
+                <option value="1">Lunes</option>
+                <option value="2">Martes</option>
+                <option value="3">Miércoles</option>
+                <option value="4">Jueves</option>
+                <option value="5">Viernes</option>
+                <option value="6">Sábado</option>
+            </select>
+        </div>
+
+        <div id="status" class="status">Cargando torneos...</div>
+        <div id="lista" class="lista"></div>
+
+    </div>
+
+    <script type="module">
+
+        let torneos = [];
+        let jugadoresIndexados = [];
+
+        function normalizarTexto(texto) {
+            return String(texto || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[,.;:()]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function separarPalabras(texto) {
+            return normalizarTexto(texto)
+                .split(" ")
+                .filter(Boolean);
+        }
+
+        function fechaAObjeto(fecha) {
+            const texto = String(fecha || "").trim();
+            if (!texto) return null;
+
+            const partes = texto.split("-"); // YYYY-MM-DD
+
+            if (partes.length === 3) {
+                const [yyyy, mm, dd] = partes;
+                return new Date(
+                    Number(yyyy),
+                    Number(mm) - 1,
+                    Number(dd)
+                );
+            }
+
+            const f = new Date(texto);
+            return Number.isNaN(f.getTime()) ? null : f;
+        }
+
+        function formatearFecha(fecha) {
+            const f = fechaAObjeto(fecha);
+            if (!f) return String(fecha || "");
+
+            const dd = String(f.getDate()).padStart(2, "0");
+            const mm = String(f.getMonth() + 1).padStart(2, "0");
+            const yyyy = String(f.getFullYear());
+
+            return `${dd}/${mm}/${yyyy}`;
+        }
+
+        function extraerAnio(fecha) {
+            const f = fechaAObjeto(fecha);
+            return f ? String(f.getFullYear()) : "";
+        }
+
+        function obtenerDiaSemana(fecha) {
+            const f = fechaAObjeto(fecha);
+            if (!f) return "";
+            return String(f.getDay());
+        }
+
+        function textoContador(cantidad) {
+            return cantidad === 1 ? "1 torneo encontrado" : `${cantidad} torneos encontrados`;
+        }
+
+        function construirIndiceJugadores(scorecards) {
+            const mapa = new Map();
+
+            scorecards.forEach(s => {
+                const nombreOriginal = String(s.display_name || "").trim();
+                const nombreNormalizado = normalizarTexto(nombreOriginal);
+                const tournamentId = s.tournament_id;
+
+                if (!nombreNormalizado || !tournamentId) return;
+
+                if (!mapa.has(nombreNormalizado)) {
+                    mapa.set(nombreNormalizado, {
+                        nombre: nombreNormalizado,
+                        ids: new Set()
+                    });
+                }
+
+                mapa.get(nombreNormalizado).ids.add(tournamentId);
+            });
+
+            jugadoresIndexados = Array.from(mapa.values());
+        }
+
+        function buscarIdsPorJugador(textoBusqueda) {
+
+            const palabras = separarPalabras(textoBusqueda);
+
+            const ids = new Set();
+
+            if (palabras.length === 0) return ids;
+
+            jugadoresIndexados.forEach(j => {
+
+                const coincide = palabras.every(palabra =>
+                    j.nombre.includes(palabra)
+                );
+
+                if (coincide) {
+                    j.ids.forEach(id => ids.add(id));
+                }
+            });
+
+            return ids;
+        }
+
+        async function buscarIdsPorJugadorHistorico(textoBusqueda) {
+            const palabras = separarPalabras(textoBusqueda);
+
+            if (palabras.length === 0) return new Set();
+
+            let query = db
+                .from("historical_player_index")
+                .select("tournament_id")
+                .limit(1000);
+
+            palabras.forEach(palabra => {
+                query = query.ilike("jugador_normalizado", `%${palabra}%`);
+            });
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error(error);
+                return new Set();
+            }
+
+            return new Set((data || []).map(r => r.tournament_id));
+        }
+
+        async function cargarIndiceHistoricoJugadores() {
+
+            let todos = [];
+
+            let desde = 0;
+
+            const bloque = 1000;
+
+            while (true) {
+
+                const { data, error } = await db
+                    .from("historical_player_index")
+                    .select("tournament_id, jugador")
+                    .range(desde, desde + bloque - 1);
+
+                if (error) throw error;
+
+                todos = todos.concat(data || []);
+
+                if (!data || data.length < bloque) {
+                    break;
+                }
+
+                desde += bloque;
+            }
+
+            return todos;
+        }
+
+        async function renderTorneos() {
+            const textoOriginal = document.getElementById("buscador").value;
+            const texto = normalizarTexto(textoOriginal);
+            const anio = document.getElementById("filtroAnio").value;
+            const dia = document.getElementById("filtroDia").value;
+            const lista = document.getElementById("lista");
+            const status = document.getElementById("status");
+
+            let idsJugador = new Set();
+
+            if (texto) {
+                const idsJugadorModernos = buscarIdsPorJugador(texto);
+                const idsJugadorHistoricos = await buscarIdsPorJugadorHistorico(texto);
+
+                idsJugador = new Set([
+                    ...idsJugadorModernos,
+                    ...idsJugadorHistoricos
+                ]);
+            }
+
+            const filtrados = torneos.filter(t => {
+                const nombre = normalizarTexto(t.name);
+                const modalidad = normalizarTexto(t.game_modes?.name || "");
+                const fecha = normalizarTexto(formatearFecha(t.tournament_date));
+
+                const coincideTextoDirecto =
+                    !texto ||
+                    nombre.includes(texto) ||
+                    modalidad.includes(texto) ||
+                    fecha.includes(texto);
+
+                const coincideJugador =
+                    !texto ||
+                    idsJugador.has(t.id);
+
+                const coincideBusqueda = !texto || coincideTextoDirecto || coincideJugador;
+                const coincideAnio = !anio || extraerAnio(t.tournament_date) === anio;
+                const coincideDia = !dia || obtenerDiaSemana(t.tournament_date) === dia;
+
+                return coincideBusqueda && coincideAnio && coincideDia;
+            });
+
+            status.textContent = textoContador(filtrados.length);
+
+            if (filtrados.length === 0) {
+                lista.innerHTML = `<div class="empty">No se encontraron torneos con esos filtros.</div>`;
+                return;
+            }
+
+            lista.innerHTML = filtrados.map(t => `
+      <div class="torneo">
+        <div class="torneo-info">
+          <div class="fecha">${formatearFecha(t.tournament_date)}</div>
+          <div class="nombre">${t.name}</div>
+          <div class="modalidad">${t.game_modes?.name || ""}</div>
+        </div>
+        <button class="ver-btn" data-id="${t.id}">Ver resultados</button>
+      </div>
+    `).join("");
+
+            document.querySelectorAll(".ver-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = btn.dataset.id;
+                    const q = document.getElementById("buscador").value || "";
+                    window.location.href = `torneos.html?id=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`;
+                });
+            });
+        }
+
+        async function cargar() {
+            const status = document.getElementById("status");
+
+            try {
+                status.textContent = "Cargando torneos...";
+
+                // =========================
+                // TORNEOS MODERNOS
+                // =========================
+
+                const { data: torneosData, error: errorTorneos } = await db
+                    .from("tournaments")
+                    .select(`
+                    id,
+                    name,
+                    tournament_date,
+                    game_mode_id,
+                    status,
+                    game_modes (
+                    id,
+                    name
+                    )
+                `)
+                    .neq("status", "closed")
+                    .order("tournament_date", { ascending: false });
+
+                if (errorTorneos) throw errorTorneos;
+
+                const { data: scorecardsData, error: errorScorecards } = await db
+                    .from("scorecards")
+                    .select("tournament_id, display_name");
+
+                if (errorScorecards) throw errorScorecards;
+
+                // =========================
+                // TORNEOS HISTORICOS
+                // =========================
+
+                const { data: historicosData, error: errorHistoricos } = await db
+                    .from("historical_tournaments")
+                    .select("id, fecha, torneo, modalidad")
+                    .order("fecha", { ascending: false });
+
+                if (errorHistoricos) throw errorHistoricos;
+
+                // =========================
+                // NORMALIZAR TORNEOS
+                // =========================
+
+                const torneosModernos = (torneosData || []).map(t => ({
+                    id: t.id,
+                    name: t.name,
+                    tournament_date: t.tournament_date,
+                    game_modes: {
+                        name: t.game_modes?.name || ""
+                    },
+                    legacy: false
+                }));
+
+                const torneosHistoricos = (historicosData || []).map(t => ({
+                    id: t.id,
+                    name: t.torneo || "TORNEO HISTÓRICO SIN NOMBRE",
+                    tournament_date: t.fecha,
+                    game_modes: {
+                        name: t.modalidad || ""
+                    },
+                    legacy: true
+                }));
+
+                // =========================
+                // COMBINAR
+                // =========================
+
+                torneos = [
+                    ...torneosModernos,
+                    ...torneosHistoricos
+                ];
+
+                // =========================
+                // ORDENAR POR FECHA
+                // =========================
+
+                torneos.sort((a, b) => {
+                    const fa = fechaAObjeto(a.tournament_date);
+                    const fb = fechaAObjeto(b.tournament_date);
+
+                    if (!fa || !fb) return 0;
+
+                    return fb - fa;
+                });
+
+                // =========================
+                // INDICE DE JUGADORES
+                // =========================
+
+                construirIndiceJugadores(scorecardsData || []);
+
+                // =========================
+                // JUGADORES HISTORICOS
+                // =========================
+
+                // agregar jugadores históricos
+
+
+                // =========================
+                // FILTRO AÑOS
+                // =========================
+
+                const anios = [...new Set(
+                    torneos
+                        .map(t => extraerAnio(t.tournament_date))
+                        .filter(Boolean)
+                )].sort((a, b) => b.localeCompare(a));
+
+                const filtroAnio = document.getElementById("filtroAnio");
+
+                filtroAnio.innerHTML =
+                    `<option value="">Todos los años</option>` +
+                    anios.map(a => `<option value="${a}">${a}</option>`).join("");
+
+                await renderTorneos();
+
+            } catch (err) {
+
+                console.error(err);
+
+                status.textContent =
+                    "Error: " +
+                    (err.message || "No se pudieron cargar los torneos.");
+
+                document.getElementById("lista").innerHTML =
+                    `<div class="empty">No se pudieron cargar los torneos.</div>`;
+            }
+        }
+
+        document.getElementById("buscador").addEventListener("input", () => {
+            renderTorneos();
+        });
+
+        document.getElementById("filtroAnio").addEventListener("change", () => {
+            renderTorneos();
+        });
+
+        document.getElementById("filtroDia").addEventListener("change", () => {
+            renderTorneos();
+        });
+
+        async function checkSession() {
+
+            const { data } = await db.auth.getSession();
+
+            if (!data.session) {
+
+                window.location.href = "login.html";
+                return false;
+            }
+
+            return true;
+        }
+
+        (async () => {
+
+            const ok = await checkSession();
+
+            if (ok) {
+                cargar();
+            }
+
+        })();
+
+        document.getElementById("btnHome").addEventListener("click", () => {
+            window.location.href = "panel.html";
+        });
+    </script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("./sw.js");
+        }
+    </script>
+</body>
+
+</html>

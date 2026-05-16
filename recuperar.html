@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperar contraseña - VMGC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#166534">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f8f3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            width: 340px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            color: #166534;
+            text-align: center;
+        }
+
+        .sub {
+            color: #6b7280;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #166534;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .msg {
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+            color: #166534;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        .link {
+            display: block;
+            margin-top: 14px;
+            text-align: center;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>Recuperar contraseña</h2>
+        <div class="sub">Ingresá tu email y te enviaremos un enlace para cambiarla.</div>
+
+        <input id="email" type="email" placeholder="Email">
+
+        <button id="btnRecuperar" type="button">Enviar enlace</button>
+
+        <div id="msg" class="msg"></div>
+
+        <a class="link" href="login.html">Volver al ingreso</a>
+    </div>
+
+    <script>
+        const emailEl = document.getElementById("email");
+        const msg = document.getElementById("msg");
+        const btn = document.getElementById("btnRecuperar");
+
+        document.getElementById("btnRecuperar").addEventListener("click", async () => {
+            msg.textContent = "";
+            msg.className = "msg";
+
+            const email = emailEl.value.trim();
+
+            if (!email) {
+                msg.textContent = "Ingresá tu email.";
+                msg.className = "msg error";
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Enviando...";
+
+            const redirectBase =
+                window.location.hostname === "127.0.0.1" ||
+                    window.location.hostname === "localhost"
+                    ? "http://127.0.0.1:5500"
+                    : "https://josevalinotto82-rgb.github.io/vmgc-members-app";
+
+            const { error } = await db.auth.resetPasswordForEmail(email, {
+                redirectTo: `${redirectBase}/cambiar_password.html`
+            });
+
+            if (error) {
+                msg.textContent = error.message;
+                msg.className = "msg error";
+                btn.disabled = false;
+                btn.textContent = "Enviar enlace";
+                return;
+            }
+
+            msg.textContent = "Te enviamos un enlace para recuperar tu contraseña.";
+            btn.disabled = false;
+            btn.textContent = "Enviar enlace";
+        });
+
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("./sw.js");
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#166534">
+    <meta charset="UTF-8">
+    <title>VMGC Members</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f8f3;
+            color: #1f2937;
+        }
+
+        .app {
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .header {
+            padding: 22px 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+        }
+
+        .club {
+            font-size: 22px;
+            font-weight: 800;
+            color: #3e5740;
+            line-height: 1.1;
+        }
+
+        .sub {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .welcome {
+            background: white;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, .08);
+            margin-bottom: 18px;
+        }
+
+        .welcome h2 {
+            margin: 0 0 8px;
+            color: #166534;
+            font-size: 20px;
+        }
+
+        .email {
+            font-size: 14px;
+            color: #6b7280;
+            word-break: break-word;
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .app-card {
+            border: none;
+            text-align: left;
+            width: 100%;
+            background: white;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, .08);
+            cursor: pointer;
+        }
+
+        .app-card-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .app-card-desc {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.35;
+        }
+
+        .primary {
+            border-left: 6px solid #166534;
+        }
+
+        .amber {
+            border-left: 6px solid #e7b067;
+        }
+
+        .blue {
+            border-left: 6px solid #2563eb;
+        }
+
+        .logout {
+            margin-top: 18px;
+            width: 100%;
+            border: none;
+            background: #991b1b;
+            color: white;
+            padding: 13px;
+            border-radius: 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin: 22px 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app">
+
+        <div class="header">
+            <img src="escudo.png" class="logo" alt="VMGC">
+            <div>
+                <div class="club">Villa María Golf</div>
+                <div class="sub">Members App</div>
+            </div>
+        </div>
+
+        <section class="welcome">
+            <h2>Bienvenido</h2>
+            <div id="userEmail" class="email">Cargando usuario...</div>
+        </section>
+
+        <section class="grid">
+
+            <button class="app-card primary" onclick="window.location.href='resultados.html'">
+                <div class="app-card-title">Resultados y torneos</div>
+                <div class="app-card-desc">
+                    Consultá torneos, resultados, categorías y tarjetas.
+                </div>
+            </button>
+
+            <button class="app-card amber" onclick="window.location.href='grilla_interactiva.html'">
+                <div class="app-card-title">Grilla de juego</div>
+                <div class="app-card-desc">
+                    Ver horarios disponibles e inscripciones de torneos abiertos.
+                </div>
+            </button>
+
+            <button class="app-card blue" onclick="alert('Próximamente: perfil del socio')">
+                <div class="app-card-title">Mi perfil</div>
+                <div class="app-card-desc">
+                    Datos del socio, matrícula, teléfono y preferencias.
+                </div>
+            </button>
+
+        </section>
+
+        <button id="btnLogout" class="logout">
+            Cerrar sesión
+        </button>
+
+        <div class="footer">
+            VMGC Members · App en desarrollo
+        </div>
+
+    </main>
+
+    <script>
+        async function init() {
+            const { data } = await db.auth.getSession();
+
+            if (!data.session) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            document.getElementById("userEmail").textContent =
+                data.session.user.email;
+        }
+
+        document.getElementById("btnLogout").addEventListener("click", async () => {
+            await db.auth.signOut();
+            window.location.href = "login.html";
+        });
+
+        init();
+    </script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("./sw.js");
+        }
+    </script>
+</body>
+
+</html>
