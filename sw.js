@@ -1,26 +1,19 @@
-const CACHE_NAME = "vmgc-cache-v2";
-
-const urlsToCache = [
-    "./",
-    "./login.html",
-    "./panel.html",
-    "./resultados.html",
-    "./torneos.html",
-    "./grilla_interactiva.html",
-    "./styles.css",
-    "./supabase.js"
-];
+const CACHE_NAME = "vmgc-app-v3";
 
 self.addEventListener("install", (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(urlsToCache))
+        caches.keys().then((names) => {
+            return Promise.all(
+                names.map((name) => caches.delete(name))
+            );
+        }).then(() => self.clients.claim())
     );
 });
 
 self.addEventListener("fetch", (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => response || fetch(event.request))
-    );
+    event.respondWith(fetch(event.request));
 });
