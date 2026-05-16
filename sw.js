@@ -1,4 +1,4 @@
-const CACHE_NAME = "vmgc-cache-v1";
+const CACHE_NAME = "vmgc-cache-v2";
 
 const urlsToCache = [
     "./",
