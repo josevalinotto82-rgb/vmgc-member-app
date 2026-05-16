@@ -218,40 +218,10 @@
             }
         }
 
-        .home-btn {
-            position: fixed;
-            top: 30px;
-            right: 27px;
-            width: 38px;
-            height: 38px;
-            border-radius: 6px;
-            background: #166534;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            transition: transform 0.15s, background 0.15s;
-        }
-
-        .home-btn:hover {
-            background: #14532d;
-            transform: scale(1.05);
-        }
     </style>
 </head>
 
 <body>
-
-    <div class="home-btn" id="btnHome" title="Volver al panel">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M3 10L12 3L21 10V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10Z" stroke="white"
-                stroke-width="2" />
-        </svg>
-    </div>
 
     <div class="container">
 
@@ -690,14 +660,35 @@
 
         })();
 
-        document.getElementById("btnHome").addEventListener("click", () => {
-            window.location.href = "panel.html";
-        });
     </script>
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("./sw.js");
         }
+    </script>
+    <script>
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        document.addEventListener("touchstart", function (e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        document.addEventListener("touchend", function (e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+
+            const diffX = touchEndX - touchStartX;
+            const diffY = Math.abs(touchEndY - touchStartY);
+
+            // Swipe fuerte hacia la derecha
+            if (diffX > 90 && diffY < 80) {
+                window.history.back();
+            }
+        }, false);
     </script>
 </body>
 

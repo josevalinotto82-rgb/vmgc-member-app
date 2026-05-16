@@ -509,22 +509,19 @@
 </head>
 
 <body>
-    <div class="container">
-        <a class="back" href="resultados.html">← Volver a torneos</a>
-
-        <div class="card">
-            <div class="club-row">
-                <img src="escudo.png" alt="Escudo Villa María Golf" class="escudo">
-                <div>
-                    <h1 class="club-name">Villa María Golf</h1>
-                </div>
+    <div class="card">
+        <div class="club-row">
+            <img src="escudo.png" alt="Escudo Villa María Golf" class="escudo">
+            <div>
+                <h1 class="club-name">Villa María Golf</h1>
             </div>
-
-            <h1 id="titulo" class="titulo">Cargando...</h1>
-            <p id="subtitulo" class="subtitulo"></p>
         </div>
 
-        <div id="contenido"></div>
+        <h1 id="titulo" class="titulo">Cargando...</h1>
+        <p id="subtitulo" class="subtitulo"></p>
+    </div>
+
+    <div id="contenido"></div>
     </div>
 
     <script type="module">
@@ -1515,6 +1512,30 @@
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("./sw.js");
         }
+    </script>
+    <script>
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        document.addEventListener("touchstart", function (e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        document.addEventListener("touchend", function (e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+
+            const diffX = touchEndX - touchStartX;
+            const diffY = Math.abs(touchEndY - touchStartY);
+
+            // Swipe fuerte hacia la derecha
+            if (diffX > 90 && diffY < 80) {
+                window.history.back();
+            }
+        }, false);
     </script>
 </body>
 
