@@ -150,7 +150,7 @@
         </div>
 
         <section class="welcome">
-            <h2 id="welcomeTitle">Bienvenido/a</h2>
+            <h2 id="welcomeTitle">Bienvenido</h2>
             <div id="memberName" class="member-name">Cargando socio...</div>
         </section>
 
@@ -272,7 +272,7 @@
             const { profile, player } = await buscarPerfil(user);
             const nombre = obtenerNombreMostrable(user, profile, player);
 
-            document.getElementById("welcomeTitle").textContent = `Bienvenido ${nombre}`;
+            document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${nombre}`;
             document.getElementById("memberName").textContent = "Usuario";
         }
 
