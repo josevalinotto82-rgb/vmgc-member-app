@@ -217,7 +217,6 @@
                 width: 100%;
             }
         }
-
     </style>
 </head>
 
@@ -509,11 +508,11 @@
                     game_mode_id,
                     status,
                     game_modes (
-                    id,
-                    name
+                        id,
+                        name
                     )
                 `)
-                    .neq("status", "closed")
+                    .in("status", ["officialized", "archived"])
                     .order("tournament_date", { ascending: false });
 
                 if (errorTorneos) throw errorTorneos;
