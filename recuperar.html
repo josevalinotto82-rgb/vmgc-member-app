@@ -131,7 +131,7 @@
                 window.location.hostname === "127.0.0.1" ||
                     window.location.hostname === "localhost"
                     ? "http://127.0.0.1:5500"
-                    : "https://josevalinotto82-rgb.github.io/vmg-sistema";
+                    : "https://app.villamariagolf.com.ar";
 
             const { error } = await db.auth.resetPasswordForEmail(email, {
                 redirectTo: `${redirectBase}/cambiar_password.html`
