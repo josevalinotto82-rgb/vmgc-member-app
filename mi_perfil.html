@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#166534">
+    <meta charset="UTF-8">
+    <title>Mi Perfil - VMGC Members</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f8f3;
+            color: #1f2937;
+        }
+
+        .app {
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+            max-width: 620px;
+            margin: 0 auto;
+        }
+
+        .page-head {
+            padding: 24px 2px 10px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #3e5740;
+            font-size: 24px;
+            letter-spacing: -.3px;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(31, 41, 55, .07);
+            margin: 14px 0;
+            border: 1px solid rgba(229, 231, 235, .9);
+        }
+
+        .profile-card {
+            padding: 22px 22px 18px;
+        }
+
+        .club-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+            color: #3e5740;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: .10em;
+            text-transform: uppercase;
+        }
+
+        .club-mark {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            opacity: .99;
+            margin-top: -6px;
+        }
+
+        .person-name {
+            margin: 0;
+            font-size: 27px;
+            line-height: 1.08;
+            color: #111827;
+            letter-spacing: -.5px;
+            font-weight: 800;
+        }
+
+        .member-row {
+            display: flex;
+            gap: 42px;
+            margin: 18px 0 8px;
+            padding-bottom: 17px;
+            border-bottom: 1px solid #edf0ed;
+        }
+
+        .member-row>div {
+            text-align: center;
+            min-width: 72px;
+        }
+
+        .mini-label {
+            font-size: 11px;
+            color: #8b938d;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .mini-value {
+            font-size: 15px;
+            color: #1f2937;
+            font-weight: 800;
+        }
+
+        .contact-line {
+            display: grid;
+            grid-template-columns: 82px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            height: 54px;
+            border-bottom: 1px solid #f0f2f0;
+        }
+
+        .contact-line:last-child {
+            border-bottom: none;
+        }
+
+        .contact-label {
+            font-size: 12px;
+            color: #8b938d;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .contact-value {
+            font-size: 14px;
+            color: #111827;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            word-break: break-word;
+            display: flex;
+            align-items: center;
+
+            min-height: 28px;
+            line-height: 1;
+        }
+
+        .change-link {
+            border: none;
+            background: transparent;
+            color: #166534;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .card h2 {
+            margin: 0 0 14px;
+            color: #166534;
+            font-size: 18px;
+            letter-spacing: -.2px;
+        }
+
+        .hcp-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .hcp-card {
+            border: 1px solid #e5e7eb;
+            border-left: 7px solid #166534;
+            border-radius: 17px;
+            padding: 13px 14px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            background: #fff;
+        }
+
+        .hcp-title {
+            font-weight: 900;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .hcp-detail {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .hcp-number {
+            font-size: 26px;
+            font-weight: 900;
+            color: #166534;
+            min-width: 42px;
+            text-align: right;
+        }
+
+        .stone-negras {
+            border-left-color: #111827;
+        }
+
+        .stone-negras .hcp-number {
+            color: #111827;
+        }
+
+        .stone-amarillas {
+            border-left-color: #f0db1b;
+        }
+
+        .stone-amarillas .hcp-number {
+            color: #111827;
+        }
+
+        .stone-blancas {
+            border-left-color: #fcf8e3;
+        }
+
+        .stone-blancas .hcp-number {
+            color: #111827;
+        }
+
+        .stone-rojas {
+            border-left-color: #b91c1c;
+        }
+
+        .stone-rojas .hcp-number {
+            color: #111827;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 800;
+            color: #374151;
+        }
+
+        input {
+            width: 100%;
+            margin-top: 6px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus {
+            border-color: #166534;
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, .12);
+        }
+
+        .btn {
+            border: none;
+            background: #166534;
+            color: white;
+            padding: 13px;
+            border-radius: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn.secondary {
+            background: #374151;
+        }
+
+        .btn.light {
+            background: #eef2ef;
+            color: #166534;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 13px;
+            padding: 10px;
+            border-radius: 12px;
+            display: none;
+            line-height: 1.35;
+        }
+
+        .status.ok {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.err {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, .42);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 16px;
+            z-index: 50;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 520px;
+            background: #fff;
+            border-radius: 22px;
+            padding: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, .20);
+        }
+
+        .modal h3 {
+            margin: 0 0 5px;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        .modal p {
+            margin: 0 0 14px;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.35;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin: 22px 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app" id="app">
+        <div class="page-head">
+            <h1>Mi Perfil</h1>
+        </div>
+
+        <section class="card profile-card">
+            <div class="club-line">
+                <span>Villa María Golf Club</span>
+                <img src="escudo.png" class="club-mark" alt="VMGC">
+            </div>
+
+            <h2 id="profileName" class="person-name">Cargando...</h2>
+
+            <div class="member-row">
+                <div>
+                    <div class="mini-label">Matrícula</div>
+                    <div id="profileMatricula" class="mini-value">-</div>
+                </div>
+                <div>
+                    <div class="mini-label">Índice</div>
+                    <div id="profileIndex" class="mini-value">-</div>
+                </div>
+            </div>
+
+            <div class="contact-line">
+                <div class="contact-label">Mail</div>
+                <div id="profileEmail" class="contact-value">-</div>
+                <button class="change-link" onclick="abrirModal('email')">Cambiar</button>
+            </div>
+
+            <div class="contact-line">
+                <div class="contact-label">Teléfono</div>
+                <div id="profilePhone" class="contact-value">-</div>
+                <button class="change-link" onclick="abrirModal('phone')">Cambiar</button>
+            </div>
+
+            <div id="contactStatus" class="status"></div>
+        </section>
+
+        <section class="card">
+            <h2>HCP de juego en Villa María Golf Club</h2>
+            <div id="hcpVMGC" class="hcp-grid">
+                <div class="warning">Cargando tees...</div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Cambiar contraseña</h2>
+            <div class="form-grid">
+                <label>
+                    Nueva contraseña
+                    <input id="passwordInput" type="password" minlength="6" placeholder="Mínimo 6 caracteres">
+                </label>
+
+                <label>
+                    Repetir contraseña
+                    <input id="passwordInput2" type="password" minlength="6" placeholder="Repetir contraseña">
+                </label>
+
+                <button id="btnSavePassword" class="btn secondary">Actualizar contraseña</button>
+                <div id="passwordStatus" class="status"></div>
+            </div>
+        </section>
+
+        <div class="footer">VMGC Members · App en desarrollo</div>
+    </main>
+
+    <div id="editModal" class="modal-backdrop">
+        <div class="modal">
+            <h3 id="modalTitle">Modificar dato</h3>
+            <p id="modalText">Ingresá el nuevo dato.</p>
+            <input id="modalInput" type="text">
+            <div id="modalStatus" class="status"></div>
+            <div class="modal-actions">
+                <button class="btn light" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn" onclick="guardarModal()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TEE_NAMES_MALE = ["Negras", "Amarillas", "Blancas"];
+        const TEE_NAMES_FEMALE = ["Rojas"];
+        const DEFAULT_SEGMENT = "18";
+        const EMAIL_REDIRECT_TO = "https://josevalinotto82-rgb.github.io/vmg-sistema/mi_perfil.html";
+
+        let sessionUser = null;
+        let perfil = null;
+        let jugador = null;
+        let modalTipo = null;
+
+        function num(v) {
+            if (v === null || v === undefined || v === "") return null;
+            const n = Number(String(v).replace(",", "."));
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function fmt(v, dec = 1) {
+            const n = num(v);
+            if (n === null) return "-";
+            return n.toLocaleString("es-AR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+        }
+
+        function roundHalfUp(value) {
+            if (!Number.isFinite(value)) return null;
+            return Math.floor(value + 0.5);
+        }
+
+        function calcularHcpJuego(index, slope, courseRating, par) {
+            const i = num(index);
+            const s = num(slope);
+            const cr = num(courseRating);
+            const p = num(par);
+            if ([i, s, cr, p].some(v => v === null)) return null;
+            return Math.min(54, roundHalfUp((i * (s / 113)) + (cr - p)));
+        }
+
+        function limpiar(v) { return String(v || "").trim(); }
+        function normalizarMail(v) { return limpiar(v).toLowerCase(); }
+
+        function status(elId, msg, ok = true) {
+            const el = document.getElementById(elId);
+            el.className = "status " + (ok ? "ok" : "err");
+            el.textContent = msg;
+        }
+
+        function limpiarStatus(elId) {
+            const el = document.getElementById(elId);
+            el.className = "status";
+            el.textContent = "";
+        }
+
+        function nombreCompletoDesdeJugador(j) {
+            if (!j) return "";
+            if (j.full_name) return limpiar(j.full_name);
+            if (j.display_name) return limpiar(j.display_name);
+            return limpiar(`${j.first_name || ""} ${j.last_name || ""}`);
+        }
+
+        function obtenerNombreApellido(j, p) {
+            const first = limpiar(j?.first_name || p?.first_name || "");
+            const last = limpiar(j?.last_name || p?.last_name || "");
+            if (first || last) return { first, last };
+
+            const full = nombreCompletoDesdeJugador(j) || limpiar(p?.name || sessionUser?.user_metadata?.name || "");
+            if (full.includes(",")) {
+                const [apellido, nombre] = full.split(",").map(x => limpiar(x));
+                return { first: nombre, last: apellido };
+            }
+
+            const partes = full.split(/\s+/).filter(Boolean);
+            return { first: partes[0] || "", last: partes.slice(1).join(" ") };
+        }
+
+        function valorJugador(campo) { return jugador?.[campo] ?? perfil?.[campo] ?? ""; }
+
+        function obtenerIndex() {
+            return num(jugador?.current_index ?? jugador?.index ?? jugador?.handicap_index ?? perfil?.current_index);
+        }
+
+        function obtenerMatricula() {
+            return limpiar(jugador?.aag_member_number ?? jugador?.matricula ?? jugador?.member_number ?? perfil?.aag_member_number ?? "");
+        }
+
+        function obtenerGenero() {
+            const g = limpiar(jugador?.gender || perfil?.gender || "").toLowerCase();
+            if (["female", "f", "dama", "damas", "mujer"].includes(g)) return "female";
+            return "male";
+        }
+
+        function obtenerEmailVisible() { return sessionUser?.email || perfil?.email || jugador?.email || ""; }
+        function obtenerTelefonoVisible() { return valorJugador("phone") || valorJugador("telefono") || valorJugador("mobile") || ""; }
+
+        async function buscarDatosUsuario(user) {
+            let prof = null;
+            let play = null;
+
+            const { data: profData } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
+            prof = profData || null;
+
+            const posiblesCamposAuth = ["profile_id", "auth_user_id", "user_id"];
+            for (const campo of posiblesCamposAuth) {
+                if (play) break;
+                const { data } = await db.from("players").select("*").eq(campo, user.id).maybeSingle();
+                if (data) play = data;
+            }
+
+            if (!play && prof?.aag_member_number) {
+                const { data } = await db.from("players").select("*").eq("aag_member_number", prof.aag_member_number).maybeSingle();
+                if (data) play = data;
+            }
+
+            if (!play && user.email) {
+                const { data } = await db.from("players").select("*").eq("email", user.email).maybeSingle();
+                if (data) play = data;
+            }
+
+            if (!play && prof?.email) {
+                const { data } = await db.from("players").select("*").eq("email", prof.email).maybeSingle();
+                if (data) play = data;
+            }
+
+            return { prof, play };
+        }
+
+        function renderDatos() {
+            const { first, last } = obtenerNombreApellido(jugador, perfil);
+            const fullName = limpiar(`${first} ${last}`) || "Socio VMGC";
+            const email = obtenerEmailVisible();
+            const phone = obtenerTelefonoVisible();
+            const matricula = obtenerMatricula();
+            const index = obtenerIndex();
+
+            document.getElementById("profileName").textContent = fullName;
+            document.getElementById("profileMatricula").textContent = matricula || "-";
+            document.getElementById("profileIndex").textContent = fmt(index, 1);
+            document.getElementById("profileEmail").textContent = email || "-";
+            document.getElementById("profilePhone").textContent = phone || "Sin cargar";
+        }
+
+        function clasePiedra(nombre) {
+            const n = limpiar(nombre).toLowerCase();
+            if (n.includes("negra")) return "stone-negras";
+            if (n.includes("amarilla")) return "stone-amarillas";
+            if (n.includes("blanca")) return "stone-blancas";
+            if (n.includes("roja")) return "stone-rojas";
+            return "";
+        }
+
+        async function cargarTeesYHcp() {
+            const index = obtenerIndex();
+            const genero = obtenerGenero();
+            const teesPermitidos = genero === "female" ? TEE_NAMES_FEMALE : TEE_NAMES_MALE;
+
+            if (index === null) {
+                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No encontré índice para calcular el HCP de juego.</div>`;
+                return;
+            }
+
+            const { data: reglas, error } = await db
+                .from("tee_handicap_rules")
+                .select("tee_id, gender, segment, slope, course_rating, par, tees(id, name, display_order)")
+                .eq("gender", genero)
+                .eq("segment", DEFAULT_SEGMENT);
+
+            if (error) {
+                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No se pudieron cargar las reglas de tees. Revisar permisos RLS de tee_handicap_rules y tees.</div>`;
+                return;
+            }
+
+            const filtradas = (reglas || [])
+                .filter(r => teesPermitidos.some(t => limpiar(r.tees?.name).toLowerCase() === t.toLowerCase()))
+                .sort((a, b) => (a.tees?.display_order ?? 999) - (b.tees?.display_order ?? 999));
+
+            if (!filtradas.length) {
+                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No encontré reglas para ${genero === "female" ? "Damas" : "Caballeros"} en tees ${teesPermitidos.join(", ")}.</div>`;
+                return;
+            }
+
+            document.getElementById("hcpVMGC").innerHTML = filtradas.map(r => {
+                const hcp = calcularHcpJuego(index, r.slope, r.course_rating, r.par);
+                const piedra = r.tees?.name || "-";
+                return `
+                    <div class="hcp-card ${clasePiedra(piedra)}">
+                        <div>
+                            <div class="hcp-title">Salidas ${piedra}</div>
+                            <div class="hcp-detail">Índice ${fmt(index, 1)} · Slope ${r.slope ?? "-"} · Rating ${fmt(r.course_rating, 1)} · Par ${r.par ?? "-"}</div>
+                        </div>
+                        <div class="hcp-number">${hcp ?? "-"}</div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function updateTabla(tabla, idCampo, idValor, valores) {
+            if (!idValor || !Object.keys(valores).length) return { ok: true, skipped: true };
+            const { error } = await db.from(tabla).update(valores).eq(idCampo, idValor);
+            return { ok: !error, error };
+        }
+
+        async function sincronizarAuthConTablas() {
+            const emailAuth = normalizarMail(sessionUser?.email);
+            if (!emailAuth) return;
+
+            const updatesProfile = {};
+            const updatesPlayer = {};
+
+            if (perfil?.email !== undefined && normalizarMail(perfil.email) !== emailAuth) updatesProfile.email = emailAuth;
+            if (jugador?.email !== undefined && normalizarMail(jugador.email) !== emailAuth) updatesPlayer.email = emailAuth;
+
+            if (perfil?.id && Object.keys(updatesProfile).length) await updateTabla("profiles", "id", perfil.id, updatesProfile);
+            if (jugador?.id && Object.keys(updatesPlayer).length) await updateTabla("players", "id", jugador.id, updatesPlayer);
+        }
+
+        function abrirModal(tipo) {
+            modalTipo = tipo;
+            limpiarStatus("modalStatus");
+
+            const input = document.getElementById("modalInput");
+            const title = document.getElementById("modalTitle");
+            const text = document.getElementById("modalText");
+
+            if (tipo === "email") {
+                title.textContent = "Cambiar mail";
+                text.textContent = "Ingresá el nuevo mail. Supabase enviará un correo de confirmación a la nueva dirección.";
+                input.type = "email";
+                input.value = obtenerEmailVisible();
+            } else {
+                title.textContent = "Cambiar teléfono";
+                text.textContent = "Ingresá el teléfono actualizado del socio.";
+                input.type = "tel";
+                input.value = obtenerTelefonoVisible();
+            }
+
+            document.getElementById("editModal").classList.add("show");
+            setTimeout(() => input.focus(), 80);
+        }
+
+        function cerrarModal() {
+            document.getElementById("editModal").classList.remove("show");
+            modalTipo = null;
+        }
+
+        async function guardarTelefono(nuevoTelefono) {
+            const errores = [];
+
+            if (perfil?.id) {
+                const valoresPerfil = {};
+                if ("phone" in perfil) valoresPerfil.phone = nuevoTelefono;
+                if ("telefono" in perfil) valoresPerfil.telefono = nuevoTelefono;
+                const rPerfil = await updateTabla("profiles", "id", perfil.id, valoresPerfil);
+                if (!rPerfil.ok) errores.push(`profiles: ${rPerfil.error.message}`);
+            }
+
+            if (jugador?.id) {
+                const valoresJugador = {};
+                if ("phone" in jugador) valoresJugador.phone = nuevoTelefono;
+                if ("telefono" in jugador) valoresJugador.telefono = nuevoTelefono;
+                if ("mobile" in jugador) valoresJugador.mobile = nuevoTelefono;
+                const rJugador = await updateTabla("players", "id", jugador.id, valoresJugador);
+                if (!rJugador.ok) errores.push(`players: ${rJugador.error.message}`);
+            }
+
+            if (errores.length) throw new Error("No pude guardar en Supabase: " + errores.join(" | "));
+        }
+
+        async function guardarEmail(nuevoEmail) {
+            const emailActualAuth = normalizarMail(sessionUser.email);
+            if (!nuevoEmail) throw new Error("El mail no puede quedar vacío.");
+            if (nuevoEmail === emailActualAuth) return "same";
+
+            const { error: authError } = await db.auth.updateUser(
+                { email: nuevoEmail },
+                { emailRedirectTo: EMAIL_REDIRECT_TO }
+            );
+            if (authError) throw authError;
+            return "pending";
+        }
+
+        async function guardarModal() {
+            const valor = limpiar(document.getElementById("modalInput").value);
+
+            try {
+                if (modalTipo === "phone") {
+                    await guardarTelefono(valor);
+                    status("modalStatus", "Teléfono guardado correctamente.", true);
+                    status("contactStatus", "Teléfono actualizado correctamente.", true);
+                }
+
+                if (modalTipo === "email") {
+                    const res = await guardarEmail(normalizarMail(valor));
+                    if (res === "pending") {
+                        status("modalStatus", "Te enviamos un mail de confirmación a la nueva dirección.", true);
+                        status("contactStatus", "Revisá el nuevo mail para confirmar el cambio de dirección.", true);
+                    } else {
+                        status("modalStatus", "El mail no cambió.", true);
+                    }
+                }
+
+                const { data } = await db.auth.getSession();
+                if (data?.session?.user) {
+                    sessionUser = data.session.user;
+                    const datos = await buscarDatosUsuario(sessionUser);
+                    perfil = datos.prof;
+                    jugador = datos.play;
+                    renderDatos();
+                }
+
+                setTimeout(cerrarModal, 850);
+            } catch (e) {
+                status("modalStatus", e.message || "No se pudo guardar el cambio.", false);
+            }
+        }
+
+        document.getElementById("btnSavePassword").addEventListener("click", async () => {
+            const pass1 = document.getElementById("passwordInput").value;
+            const pass2 = document.getElementById("passwordInput2").value;
+            try {
+                if (!pass1 || pass1.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
+                if (pass1 !== pass2) throw new Error("Las contraseñas no coinciden.");
+                const { error } = await db.auth.updateUser({ password: pass1 });
+                if (error) throw error;
+                document.getElementById("passwordInput").value = "";
+                document.getElementById("passwordInput2").value = "";
+                status("passwordStatus", "Contraseña actualizada correctamente.", true);
+            } catch (e) {
+                status("passwordStatus", e.message || "No se pudo actualizar la contraseña.", false);
+            }
+        });
+
+        function activarGestoVolver() {
+            let startX = 0;
+            let startY = 0;
+
+            document.addEventListener("touchstart", (e) => {
+                const t = e.touches[0];
+                startX = t.clientX;
+                startY = t.clientY;
+            }, { passive: true });
+
+            document.addEventListener("touchend", (e) => {
+                const t = e.changedTouches[0];
+                const dx = t.clientX - startX;
+                const dy = Math.abs(t.clientY - startY);
+                if (startX < 35 && dx > 95 && dy < 70) {
+                    window.location.href = "panel.html";
+                }
+            }, { passive: true });
+        }
+
+        async function init() {
+            const { data, error } = await db.auth.getSession();
+            if (error || !data.session) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            sessionUser = data.session.user;
+
+            const datos = await buscarDatosUsuario(sessionUser);
+            perfil = datos.prof;
+            jugador = datos.play;
+
+            await sincronizarAuthConTablas();
+
+            const datosActualizados = await buscarDatosUsuario(sessionUser);
+            perfil = datosActualizados.prof;
+            jugador = datosActualizados.play;
+
+            renderDatos();
+            await cargarTeesYHcp();
+            activarGestoVolver();
+        }
+
+        init();
+    </script>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("./sw.js");
+        }
+    </script>
+</body>
+
+</html>

@@ -70,9 +70,10 @@
             font-size: 20px;
         }
 
-        .email {
-            font-size: 14px;
-            color: #6b7280;
+        .member-name {
+            font-size: 16px;
+            color: #374151;
+            font-weight: 700;
             word-break: break-word;
         }
 
@@ -150,8 +151,8 @@
         </div>
 
         <section class="welcome">
-            <h2>Bienvenido</h2>
-            <div id="userEmail" class="email">Cargando usuario...</div>
+            <h2 id="welcomeTitle">Bienvenido</h2>
+            <div id="memberName" class="member-name">Cargando socio...</div>
         </section>
 
         <section class="grid">
@@ -170,36 +171,110 @@
                 </div>
             </button>
 
-            <button class="app-card blue" onclick="alert('Próximamente: perfil del socio')">
+            <button class="app-card blue" onclick="window.location.href='mi_perfil.html'">
                 <div class="app-card-title">Mi perfil</div>
                 <div class="app-card-desc">
-                    Datos del socio, matrícula, teléfono y preferencias.
+                    Datos del socio, matrícula, teléfono, índice y hándicap de juego.
                 </div>
             </button>
 
         </section>
 
-        <button id="btnLogout" class="logout">
-            Cerrar sesión
-        </button>
+        <button id="btnLogout" class="logout">Cerrar sesión</button>
 
-        <div class="footer">
-            VMGC Members · App en desarrollo
-        </div>
+        <div class="footer">VMGC Members · App en desarrollo</div>
 
     </main>
 
     <script>
-        async function init() {
-            const { data } = await db.auth.getSession();
+        const CLUB_VMGC = 408;
 
-            if (!data.session) {
+        function limpiarTexto(valor) {
+            return String(valor || "").trim();
+        }
+
+        function primerNombre(nombreCompleto) {
+            const limpio = limpiarTexto(nombreCompleto);
+            if (!limpio) return "";
+            const sinComa = limpio.includes(",")
+                ? limpio.split(",").reverse().join(" ")
+                : limpio;
+            return limpiarTexto(sinComa).split(/\s+/)[0] || "";
+        }
+
+        async function buscarPerfil(user) {
+            const userId = user.id;
+            const email = user.email;
+
+            let profile = null;
+            let player = null;
+
+            // 1) Perfil por id de auth.users
+            const { data: prof } = await db
+                .from("profiles")
+                .select("*")
+                .eq("id", userId)
+                .maybeSingle();
+
+            profile = prof || null;
+
+            // 2) Jugador linkeado por profile_id
+            const { data: playerByProfile } = await db
+                .from("players")
+                .select("*")
+                .eq("profile_id", userId)
+                .maybeSingle();
+
+            if (playerByProfile) player = playerByProfile;
+
+            // 3) Backup: jugador por email si existe columna email
+            if (!player && email) {
+                const { data: playerByEmail } = await db
+                    .from("players")
+                    .select("*")
+                    .eq("email", email)
+                    .maybeSingle();
+
+                if (playerByEmail) player = playerByEmail;
+            }
+
+            return { profile, player };
+        }
+
+        function obtenerNombreMostrable(user, profile, player) {
+            const candidatos = [
+                player?.first_name,
+                profile?.first_name,
+                profile?.name,
+                user?.user_metadata?.first_name,
+                user?.user_metadata?.name,
+                player?.full_name,
+                player?.display_name,
+                user?.email
+            ];
+
+            for (const c of candidatos) {
+                const nombre = primerNombre(c);
+                if (nombre && !nombre.includes("@")) return nombre;
+            }
+
+            return "socio";
+        }
+
+        async function init() {
+            const { data, error } = await db.auth.getSession();
+
+            if (error || !data.session) {
                 window.location.href = "login.html";
                 return;
             }
 
-            document.getElementById("userEmail").textContent =
-                data.session.user.email;
+            const user = data.session.user;
+            const { profile, player } = await buscarPerfil(user);
+            const nombre = obtenerNombreMostrable(user, profile, player);
+
+            document.getElementById("welcomeTitle").textContent = `Bienvenido ${nombre}`;
+            document.getElementById("memberName").textContent = "Members App VMGC";
         }
 
         document.getElementById("btnLogout").addEventListener("click", async () => {
@@ -209,6 +284,7 @@
 
         init();
     </script>
+
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("./sw.js");
