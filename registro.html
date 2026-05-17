@@ -127,10 +127,7 @@
                 return;
             }
 
-            if (
-                Number(data.option_club_id) !== 408 &&
-                data.is_club_member !== true
-            ) {
+            if (data.is_club_member !== true) {
                 msg.textContent = "Solo socios del Villa María Golf Club pueden registrarse.";
                 return;
             }
