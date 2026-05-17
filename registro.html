@@ -178,7 +178,7 @@
                 email,
                 password,
                 options: {
-                    emailRedirectTo: "https://josevalinotto82-rgb.github.io/vmg-sistema/login.html",
+                    emailRedirectTo: "https://app.villamariagolf.com.ar/login.html",
                     data: {
                         aag_member_number: jugadorEncontrado.aag_member_number
                     }
@@ -193,15 +193,19 @@
 
             const userId = authData.user.id;
 
-            await supabase.from("profiles").insert({
-                id: userId,
-                role: "member",
-                active: true
+            const { error: finalError } = await supabase.rpc("finalizar_registro_jugador", {
+                p_user_id: userId,
+                p_matricula: jugadorEncontrado.aag_member_number,
+                p_email: email,
+                p_phone: telefono
             });
 
-            await supabase.from("players").update({
-                profile_id: userId
-            }).eq("id", jugadorEncontrado.id);
+            if (finalError) {
+                console.error(finalError);
+                msg.style.color = "red";
+                msg.textContent = finalError.message;
+                return;
+            }
 
             msg.style.color = "#166534";
             msg.textContent = "Registrado. Revisá tu correo y confirmá tu e-mail para ingresar.";
