@@ -195,10 +195,23 @@
         function primerNombre(nombreCompleto) {
             const limpio = limpiarTexto(nombreCompleto);
             if (!limpio) return "";
-            const sinComa = limpio.includes(",")
-                ? limpio.split(",").reverse().join(" ")
-                : limpio;
-            return limpiarTexto(sinComa).split(/\s+/)[0] || "";
+
+            let nombres = limpio;
+
+            if (limpio.includes(",")) {
+                const partes = limpio.split(",");
+                nombres = partes.slice(1).join(" ");
+            }
+
+            nombres = limpiarTexto(nombres);
+
+            const palabras = nombres.split(/\s+/).filter(Boolean);
+
+            if (palabras.length >= 2) {
+                return `${palabras[0]} ${palabras[1]}`;
+            }
+
+            return palabras[0] || "";
         }
 
         async function buscarPerfil(user) {
