@@ -19,8 +19,10 @@
         <h2>Ingreso VMGC</h2>
 
         <form id="loginForm">
-            <input id="email" type="email" placeholder="Email">
-            <input id="password" type="password" placeholder="Contraseña">
+            <input id="email" type="email" placeholder="Email" required autocomplete="email">
+
+            <input id="password" type="password" placeholder="Contraseña" required autocomplete="current-password"
+                onkeydown="if(event.key==='Enter'){document.getElementById('loginForm').requestSubmit();}">
 
             <button id="loginBtn" type="submit">Ingresar</button>
         </form>
