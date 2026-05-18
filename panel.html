@@ -111,11 +111,24 @@
         }
 
         .amber {
-            border-left: 6px solid #e7b067;
+            border-left: 6px solid #df7146;
         }
 
         .blue {
             border-left: 6px solid #2563eb;
+        }
+
+        .internal {
+            background: linear-gradient(135deg, #f9faf8 0%, #eff5ef 100%);
+            border-left: 6px solid #ecbc55;
+        }
+
+        .internal .app-card-title {
+            color: #34463a;
+        }
+
+        .internal .app-card-desc {
+            color: #647064;
         }
 
         .logout {
@@ -167,6 +180,13 @@
                 <div class="app-card-title">Grilla de juego</div>
                 <div class="app-card-desc">
                     Ver horarios disponibles e inscripciones de torneos abiertos.
+                </div>
+            </button>
+
+            <button class="app-card internal" onclick="window.location.href='torneos_internos.html'">
+                <div class="app-card-title">Crea tu Torneo</div>
+                <div class="app-card-desc">
+                    "NO OFICIAL" Divertite con amigos.
                 </div>
             </button>
 

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Torneos Internos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#eef0ed">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #eef0ed;
+            --card: #fbfbfa;
+            --card-2: #f6f6f3;
+            --text: #242832;
+            --muted: #737b86;
+            --line: #dedfd9;
+            --accent: #53685c;
+            --accent-2: #7c8f83;
+            --blue: #6f8197;
+            --danger: #9a4444;
+            --shadow: 0 10px 28px rgba(35, 40, 45, .08);
+            --radius: 20px;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, .9), transparent 360px),
+                linear-gradient(180deg, #f4f4f1 0%, var(--bg) 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app {
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .desktop-wide {
+            max-width: 980px;
+        }
+
+        .header {
+            padding: 22px 0 14px;
+        }
+
+        .eyebrow {
+            color: var(--accent-2);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            color: var(--accent);
+            font-size: 28px;
+            line-height: 1.08;
+            letter-spacing: -.03em;
+        }
+
+        h2,
+        .section-title {
+            margin: 0 0 16px;
+            color: #3f5148;
+            font-size: 19px;
+            letter-spacing: -.015em;
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .card {
+            background: rgba(251, 251, 250, .96);
+            border: 1px solid rgba(222, 223, 217, .85);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .card.soft {
+            background: rgba(246, 246, 243, .92);
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 14px;
+        }
+
+        .field label {
+            font-size: 13px;
+            font-weight: 800;
+            color: #46524b;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 14px;
+            border: 1px solid #d8d9d3;
+            background: #fff;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: #9aaa9e;
+            box-shadow: 0 0 0 4px rgba(83, 104, 92, .12);
+        }
+
+        button {
+            border: none;
+            border-radius: 15px;
+            padding: 13px 16px;
+            cursor: pointer;
+            font-weight: 800;
+            color: white;
+            background: linear-gradient(135deg, #53685c, #6f8175);
+            box-shadow: 0 8px 18px rgba(83, 104, 92, .18);
+            font-size: 14px;
+        }
+
+        button:hover {
+            opacity: .94;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .secondary,
+        button.secondary {
+            background: linear-gradient(135deg, #727984, #8d949d);
+        }
+
+        .blue,
+        .btn-enter,
+        button.blue {
+            background: linear-gradient(135deg, #667891, #8798ac);
+        }
+
+        .danger {
+            background: linear-gradient(135deg, #8f4b4b, #ad6868);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status,
+        .estado {
+            margin-top: 12px;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .ok,
+        .open {
+            color: #52705d;
+            font-weight: 800;
+        }
+
+        .error,
+        .expired {
+            color: var(--danger);
+            font-weight: 800;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .search-results {
+            border: 1px solid #d8d9d3;
+            border-radius: 14px;
+            margin-top: 6px;
+            background: #fff;
+            max-height: 230px;
+            overflow-y: auto;
+        }
+
+        .search-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eeeeea;
+            font-size: 14px;
+        }
+
+        .search-item:hover {
+            background: #f5f5f1;
+        }
+
+        .swipe-hint {
+            text-align: center;
+            color: #9aa0a6;
+            font-size: 12px;
+            margin: 16px 0 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            display: block;
+            background: #fff;
+            border: 1px solid #e3e3dd;
+            border-radius: 18px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 6px 18px rgba(35, 40, 45, .05);
+        }
+
+        tbody td {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            border: 0;
+            padding: 7px 0;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        tbody td::before {
+            content: attr(data-label);
+            font-weight: 800;
+            color: #667064;
+            text-align: left;
+        }
+
+        tbody td:first-child {
+            display: block;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 800;
+            color: #252a32;
+            padding-bottom: 9px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+        }
+
+        tbody td:first-child::before {
+            content: "";
+            display: none;
+        }
+
+        tbody td:last-child {
+            justify-content: flex-end;
+            padding-top: 10px;
+        }
+
+        tbody td:last-child::before {
+            content: "";
+            display: none;
+        }
+
+        tbody td button {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        @media (min-width: 760px) {
+            .app {
+                max-width: 1040px;
+                padding-left: 22px;
+                padding-right: 22px;
+            }
+
+            .app.narrow {
+                max-width: 640px;
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            table {
+                border-collapse: collapse;
+                border-spacing: 0;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tbody tr {
+                display: table-row;
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+                margin: 0;
+            }
+
+            tbody td,
+            th {
+                display: table-cell;
+                border-bottom: 1px solid #e5e5df;
+                padding: 12px 10px;
+                text-align: left;
+                vertical-align: middle;
+            }
+
+            tbody td::before {
+                content: "";
+                display: none;
+            }
+
+            tbody td:first-child {
+                display: table-cell;
+                border-bottom: 1px solid #e5e5df;
+                margin: 0;
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+
+            tbody td:last-child {
+                display: table-cell;
+            }
+
+            tbody td button {
+                width: auto;
+                margin-top: 0;
+            }
+
+            th {
+                color: #53685c;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app">
+        <header class="header">
+            <div class="eyebrow">VMGC Members</div>
+            <h1>Torneos Internos</h1>
+            <div class="sub">Creá torneos rápidos, compartí una contraseña y cargá tarjetas desde el celular.</div>
+        </header>
+        <section class="card">
+            <h2 class="section-title">Crear torneo</h2>
+            <div class="form-grid">
+                <div class="field"><label>Nombre torneo</label><input id="nombre" autocomplete="off"></div>
+                <div class="field"><label>Contraseña</label><input id="password" autocomplete="off"></div>
+                <div class="field"><label>Modalidad</label><select id="modalidad"></select></div>
+                <div class="field"><label>Juego</label><select id="segmento">
+                        <option value="18">18 hoyos</option>
+                        <option value="front9">9 Ida</option>
+                        <option value="back9">9 Vuelta</option>
+                    </select></div>
+            </div>
+            <button id="btnCrear">Crear torneo</button>
+            <div id="estado" class="status"></div>
+        </section>
+        <section class="card soft">
+            <h2 class="section-title">Torneos internos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Torneo</th>
+                        <th>Juego</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tablaTorneos"></tbody>
+            </table>
+        </section>
+        <div class="swipe-hint">Deslizá hacia la derecha para volver al panel</div>
+    </main>
+    <script>
+
+        function configurarSwipeNavegacion({ izquierda, derecha, resolverDerecha, resolverIzquierda }) {
+            let startX = 0;
+            let startY = 0;
+            let tracking = false;
+
+            document.addEventListener("touchstart", (e) => {
+                const target = e.target;
+                if (target.closest("input, select, textarea, button, .search-results")) return;
+                const t = e.changedTouches[0];
+                startX = t.clientX;
+                startY = t.clientY;
+                tracking = true;
+            }, { passive: true });
+
+            document.addEventListener("touchend", (e) => {
+                if (!tracking) return;
+                tracking = false;
+                const t = e.changedTouches[0];
+                const dx = t.clientX - startX;
+                const dy = t.clientY - startY;
+                if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+                if (dx > 0) {
+                    const destino = resolverDerecha ? resolverDerecha() : derecha;
+                    if (destino) window.location.href = destino;
+                } else {
+                    const destino = resolverIzquierda ? resolverIzquierda() : izquierda;
+                    if (destino) window.location.href = destino;
+                }
+            }, { passive: true });
+        }
+
+        configurarSwipeNavegacion({ derecha: "panel.html" });
+
+        let categoriasBase = [];
+
+        async function exigirLogin() {
+
+            const { data: { session } } = await db.auth.getSession();
+
+            if (!session) {
+                window.location.href = "login.html";
+                return;
+            }
+
+        }
+
+        async function cargarModalidades() {
+
+            const { data, error } = await db
+                .from("game_modes")
+                .select("id, name")
+                .order("name");
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            document.getElementById("modalidad").innerHTML =
+                (data || [])
+                    .map(m => `
+      <option value="${m.id}">
+        ${m.name}
+      </option>
+    `)
+                    .join("");
+
+        }
+
+        async function cargarTorneos() {
+
+            const { data, error } = await db
+                .from("internal_tournaments")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const tbody = document.getElementById("tablaTorneos");
+
+            tbody.innerHTML = (data || []).map(t => {
+
+                const vencido =
+                    new Date(t.expires_at) < new Date();
+
+                return `
+      <tr>
+
+        <td>${t.name}</td>
+
+        <td data-label="Juego">
+          ${t.hole_segment === "18"
+                        ? "18 hoyos"
+                        : t.hole_segment === "front9"
+                            ? "9 Ida"
+                            : "9 Vuelta"
+                    }
+        </td>
+
+        <td data-label="Estado">
+          <span class="${vencido ? "expired" : "open"}">
+            ${t.status === "finished"
+                        ? "Finalizado"
+                        : vencido
+                            ? "Expirado"
+                            : "Abierto"
+                    }
+          </span>
+        </td>
+
+        <td>
+          <button
+            class="btn-enter"
+            onclick="entrarTorneo('${t.id}')"
+          >
+            Entrar
+          </button>
+        </td>
+
+      </tr>
+    `;
+
+            }).join("");
+
+        }
+
+        document.getElementById("btnCrear")
+            .addEventListener("click", async () => {
+
+                const estado = document.getElementById("estado");
+
+                estado.textContent = "";
+
+                const nombre =
+                    document.getElementById("nombre")
+                        .value
+                        .trim();
+
+                const password =
+                    document.getElementById("password")
+                        .value
+                        .trim();
+
+                const modalidad =
+                    document.getElementById("modalidad")
+                        .value;
+
+                const segmento =
+                    document.getElementById("segmento")
+                        .value;
+
+                if (!nombre) {
+                    estado.textContent = "Ingresá nombre.";
+                    estado.className = "status error";
+                    return;
+                }
+
+                if (!password) {
+                    estado.textContent = "Ingresá contraseña.";
+                    estado.className = "status error";
+                    return;
+                }
+
+                const { data: { user } } =
+                    await db.auth.getUser();
+
+                const holeCount =
+                    segmento === "18"
+                        ? 18
+                        : 9;
+
+                // CREAR TORNEO
+
+                const { data: torneo, error } =
+                    await db
+                        .from("internal_tournaments")
+                        .insert({
+
+                            name: nombre,
+                            access_password: password,
+
+                            created_by: user.id,
+
+                            game_mode_id: modalidad,
+
+                            hole_segment: segmento,
+                            hole_count: holeCount,
+
+                            status: "open"
+
+                        })
+                        .select()
+                        .single();
+
+                if (error) {
+                    console.error(error);
+
+                    estado.textContent =
+                        "Error creando torneo.";
+
+                    estado.className =
+                        "status error";
+
+                    return;
+                }
+
+                // CATEGORIAS AUTOMÁTICAS INTERNAS
+
+                const reglasCategorias = [
+                    {
+                        name: "Caballeros Negras",
+                        gender: "male",
+                        index_min: -6,
+                        index_max: 9,
+                        tee_name: "Negras",
+                        display_order: 1
+                    },
+                    {
+                        name: "Caballeros Amarillas",
+                        gender: "male",
+                        index_min: 9.1,
+                        index_max: 15,
+                        tee_name: "Amarillas",
+                        display_order: 2
+                    },
+                    {
+                        name: "Caballeros Blancas",
+                        gender: "male",
+                        index_min: 15.1,
+                        index_max: 54,
+                        tee_name: "Blancas",
+                        display_order: 3
+                    },
+                    {
+                        name: "Damas Rojas",
+                        gender: "female",
+                        index_min: -6,
+                        index_max: 54,
+                        tee_name: "Rojas",
+                        display_order: 4
+                    }
+                ];
+
+                const categoriasInsert = [];
+
+                for (const cat of reglasCategorias) {
+
+                    const { data: tee, error: errorTee } =
+                        await db
+                            .from("tees")
+                            .select("id, name")
+                            .ilike("name", cat.tee_name)
+                            .maybeSingle();
+
+                    if (errorTee || !tee) {
+                        throw new Error(`No se encontró el tee ${cat.tee_name}`);
+                    }
+
+                    const { data: regla, error: errorRegla } =
+                        await db
+                            .from("tee_handicap_rules")
+                            .select("*")
+                            .eq("tee_id", tee.id)
+                            .eq("gender", cat.gender)
+                            .eq("segment", segmento)
+                            .maybeSingle();
+
+                    if (errorRegla || !regla) {
+                        throw new Error(`No existe regla de handicap para ${cat.name}`);
+                    }
+
+                    categoriasInsert.push({
+                        internal_tournament_id: torneo.id,
+                        name: cat.name,
+                        gender: cat.gender,
+                        index_min: cat.index_min,
+                        index_max: cat.index_max,
+                        tee_id: tee.id,
+                        display_order: cat.display_order,
+                        hole_segment: segmento,
+                        slope: regla.slope,
+                        course_rating: regla.course_rating,
+                        par: regla.par
+                    });
+
+                }
+
+                const { error: errorCategorias } =
+                    await db
+                        .from("internal_tournament_categories")
+                        .insert(categoriasInsert);
+
+                if (errorCategorias) {
+
+                    console.error(errorCategorias);
+
+                    estado.textContent =
+                        "Torneo creado pero falló categorías.";
+
+                    estado.className =
+                        "status error";
+
+                    return;
+                }
+
+                estado.textContent =
+                    "Torneo creado.";
+
+                estado.className =
+                    "status ok";
+
+                document.getElementById("nombre").value = "";
+                document.getElementById("password").value = "";
+
+                await cargarTorneos();
+
+            });
+
+        window.entrarTorneo = function (id) {
+
+            window.location.href =
+                `torneo_interno.html?id=${id}`;
+
+        }
+
+        async function init() {
+            await exigirLogin();
+            await cargarModalidades();
+            await cargarTorneos();
+        }
+
+        init();
+
+    </script>
+
+</body>
+
+</html>
