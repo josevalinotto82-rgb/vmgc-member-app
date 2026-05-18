@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=4"></script>
+    <script src="supabase.js?v=5"></script>
 
     <style>
         * {
@@ -319,7 +319,67 @@
 
     <script>
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("./sw.js");
+
+            window.addEventListener("load", async () => {
+
+                const registration =
+                    await navigator.serviceWorker.register("./sw.js?v=5");
+
+                // Fuerza búsqueda de actualización
+                registration.update();
+
+                // Si ya hay uno esperando, activarlo
+                if (registration.waiting) {
+                    registration.waiting.postMessage({
+                        type: "SKIP_WAITING"
+                    });
+                }
+
+                // Detectar nueva versión
+                registration.addEventListener("updatefound", () => {
+
+                    const newWorker =
+                        registration.installing;
+
+                    if (!newWorker) return;
+
+                    newWorker.addEventListener("statechange", () => {
+
+                        if (
+                            newWorker.state === "installed" &&
+                            navigator.serviceWorker.controller
+                        ) {
+
+                            newWorker.postMessage({
+                                type: "SKIP_WAITING"
+                            });
+
+                            // recargar solo una vez
+                            if (!window.__swReloaded) {
+                                window.__swReloaded = true;
+                                window.location.reload();
+                            }
+
+                        }
+
+                    });
+
+                });
+
+            });
+
+            navigator.serviceWorker.addEventListener(
+                "controllerchange",
+                () => {
+
+                    if (!window.__swControllerReloaded) {
+                        window.__swControllerReloaded = true;
+                        window.location.reload();
+                    }
+
+                }
+            );
+
         }
     </script>
 </body>
