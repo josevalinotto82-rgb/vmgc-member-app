@@ -548,28 +548,41 @@
             let prof = null;
             let play = null;
 
-            const { data: profData } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
+            const { data: profData, error: profError } = await db
+                .from("profiles")
+                .select("*")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (profError) throw profError;
+
             prof = profData || null;
 
-            const posiblesCamposAuth = ["profile_id", "auth_user_id", "user_id"];
-            for (const campo of posiblesCamposAuth) {
-                if (play) break;
-                const { data } = await db.from("players").select("*").eq(campo, user.id).maybeSingle();
-                if (data) play = data;
-            }
+            const { data: playerByProfile, error: playerError } = await db
+                .from("players")
+                .select("*")
+                .eq("profile_id", user.id)
+                .maybeSingle();
 
-            if (!play && prof?.aag_member_number) {
-                const { data } = await db.from("players").select("*").eq("aag_member_number", prof.aag_member_number).maybeSingle();
-                if (data) play = data;
-            }
+            if (playerError) throw playerError;
 
-            if (!play && user.email) {
-                const { data } = await db.from("players").select("*").eq("email", user.email).maybeSingle();
-                if (data) play = data;
-            }
+            if (playerByProfile) {
+                play = playerByProfile;
+            } else if (prof?.aag_member_number) {
+                const { data } = await db
+                    .from("players")
+                    .select("*")
+                    .eq("aag_member_number", prof.aag_member_number)
+                    .maybeSingle();
 
-            if (!play && prof?.email) {
-                const { data } = await db.from("players").select("*").eq("email", prof.email).maybeSingle();
+                if (data) play = data;
+            } else if (user.email) {
+                const { data } = await db
+                    .from("players")
+                    .select("*")
+                    .eq("email", user.email)
+                    .maybeSingle();
+
                 if (data) play = data;
             }
 
@@ -821,8 +834,11 @@
             jugador = datosActualizados.play;
 
             renderDatos();
-            await cargarTeesYHcp();
             activarGestoVolver();
+
+            setTimeout(() => {
+                cargarTeesYHcp();
+            }, 50);
         }
 
         init();

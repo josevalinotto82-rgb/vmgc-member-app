@@ -2002,7 +2002,7 @@
 
         realtimeReloadTimer = setTimeout(() => {
             recargarGrillaRealtime();
-        }, 350);
+        }, 700);
     }
 
     function suscribirRealtimeGrilla() {
@@ -2072,9 +2072,16 @@
             }
 
             state.blocks = await fetchBlocks(state.torneo.id);
-            state.lines = await fetchLines(state.blocks.map((b) => b.id));
-            state.slots = await fetchSlots(state.lines.map((l) => l.id));
-            state.playerAlreadyRegistered = await fetchPlayerAlreadyRegistered(state.torneo.id);
+
+            const lineasPromise = fetchLines(state.blocks.map((b) => b.id));
+            const registradoPromise = fetchPlayerAlreadyRegistered(state.torneo.id);
+
+            state.lines = await lineasPromise;
+
+            const slotsPromise = fetchSlots(state.lines.map((l) => l.id));
+
+            state.slots = await slotsPromise;
+            state.playerAlreadyRegistered = await registradoPromise;
 
             state.showAdminSequentialTimes =
                 APP.esAdmin &&

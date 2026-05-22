@@ -294,6 +294,13 @@
         }
 
         async function init() {
+            const cachedName = localStorage.getItem("vmgc_nombre_socio");
+
+            if (cachedName) {
+                document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${cachedName}`;
+                document.getElementById("memberName").textContent = "Usuario";
+            }
+
             const { data, error } = await db.auth.getSession();
 
             if (error || !data.session) {
@@ -304,6 +311,8 @@
             const user = data.session.user;
             const { profile, player } = await buscarPerfil(user);
             const nombre = obtenerNombreMostrable(user, profile, player);
+
+            localStorage.setItem("vmgc_nombre_socio", nombre);
 
             document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${nombre}`;
             document.getElementById("memberName").textContent = "Usuario";
@@ -319,67 +328,9 @@
 
     <script>
         if ("serviceWorker" in navigator) {
-
-            window.addEventListener("load", async () => {
-
-                const registration =
-                    await navigator.serviceWorker.register("./sw.js?v=6");
-
-                // Fuerza búsqueda de actualización
-                registration.update();
-
-                // Si ya hay uno esperando, activarlo
-                if (registration.waiting) {
-                    registration.waiting.postMessage({
-                        type: "SKIP_WAITING"
-                    });
-                }
-
-                // Detectar nueva versión
-                registration.addEventListener("updatefound", () => {
-
-                    const newWorker =
-                        registration.installing;
-
-                    if (!newWorker) return;
-
-                    newWorker.addEventListener("statechange", () => {
-
-                        if (
-                            newWorker.state === "installed" &&
-                            navigator.serviceWorker.controller
-                        ) {
-
-                            newWorker.postMessage({
-                                type: "SKIP_WAITING"
-                            });
-
-                            // recargar solo una vez
-                            if (!window.__swReloaded) {
-                                window.__swReloaded = true;
-                                window.location.reload();
-                            }
-
-                        }
-
-                    });
-
-                });
-
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./sw.js?v=6");
             });
-
-            navigator.serviceWorker.addEventListener(
-                "controllerchange",
-                () => {
-
-                    if (!window.__swControllerReloaded) {
-                        window.__swControllerReloaded = true;
-                        window.location.reload();
-                    }
-
-                }
-            );
-
         }
     </script>
 </body>

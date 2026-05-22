@@ -430,7 +430,17 @@
 
             let idsJugador = new Set();
 
-            if (texto) {
+            if (texto && texto.length >= 3) {
+                const { data: scorecardsData, error: errorScorecards } = await db
+                    .from("scorecards")
+                    .select("tournament_id, display_name")
+                    .ilike("display_name", `%${textoOriginal}%`)
+                    .limit(500);
+
+                if (!errorScorecards) {
+                    construirIndiceJugadores(scorecardsData || []);
+                }
+
                 const idsJugadorModernos = buscarIdsPorJugador(texto);
                 const idsJugadorHistoricos = await buscarIdsPorJugadorHistorico(texto);
 
@@ -517,12 +527,6 @@
 
                 if (errorTorneos) throw errorTorneos;
 
-                const { data: scorecardsData, error: errorScorecards } = await db
-                    .from("scorecards")
-                    .select("tournament_id, display_name");
-
-                if (errorScorecards) throw errorScorecards;
-
                 // =========================
                 // TORNEOS HISTORICOS
                 // =========================
@@ -584,7 +588,7 @@
                 // INDICE DE JUGADORES
                 // =========================
 
-                construirIndiceJugadores(scorecardsData || []);
+                jugadoresIndexados = [];
 
                 // =========================
                 // JUGADORES HISTORICOS
