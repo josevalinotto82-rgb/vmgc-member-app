@@ -191,28 +191,22 @@
                 return;
             }
 
-            const userId = authData.user.id;
+            document.body.innerHTML = `
+                <div class="card">
+                    <h2>Registro exitoso</h2>
 
-            const { error: finalError } = await supabase.rpc("finalizar_registro_jugador", {
-                p_user_id: userId,
-                p_matricula: jugadorEncontrado.aag_member_number,
-                p_email: email,
-                p_phone: telefono
-            });
+                    <div class="info" style="display:block; line-height:1.45;">
+                        Ya creamos tu solicitud de registro.<br><br>
+                        Ahora revisá tu correo electrónico y confirmá tu cuenta para poder ingresar.
+                        <br><br>
+                        Si no ves el mail, revisá también <b>Correo no deseado</b> o <b>SPAM</b>.
+                    </div>
 
-            if (finalError) {
-                console.error(finalError);
-                msg.style.color = "red";
-                msg.textContent = finalError.message;
-                return;
-            }
-
-            msg.style.color = "#166534";
-            msg.textContent = "Registrado. Revisá tu correo y confirmá tu e-mail para ingresar.";
-
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 5000);
+                    <button onclick="window.location.href='login.html'">
+                        Ir al ingreso
+                    </button>
+                </div>
+            `;
         });
     </script>
     <script>
