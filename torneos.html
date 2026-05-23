@@ -494,13 +494,19 @@
         }
 
         body.mobile-landscape .mini-table {
+            width: 760px !important;
             min-width: 760px !important;
-            width: max-content !important;
-            table-layout: auto !important;
+            max-width: 760px !important;
+            table-layout: fixed !important;
         }
 
         body.mobile-landscape .mini-table td {
-            min-width: 42px;
+            width: 60px;
+        }
+
+        body.mobile-landscape .mini-table .label,
+        body.mobile-landscape .mini-table .sum {
+            width: 55px !important;
         }
     </style>
 </head>
