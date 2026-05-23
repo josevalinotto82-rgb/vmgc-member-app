@@ -160,25 +160,11 @@
                 return;
             }
 
-            const { error: preUpdateError } = await supabase
-                .from("players")
-                .update({
-                    email,
-                    phone: telefono
-                })
-                .eq("id", jugadorEncontrado.id);
-
-            if (preUpdateError) {
-                console.error(preUpdateError);
-                msg.textContent = preUpdateError.message;
-                return;
-            }
-
             const { error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
-                    emailRedirectTo: "https://app.villamariagolf.com.ar/confirmado.html",
+                    emailRedirectTo: "https://app.villamariagolf.com.ar/login.html",
                     data: {
                         aag_member_number: jugadorEncontrado.aag_member_number,
                         phone: telefono
