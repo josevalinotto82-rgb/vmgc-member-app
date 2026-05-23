@@ -93,6 +93,7 @@
 
         .tabla-wrap {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
@@ -323,10 +324,15 @@
         }
 
         @media (max-width: 860px) {
+
             .container {
                 width: 100%;
                 max-width: 100%;
                 padding: 10px 6px 20px;
+            }
+
+            .card {
+                padding: 12px;
             }
 
             .card,
@@ -335,49 +341,55 @@
             }
 
             .categoria-header {
-                padding: 14px 14px;
+                padding: 14px;
                 font-size: 18px;
-            }
-
-            table {
-                min-width: 100%;
-                width: 100%;
-                table-layout: fixed;
             }
 
             .tabla-wrap {
                 overflow-x: hidden;
             }
 
-            .scorecard-table {
-                min-width: 0 !important;
+            table {
+                min-width: 100%;
                 width: 100%;
-                table-layout: fixed;
-            }
-
-            .scorecard-table td {
-                font-size: 11px;
-                padding: 5px 2px;
-            }
-
-            td.nombre {
-                font-size: 13px;
-                line-height: 1.1;
-                word-break: break-word;
-            }
-
-            .card {
-                padding: 12px;
-            }
-
-            .categoria-card {
-                overflow: hidden;
+                table-layout: auto;
             }
 
             th,
             td {
-                font-size: 11px;
-                padding: 6px 3px;
+                font-size: 10px;
+                padding: 6px 2px;
+            }
+
+            th:nth-child(1),
+            td:nth-child(1) {
+                width: 26px;
+            }
+
+            th:nth-child(2),
+            td.nombre {
+                width: 42%;
+            }
+
+            th:nth-child(3),
+            td:nth-child(3),
+            th:nth-child(4),
+            td:nth-child(4),
+            th:nth-child(5),
+            td:nth-child(5),
+            th:nth-child(6),
+            td:nth-child(6),
+            th:nth-child(7),
+            td:nth-child(7) {
+                width: 38px;
+            }
+
+            td.nombre {
+                font-size: 12px;
+                line-height: 1.15;
+                white-space: normal;
+                word-break: normal;
+                overflow-wrap: break-word;
             }
 
             .scorecard-desktop {
@@ -408,8 +420,9 @@
 
             .mini-table {
                 width: 100%;
-                border-collapse: collapse;
                 min-width: 0;
+                border-collapse: collapse;
+                table-layout: fixed;
             }
 
             .mini-table td {
@@ -462,47 +475,6 @@
 
             .double-bogey {
                 border-width: 3px;
-            }
-
-            table {
-                table-layout: auto;
-            }
-
-            th:nth-child(2),
-            td.nombre {
-                width: 42%;
-            }
-
-            td.nombre {
-                font-size: 12px;
-                line-height: 1.15;
-                white-space: normal;
-                word-break: normal;
-                overflow-wrap: break-word;
-            }
-
-            th,
-            td {
-                font-size: 10px;
-                padding: 6px 2px;
-            }
-
-            th:nth-child(1),
-            td:nth-child(1) {
-                width: 26px;
-            }
-
-            th:nth-child(3),
-            td:nth-child(3),
-            th:nth-child(4),
-            td:nth-child(4),
-            th:nth-child(5),
-            td:nth-child(5),
-            th:nth-child(6),
-            td:nth-child(6),
-            th:nth-child(7),
-            td:nth-child(7) {
-                width: 38px;
             }
         }
     </style>
