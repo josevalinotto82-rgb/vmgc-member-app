@@ -174,13 +174,14 @@
                 return;
             }
 
-            const { data: authData, error: authError } = await supabase.auth.signUp({
+            const { error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     emailRedirectTo: "https://app.villamariagolf.com.ar/login.html",
                     data: {
-                        aag_member_number: jugadorEncontrado.aag_member_number
+                        aag_member_number: jugadorEncontrado.aag_member_number,
+                        phone: telefono
                     }
                 }
             });
@@ -195,11 +196,14 @@
                 <div class="card">
                     <h2>Registro exitoso</h2>
 
-                    <div class="info" style="display:block; line-height:1.45;">
-                        Ya creamos tu solicitud de registro.<br><br>
+                    <div class="info" style="display:block; line-height:1.5;">
+                        Tu cuenta fue creada correctamente.<br><br>
+
                         Ahora revisá tu correo electrónico y confirmá tu cuenta para poder ingresar.
                         <br><br>
-                        Si no ves el mail, revisá también <b>Correo no deseado</b> o <b>SPAM</b>.
+
+                        IMPORTANTE:<br>
+                        Revisá también <b>Correo no deseado</b> o <b>SPAM</b>.
                     </div>
 
                     <button onclick="window.location.href='login.html'">
