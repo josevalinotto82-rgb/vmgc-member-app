@@ -346,7 +346,8 @@
             }
 
             .tabla-wrap {
-                overflow-x: hidden;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             table {
@@ -476,6 +477,30 @@
             .double-bogey {
                 border-width: 3px;
             }
+        }
+
+
+        body.mobile-landscape .scorecard-desktop {
+            display: none !important;
+        }
+
+        body.mobile-landscape .scorecard-mobile {
+            display: block !important;
+        }
+
+        body.mobile-landscape .mini-card {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body.mobile-landscape .mini-table {
+            min-width: 760px !important;
+            width: max-content !important;
+            table-layout: auto !important;
+        }
+
+        body.mobile-landscape .mini-table td {
+            min-width: 42px;
         }
     </style>
 </head>
@@ -1592,6 +1617,20 @@
                 window.history.back();
             }
         }, false);
+    </script>
+    <script>
+        function ajustarOrientacionMobile() {
+            const esMobile = window.innerWidth <= 860;
+            const esHorizontal = window.innerWidth > window.innerHeight;
+
+            document.body.classList.toggle("mobile-landscape", esMobile && esHorizontal);
+        }
+
+        window.addEventListener("load", ajustarOrientacionMobile);
+        window.addEventListener("resize", ajustarOrientacionMobile);
+        window.addEventListener("orientationchange", function () {
+            setTimeout(ajustarOrientacionMobile, 300);
+        });
     </script>
 </body>
 
