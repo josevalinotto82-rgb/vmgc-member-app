@@ -465,17 +465,7 @@
 
                 let idsJugador = new Set();
 
-                if (texto && texto.length >= 3) {
-                    const { data: scorecardsData, error: errorScorecards } = await db
-                        .from("scorecards")
-                        .select("tournament_id, display_name")
-                        .ilike("display_name", `%${textoOriginal}%`)
-                        .limit(500);
-
-                    if (!errorScorecards) {
-                        construirIndiceJugadores(scorecardsData || []);
-                    }
-
+                if (texto) {
                     const idsJugadorModernos = buscarIdsPorJugador(texto);
                     const idsJugadorHistoricos = await buscarIdsPorJugadorHistorico(texto);
 
@@ -547,20 +537,27 @@
                     const { data: torneosData, error: errorTorneos } = await db
                         .from("tournaments")
                         .select(`
-                    id,
-                    name,
-                    tournament_date,
-                    game_mode_id,
-                    status,
-                    game_modes (
-                        id,
-                        name
-                    )
-                `)
+              id,
+              name,
+              tournament_date,
+              game_mode_id,
+              status,
+              game_modes (
+                  id,
+                  name
+              )
+          `)
                         .in("status", ["officialized", "archived"])
+                        .eq("published", true)
                         .order("tournament_date", { ascending: false });
 
                     if (errorTorneos) throw errorTorneos;
+
+                    const { data: scorecardsData, error: errorScorecards } = await db
+                        .from("scorecards")
+                        .select("tournament_id, display_name");
+
+                    if (errorScorecards) throw errorScorecards;
 
                     // =========================
                     // TORNEOS HISTORICOS
@@ -623,7 +620,7 @@
                     // INDICE DE JUGADORES
                     // =========================
 
-                    jugadoresIndexados = [];
+                    construirIndiceJugadores(scorecardsData || []);
 
                     // =========================
                     // JUGADORES HISTORICOS
@@ -675,36 +672,12 @@
                 renderTorneos();
             });
 
-            async function checkSession() {
+            cargar();
 
-                const { data } = await db.auth.getSession();
-
-                if (!data.session) {
-
-                    window.location.href = "login.html";
-                    return false;
-                }
-
-                return true;
-            }
-
-            (async () => {
-
-                const ok = await checkSession();
-
-                if (ok) {
-                    cargar();
-                }
-
-            })();
-
+            document.getElementById("btnHome").addEventListener("click", () => {
+                window.location.href = "panel.html";
+            });
         </script>
-        <script>
-            if ("serviceWorker" in navigator) {
-                navigator.serviceWorker.register("./sw.js");
-            }
-        </script>
-        
 </body>
 
 </html>
