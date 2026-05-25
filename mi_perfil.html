@@ -367,10 +367,47 @@
             color: #9ca3af;
             margin: 22px 0 8px;
         }
+
+        .floating-back-btn {
+            position: fixed;
+
+            bottom: calc(env(safe-area-inset-bottom) + 14px);
+            left: 14px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+            z-index: 9999;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: rgba(197, 212, 198, 0.92);
+            color: #166534;
+
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+
+            padding-bottom: 2px;
+
+            border: none;
+            outline: none;
+
+            -webkit-tap-highlight-color: transparent;
+        }
     </style>
 </head>
 
 <body>
+
+    <div style="padding: 10px 10px 0;">
+        <button class="floating-back-btn" onclick="window.location.href='panel.html'">
+            &lt;
+        </button>
+    </div>
     <main class="app" id="app">
         <div class="page-head">
             <h1>Mi Perfil</h1>
