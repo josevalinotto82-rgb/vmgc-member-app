@@ -366,10 +366,57 @@
             padding: 12px 0;
             border-bottom: 1px solid #eee;
         }
+
+        .floating-back-btn {
+
+            padding: 0 !important;
+            padding-bottom: 0 !important;
+            box-shadow: none !important;
+            line-height: 0 !important;
+            font-family: Arial, sans-serif;
+
+            position: fixed;
+
+            bottom: calc(env(safe-area-inset-bottom) + 14px);
+            left: 14px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+            z-index: 9999;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: rgba(197, 212, 198, 0.92);
+            color: #166534;
+
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+
+            padding-bottom: 2px;
+
+            border: none;
+            outline: none;
+
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .floating-back-icon {
+            display: block;
+            line-height: 1;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
 <body>
+    <button class="floating-back-btn" onclick="window.location.href='torneos_internos.html'">
+        <span class="floating-back-icon">&lt;</span>
+    </button>
     <main class="app">
         <section id="cardPassword" class="card" style="margin-top:22px;">
             <div class="eyebrow">Acceso privado</div>

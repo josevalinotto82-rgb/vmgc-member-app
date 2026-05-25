@@ -479,6 +479,37 @@
             }
         }
 
+        .floating-back-btn {
+            position: fixed;
+
+            bottom: calc(env(safe-area-inset-bottom) + 14px);
+            left: 14px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+            z-index: 9999;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: rgba(197, 212, 198, 0.92);
+            color: #166534;
+
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+
+            padding-bottom: 2px;
+
+            border: none;
+            outline: none;
+
+            -webkit-tap-highlight-color: transparent;
+        }
+
 
         body.mobile-landscape .scorecard-desktop {
             display: none !important;
@@ -512,6 +543,12 @@
 </head>
 
 <body>
+
+    <div style="padding: 10px 10px 0;">
+        <button class="floating-back-btn" onclick="window.location.href='resultados.html'">
+            &lt;
+        </button>
+    </div>
     <div class="card">
         <div class="club-row">
             <img src="escudo.png" alt="Escudo Villa María Golf" class="escudo">
@@ -1600,30 +1637,7 @@
             });
         }
     </script>
-    <script>
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
 
-        document.addEventListener("touchstart", function (e) {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, false);
-
-        document.addEventListener("touchend", function (e) {
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-
-            const diffX = touchEndX - touchStartX;
-            const diffY = Math.abs(touchEndY - touchStartY);
-
-            // Swipe fuerte hacia la derecha
-            if (diffX > 90 && diffY < 80) {
-                window.history.back();
-            }
-        }, false);
-    </script>
     <script>
         function ajustarOrientacionMobile() {
             const esMobile = window.innerWidth <= 860;
