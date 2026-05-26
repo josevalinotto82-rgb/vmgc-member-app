@@ -2814,7 +2814,13 @@
             ? `<button class="slot-inline-manual-btn" type="button" data-release-reserve-slot="${slot.id}">Liberar reserva</button>`
             : "";
 
-        const botonAgregarJugador = `<span class="slot-libre-link" data-open-inline="${slot.id}">Agregar jugador</span>`;
+        const esReserva24 =
+            String(slot?.notes || "") === "RESERVA_24H_SOCIO" &&
+            lockActive(slot);
+
+        const botonAgregarJugador = esReserva24
+            ? `<span class="slot-libre-link" style="text-decoration:none; cursor:not-allowed;">Reservado</span>`
+            : `<span class="slot-libre-link" data-open-inline="${slot.id}">Agregar jugador</span>`;
 
         const accionesSlotLibre = `
       <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
@@ -3247,6 +3253,10 @@
         const puedeReservar = puedeReservarSlotDeSuLinea(slot);
         const reservaMia = esReservaMia(slot);
 
+        const esReserva24 =
+            String(slot?.notes || "") === "RESERVA_24H_SOCIO" &&
+            lockActive(slot);
+
         let acciones = "";
 
         if (reservaMia) {
@@ -3310,7 +3320,9 @@
         <div class="mobile-slot-num">Lugar ${safeText(slot.slot_number)}</div>
       </div>
 
-      <div class="mobile-slot-name mobile-slot-empty">Libre</div>
+      <div class="mobile-slot-name mobile-slot-empty">
+        ${esReserva24 ? "Reservado" : "Libre"}
+      </div>
 
       <div class="mobile-actions">
         ${acciones}
