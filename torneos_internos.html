@@ -525,7 +525,6 @@
             const { data, error } = await db
                 .from("internal_tournaments")
                 .select("*")
-                .neq("status", "finished")
                 .order("created_at", { ascending: false });
 
             if (error) {
