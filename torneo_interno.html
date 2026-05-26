@@ -1277,7 +1277,28 @@
                     estado.className =
                         "status ok";
 
+                    torneo.status = "finished";
+                    torneo.winner_scorecard_id = ganador?.id || null;
+                    torneo.second_scorecard_id = segundo?.id || null;
+                    torneo.third_scorecard_id = tercero?.id || null;
+                    torneo.finished_at = new Date().toISOString();
+
+                    document.getElementById("cardFinalizar")
+                        .classList.add("hidden");
+
+                    document.getElementById("cardAnotarse")
+                        .classList.add("hidden");
+
+                    aplicarBloqueoTorneo();
+
                     await cargarLeaderboard();
+
+                    await renderPodio();
+
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
 
                 } catch (err) {
 
