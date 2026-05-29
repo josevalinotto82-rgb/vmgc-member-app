@@ -25,7 +25,7 @@
 
         .app {
             min-height: 100vh;
-            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+            padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 52px);
             max-width: 520px;
             margin: 0 auto;
         }
@@ -149,6 +149,59 @@
             color: #9ca3af;
             margin: 22px 0 8px;
         }
+
+        .logo-clickable {
+            cursor: pointer;
+            transition: transform .15s ease;
+        }
+
+        .logo-clickable:hover {
+            transform: scale(1.05);
+        }
+
+        .sponsor-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 70px;
+            background: #ffffff;
+            border-top: 1px solid #dbe7dd;
+            overflow: hidden;
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+        }
+
+        .sponsor-track {
+            display: flex;
+            gap: 34px;
+            white-space: nowrap;
+            animation: sponsorsMove 30s linear infinite;
+            font-size: 13px;
+            font-weight: 800;
+            color: #166534;
+            padding-left: 100%;
+        }
+
+        .sponsor-track span {
+            flex: 0 0 auto;
+        }
+
+        @keyframes sponsorsMove {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-100%);
+            }
+        }
+
+        .sponsor-track img {
+            height: 55px;
+            width: auto;
+        }
     </style>
 </head>
 
@@ -156,7 +209,8 @@
     <main class="app">
 
         <div class="header">
-            <img src="escudo.png" class="logo" alt="VMGC">
+            <img src="escudo.png" class="logo logo-clickable" alt="VMGC"
+                onclick="window.open('https://villamariagolf.com.ar','_blank')">
             <div>
                 <div class="club">Villa María Golf Club</div>
             </div>
@@ -202,6 +256,23 @@
         <button id="btnLogout" class="logout">Cerrar sesión</button>
 
         <div class="footer">VMGC Members · App en desarrollo</div>
+
+        <div class="sponsor-bar">
+    <div class="sponsor-track">
+
+        <img src="agrorepuestos.png" alt="Auspiciante 1">
+        <img src="alge.png" alt="Auspiciante 2">
+        <img src="arcad.png" alt="Auspiciante 3">
+        <img src="clinica.png" alt="Auspiciante 4">
+        <img src="isis.png" alt="Auspiciante 5">
+        <img src="la_segunda.png" alt="Auspiciante 6">
+        <img src="mariense_1.png" alt="Auspiciante 7">
+        <img src="puerto_noria_1.png" alt="Auspiciante 8">
+        <img src="sh_oleo.png" alt="Auspiciante 9">
+        <img src="shell_ramonda.png" alt="Auspiciante 10">
+        <img src="suarez.png" alt="Auspiciante 11">
+    </div>
+</div>
 
     </main>
 

@@ -64,8 +64,10 @@
         }
 
         .titulo {
-            margin: 0 0 8px;
-            font-size: 28px;
+            margin: 0 0 4px;
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.15;
             text-transform: uppercase;
         }
 
@@ -325,6 +327,10 @@
 
         @media (max-width: 860px) {
 
+            .titulo {
+                font-size: 18px;
+            }
+
             .container {
                 width: 100%;
                 max-width: 100%;
@@ -538,6 +544,24 @@
         body.mobile-landscape .mini-table .label,
         body.mobile-landscape .mini-table .sum {
             width: 55px !important;
+        }
+
+        .card {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+
+            background: white;
+            border-radius: 0 0 14px 14px;
+
+            padding: 14px 18px;
+            margin-bottom: 14px;
+
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .08);
+        }
+
+        #contenido {
+            padding: 0 10px 20px;
         }
     </style>
 </head>
