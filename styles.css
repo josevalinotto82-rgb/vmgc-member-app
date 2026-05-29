@@ -83,3 +83,18 @@ button:disabled {
     color: #6b7280;
     font-weight: normal;
 }
+
+.logo-login{
+    width: 110px;
+    height: auto;
+    display: block;
+    margin: 0 auto 15px;
+}
+
+.card{
+    text-align: center;
+}
+
+.card form{
+    text-align: left;
+}
