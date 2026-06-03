@@ -296,6 +296,31 @@
             let torneos = [];
             let jugadoresIndexados = [];
 
+            async function registrarUsoPagina(page, action = "view", extra = {}) {
+                try {
+                    const { data: { user } } = await db.auth.getUser();
+                    if (!user) return;
+
+                    const { data: player } = await db
+                        .from("players")
+                        .select("id")
+                        .eq("profile_id", user.id)
+                        .maybeSingle();
+
+                    await db.from("app_usage_events").insert({
+                        user_id: user.id,
+                        player_id: player?.id || null,
+                        email: user.email || null,
+                        page,
+                        action,
+                        tournament_id: extra.tournament_id || null,
+                        metadata: extra
+                    });
+                } catch (err) {
+                    console.warn("No se pudo registrar uso:", err);
+                }
+            }
+
             function normalizarTexto(texto) {
                 return String(texto || "")
                     .toLowerCase()
@@ -516,9 +541,14 @@
     `).join("");
 
                 document.querySelectorAll(".ver-btn").forEach(btn => {
-                    btn.addEventListener("click", () => {
+                    btn.addEventListener("click", async () => {
                         const id = btn.dataset.id;
                         const q = document.getElementById("buscador").value || "";
+
+                        await registrarUsoPagina("consulta_torneos", "ver_resultado", {
+                            tournament_id: id
+                        });
+
                         window.location.href = `torneos.html?id=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`;
                     });
                 });
@@ -660,21 +690,23 @@
                 }
             }
 
-            document.getElementById("buscador").addEventListener("input", () => {
+            document.getElementById("buscador")?.addEventListener("input", () => {
                 renderTorneos();
             });
 
-            document.getElementById("filtroAnio").addEventListener("change", () => {
+            document.getElementById("filtroAnio")?.addEventListener("change", () => {
                 renderTorneos();
             });
 
-            document.getElementById("filtroDia").addEventListener("change", () => {
+            document.getElementById("filtroDia")?.addEventListener("change", () => {
                 renderTorneos();
             });
+
+            registrarUsoPagina("consulta_torneos", "view");
 
             cargar();
 
-            document.getElementById("btnHome").addEventListener("click", () => {
+            document.getElementById("btnHome")?.addEventListener("click", () => {
                 window.location.href = "panel.html";
             });
         </script>

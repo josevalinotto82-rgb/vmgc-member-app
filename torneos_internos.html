@@ -773,14 +773,45 @@
             });
 
         window.entrarTorneo = function (id) {
+            registrarUsoPagina("torneos_internos", "entrar_torneo", {
+                internal_tournament_id: id
+            });
 
             window.location.href =
                 `torneo_interno.html?id=${id}`;
 
         }
 
+        async function registrarUsoPagina(page, action = "view", extra = {}) {
+            try {
+                const { data: { user } } = await db.auth.getUser();
+                if (!user) return;
+
+                const { data: player } = await db
+                    .from("players")
+                    .select("id")
+                    .eq("profile_id", user.id)
+                    .maybeSingle();
+
+                await db.from("app_usage_events").insert({
+                    user_id: user.id,
+                    player_id: player?.id || null,
+                    email: user.email || null,
+                    page,
+                    action,
+                    tournament_id: extra.tournament_id || null,
+                    metadata: extra
+                });
+            } catch (err) {
+                console.warn("No se pudo registrar uso:", err);
+            }
+        }
+
         async function init() {
             await exigirLogin();
+
+            await registrarUsoPagina("torneos_internos", "view");
+
             await cargarModalidades();
             await cargarTorneos();
         }

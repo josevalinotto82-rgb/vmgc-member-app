@@ -851,6 +851,31 @@
             }, { passive: true });
         }
 
+        async function registrarUsoPagina(page, action = "view", extra = {}) {
+            try {
+                const { data: { user } } = await db.auth.getUser();
+                if (!user) return;
+
+                const { data: player } = await db
+                    .from("players")
+                    .select("id")
+                    .eq("profile_id", user.id)
+                    .maybeSingle();
+
+                await db.from("app_usage_events").insert({
+                    user_id: user.id,
+                    player_id: player?.id || null,
+                    email: user.email || null,
+                    page,
+                    action,
+                    tournament_id: extra.tournament_id || null,
+                    metadata: extra
+                });
+            } catch (err) {
+                console.warn("No se pudo registrar uso:", err);
+            }
+        }
+
         async function init() {
             const { data, error } = await db.auth.getSession();
             if (error || !data.session) {
@@ -859,6 +884,8 @@
             }
 
             sessionUser = data.session.user;
+
+            await registrarUsoPagina("perfil", "view");
 
             const datos = await buscarDatosUsuario(sessionUser);
             perfil = datos.prof;

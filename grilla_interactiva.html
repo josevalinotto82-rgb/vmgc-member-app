@@ -1192,6 +1192,31 @@
     let realtimeChannel = null;
     let realtimeReloadTimer = null;
 
+    async function registrarUsoPagina(page, action = "view", extra = {}) {
+        try {
+            const { data: { user } } = await db.auth.getUser();
+            if (!user) return;
+
+            const { data: player } = await db
+                .from("players")
+                .select("id")
+                .eq("profile_id", user.id)
+                .maybeSingle();
+
+            await db.from("app_usage_events").insert({
+                user_id: user.id,
+                player_id: player?.id || null,
+                email: user.email || null,
+                page,
+                action,
+                tournament_id: extra.tournament_id || null,
+                metadata: extra
+            });
+        } catch (err) {
+            console.warn("No se pudo registrar uso:", err);
+        }
+    }
+
     function abrirBuscadorJugador(slotId, elemento, opciones = {}) {
         slotBusquedaActivo = slotId;
 
@@ -2144,6 +2169,10 @@
             renderTournamentSelector(torneosAbiertos);
 
             state.torneo = await fetchTournament();
+
+            await registrarUsoPagina("grilla", "view", {
+                tournament_id: state.torneo.id
+            });
 
             document.getElementById("tituloPrincipal").textContent = state.torneo.name || "Torneo";
 
@@ -3594,6 +3623,11 @@
         const popup = document.getElementById("playerSearchPopup");
         if (popup) popup.classList.add("hidden");
 
+        await registrarUsoPagina("grilla", "inscripcion", {
+            tournament_id: state.torneo.id,
+            tipo: "individual"
+        });
+
         renderView();
         setStatus("Jugador agregado correctamente.", "ok");
     }
@@ -3687,6 +3721,10 @@
 
         await unlockLineFromSlot(slotId);
         await cerrarBuscadorJugador();
+        await registrarUsoPagina("grilla", "inscripcion", {
+            tournament_id: state.torneo.id,
+            tipo: "pareja"
+        });
         await loadGrid();
     }
 
@@ -4464,7 +4502,7 @@
     installAdminDragAndDrop();
     loadGrid();
 
-    document.getElementById("btnHome").addEventListener("click", () => {
+    document.getElementById("btnHome")?.addEventListener("click", () => {
         window.location.href = "panel.html";
     });
 

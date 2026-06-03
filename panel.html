@@ -266,91 +266,91 @@
             <div class="sponsor-track">
 
                 <a href="https://agrorepuestosvm.com.ar/" target="_blank">
-                    <img src="agrorepuestos.png" alt="Auspiciante 1">
+                    <img src="sponsors/agrorepuestos.png" alt="Auspiciante 1">
                 </a>
 
                 <a href="https://www.instagram.com/alge.aberturas/" target="_blank">
-                    <img src="alge.png" alt="Auspiciante 2">
+                    <img src="sponsors/alge.png" alt="Auspiciante 2">
                 </a>
 
                 <a href="https://www.instagram.com/arcad_motoimplementos/" target="_blank">
-                    <img src="arcad.png" alt="Auspiciante 3">
+                    <img src="sponsors/arcad.png" alt="Auspiciante 3">
                 </a>
 
                 <a href="https://www.clinicaespecialidades.com/" target="_blank">
-                    <img src="clinica.png" alt="Auspiciante 4">
+                    <img src="sponsors/clinica.png" alt="Auspiciante 4">
                 </a>
 
                 <a href="https://www.instagram.com/isisexpress/?hl=es" target="_blank">
-                    <img src="isis.png" alt="Auspiciante 5">
+                    <img src="sponsors/isis.png" alt="Auspiciante 5">
                 </a>
 
                 <a href="https://www.lasegunda.com.ar/home" target="_blank">
-                    <img src="la_segunda.png" alt="Auspiciante 6">
+                    <img src="sponsors/la_segunda.png" alt="Auspiciante 6">
                 </a>
 
                 <a href="https://aguasmariense.com.ar/" target="_blank">
-                    <img src="mariense_1.png" alt="Auspiciante 7">
+                    <img src="sponsors/mariense_1.png" alt="Auspiciante 7">
                 </a>
 
                 <a href="https://www.instagram.com/puertonoria/" target="_blank">
-                    <img src="puerto_noria_1.png" alt="Auspiciante 8">
+                    <img src="sponsors/puerto_noria_1.png" alt="Auspiciante 8">
                 </a>
 
                 <a href="https://www.sholeohidraulicasrl.com/" target="_blank">
-                    <img src="sh_oleo_1.png" alt="Auspiciante 9">
+                    <img src="sponsors/sh_oleo_2.png" alt="Auspiciante 9">
                 </a>
 
                 <a href="https://find.shell.com/ar/fuel/10129755-j-l-ramonda-e-hijos-s-r-l/es_AR" target="_blank">
-                    <img src="shell_ramonda.png" alt="Auspiciante 10">
+                    <img src="sponsors/shell_ramonda.png" alt="Auspiciante 10">
                 </a>
 
                 <a href="https://autoshondaramonsuarez.com.ar/" target="_blank">
-                    <img src="suarez.png" alt="Auspiciante 11">
+                    <img src="sponsors/suarez.png" alt="Auspiciante 11">
                 </a>
 
                 <a href="https://agrorepuestosvm.com.ar/" target="_blank">
-                    <img src="agrorepuestos.png" alt="Auspiciante 1">
+                    <img src="sponsors/agrorepuestos.png" alt="Auspiciante 1">
                 </a>
 
                 <a href="https://www.instagram.com/alge.aberturas/" target="_blank">
-                    <img src="alge.png" alt="Auspiciante 2">
+                    <img src="sponsors/alge.png" alt="Auspiciante 2">
                 </a>
 
                 <a href="https://www.instagram.com/arcad_motoimplementos/" target="_blank">
-                    <img src="arcad.png" alt="Auspiciante 3">
+                    <img src="sponsors/arcad.png" alt="Auspiciante 3">
                 </a>
 
                 <a href="https://www.clinicaespecialidades.com/" target="_blank">
-                    <img src="clinica.png" alt="Auspiciante 4">
+                    <img src="sponsors/clinica.png" alt="Auspiciante 4">
                 </a>
 
                 <a href="https://www.instagram.com/isisexpress/?hl=es" target="_blank">
-                    <img src="isis.png" alt="Auspiciante 5">
+                    <img src="sponsors/isis.png" alt="Auspiciante 5">
                 </a>
 
                 <a href="https://www.lasegunda.com.ar/home" target="_blank">
-                    <img src="la_segunda.png" alt="Auspiciante 6">
+                    <img src="sponsors/la_segunda.png" alt="Auspiciante 6">
                 </a>
 
                 <a href="https://aguasmariense.com.ar/" target="_blank">
-                    <img src="mariense_1.png" alt="Auspiciante 7">
+                    <img src="sponsors/mariense_1.png" alt="Auspiciante 7">
                 </a>
 
                 <a href="https://www.instagram.com/puertonoria/" target="_blank">
-                    <img src="puerto_noria_1.png" alt="Auspiciante 8">
+                    <img src="sponsors/puerto_noria_1.png" alt="Auspiciante 8">
                 </a>
 
                 <a href="https://www.sholeohidraulicasrl.com/" target="_blank">
-                    <img src="sh_oleo_1.png" alt="Auspiciante 9">
+                    <img src="sponsors/sh_oleo_2.png" alt="Auspiciante 9">
                 </a>
 
                 <a href="https://find.shell.com/ar/fuel/10129755-j-l-ramonda-e-hijos-s-r-l/es_AR" target="_blank">
-                    <img src="shell_ramonda.png" alt="Auspiciante 10">
+                    <img src="sponsors/shell_ramonda.png" alt="Auspiciante 10">
                 </a>
 
                 <a href="https://autoshondaramonsuarez.com.ar/" target="_blank">
-                    <img src="suarez.png" alt="Auspiciante 11">
+                    <img src="sponsors/suarez.png" alt="Auspiciante 11">
                 </a>
 
             </div>
@@ -446,6 +446,31 @@
             return "socio";
         }
 
+        async function registrarUsoPagina(page, action = "view", extra = {}) {
+            try {
+                const { data: { user } } = await db.auth.getUser();
+                if (!user) return;
+
+                const { data: player } = await db
+                    .from("players")
+                    .select("id")
+                    .eq("profile_id", user.id)
+                    .maybeSingle();
+
+                await db.from("app_usage_events").insert({
+                    user_id: user.id,
+                    player_id: player?.id || null,
+                    email: user.email || null,
+                    page,
+                    action,
+                    tournament_id: extra.tournament_id || null,
+                    metadata: extra
+                });
+            } catch (err) {
+                console.warn("No se pudo registrar uso:", err);
+            }
+        }
+
         async function init() {
             const cachedName = localStorage.getItem("vmgc_nombre_socio");
 
@@ -462,6 +487,7 @@
             }
 
             const user = data.session.user;
+            await registrarUsoPagina("panel", "view");
             const { profile, player } = await buscarPerfil(user);
             const nombre = obtenerNombreMostrable(user, profile, player);
 
