@@ -427,7 +427,7 @@
                     <div id="profileMatricula" class="mini-value">-</div>
                 </div>
                 <div>
-                    <div class="mini-label">Índice</div>
+                    <div class="mini-label">Index</div>
                     <div id="profileIndex" class="mini-value">-</div>
                 </div>
             </div>
@@ -656,7 +656,7 @@
             const teesPermitidos = genero === "female" ? TEE_NAMES_FEMALE : TEE_NAMES_MALE;
 
             if (index === null) {
-                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No encontré índice para calcular el HCP de juego.</div>`;
+                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No encontré Index para calcular el HCP de juego.</div>`;
                 return;
             }
 
@@ -687,7 +687,7 @@
                     <div class="hcp-card ${clasePiedra(piedra)}">
                         <div>
                             <div class="hcp-title">Salidas ${piedra}</div>
-                            <div class="hcp-detail">Índice ${fmt(index, 1)} · Slope ${r.slope ?? "-"} · Rating ${fmt(r.course_rating, 1)} · Par ${r.par ?? "-"}</div>
+                            <div class="hcp-detail">Index ${fmt(index, 1)} · Slope ${r.slope ?? "-"} · Rating ${fmt(r.course_rating, 1)} · Par ${r.par ?? "-"}</div>
                         </div>
                         <div class="hcp-number">${hcp ?? "-"}</div>
                     </div>
