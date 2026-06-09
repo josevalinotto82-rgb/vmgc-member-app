@@ -150,6 +150,12 @@
                 return;
             }
 
+            if (jugadorEncontrado.profile_id) {
+                msg.style.color = "red";
+                msg.textContent = "Esta matrícula ya tiene una cuenta registrada. Usá recuperar contraseña o ingresá con el mail ya vinculado.";
+                return;
+            }
+
             const email = emailEl.value.trim();
             const telefono = document.getElementById("telefono").value.trim();
             console.log("TELÉFONO A GUARDAR:", telefono);
