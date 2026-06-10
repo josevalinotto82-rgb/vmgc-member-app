@@ -174,9 +174,10 @@
         .sponsor-track {
             display: flex;
             align-items: center;
-            width: fit-content;
+            width: max-content;
             gap: 0;
             animation: sponsorsMove 30s linear infinite;
+            will-change: transform;
         }
 
         .sponsor-track a {
@@ -523,10 +524,15 @@
     <script>
         window.addEventListener("load", () => {
             const track = document.querySelector(".sponsor-track");
+            if (!track || track.dataset.clonado === "true") return;
 
-            if (!track) return;
+            const original = track.innerHTML;
+            track.innerHTML = original + original;
+            track.dataset.clonado = "true";
 
-            track.innerHTML += track.innerHTML;
+            track.style.animation = "none";
+            track.offsetHeight;
+            track.style.animation = "sponsorsMove 30s linear infinite";
         });
     </script>
 
