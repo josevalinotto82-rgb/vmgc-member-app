@@ -1,4 +1,4 @@
-const CACHE_NAME = "vmgc-app-v6";
+const CACHE_NAME = "vmgc-app-v7";
 
 const ASSETS = [
     "./escudo.png",
@@ -48,7 +48,11 @@ self.addEventListener("fetch", (event) => {
     if (request.mode === "navigate" || request.destination === "document") {
         event.respondWith(
             fetch(request, { cache: "no-store" })
-                .catch(() => caches.match(request))
+                .catch(() => {
+                    return caches.match(request).then((cached) => {
+                        return cached || Response.error();
+                    });
+                })
         );
         return;
     }
@@ -88,6 +92,10 @@ self.addEventListener("fetch", (event) => {
                 });
                 return response;
             })
-            .catch(() => caches.match(request))
+            .catch(() => {
+                return caches.match(request).then((cached) => {
+                    return cached || Response.error();
+                });
+            })
     );
 });
