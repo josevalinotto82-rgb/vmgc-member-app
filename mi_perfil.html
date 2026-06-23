@@ -430,6 +430,22 @@
                     <div class="mini-label">Index</div>
                     <div id="profileIndex" class="mini-value">-</div>
                 </div>
+                <div>
+                    <div class="mini-label">Low Index</div>
+                    <div id="profileLowIndex" class="mini-value">-</div>
+                </div>
+            </div>
+
+            <div class="contact-line">
+                <div class="contact-label">Fecha nac.</div>
+                <div id="profileBornDate" class="contact-value">-</div>
+                <span></span>
+            </div>
+
+            <div class="contact-line">
+                <div class="contact-label">DNI</div>
+                <div id="profileDocNumber" class="contact-value">-</div>
+                <span></span>
             </div>
 
             <div class="contact-line">
@@ -572,6 +588,30 @@
             return limpiar(jugador?.aag_member_number ?? jugador?.matricula ?? jugador?.member_number ?? perfil?.aag_member_number ?? "");
         }
 
+        function obtenerBornDate() {
+            return jugador?.born_date ?? perfil?.born_date ?? "";
+        }
+
+        function obtenerDocNumber() {
+            return jugador?.doc_number ?? perfil?.doc_number ?? "";
+        }
+
+        function obtenerLowIndex() {
+            return num(jugador?.lowest_handicap_index ?? perfil?.lowest_handicap_index);
+        }
+
+        function formatearFechaAR(value) {
+            if (!value) return "-";
+
+            const s = String(value).trim();
+
+            // Si viene como YYYY-MM-DD
+            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+
+            return s;
+        }
+
         function obtenerGenero() {
             const g = limpiar(jugador?.gender || perfil?.gender || "").toLowerCase();
             if (["female", "f", "dama", "damas", "mujer"].includes(g)) return "female";
@@ -633,10 +673,16 @@
             const phone = obtenerTelefonoVisible();
             const matricula = obtenerMatricula();
             const index = obtenerIndex();
+            const bornDate = obtenerBornDate();
+            const docNumber = obtenerDocNumber();
+            const lowIndex = obtenerLowIndex();
 
             document.getElementById("profileName").textContent = fullName;
             document.getElementById("profileMatricula").textContent = matricula || "-";
             document.getElementById("profileIndex").textContent = fmt(index, 1);
+            document.getElementById("profileLowIndex").textContent = fmt(lowIndex, 1);
+            document.getElementById("profileBornDate").textContent = formatearFechaAR(bornDate);
+            document.getElementById("profileDocNumber").textContent = docNumber || "-";
             document.getElementById("profileEmail").textContent = email || "-";
             document.getElementById("profilePhone").textContent = phone || "Sin cargar";
         }

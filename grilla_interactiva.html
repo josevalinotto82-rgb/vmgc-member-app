@@ -4368,6 +4368,8 @@
 
                     // 👉 si está bloqueado
                     if (slot?.participant_type === "blocked") {
+                        if (!APP.esAdmin) return;
+
                         await db
                             .from("line_slots")
                             .update(buildSlotResetPayload())
