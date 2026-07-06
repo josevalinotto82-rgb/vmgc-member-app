@@ -1099,7 +1099,7 @@
 <body>
 
     <div style="padding: 10px 10px 0;">
-        <button class="floating-back-btn" onclick="window.location.href='panel.html'">
+        <button class="floating-back-btn" onclick="window.location.href='torneos_para_anotarse.html'">
             &lt;
         </button>
     </div>
@@ -1107,11 +1107,6 @@
     <div class="header-torneo">
         <h1 id="tituloPrincipal">Grilla Interactiva</h1>
         <div id="subTituloTorneo" class="sub"></div>
-    </div>
-
-    <div id="selectorTorneosWrap" class="selector-torneos-wrap" style="display:none;">
-        <div class="selector-torneos-label">Torneos abiertos</div>
-        <div id="selectorTorneos" class="selector-torneos"></div>
     </div>
 
     <div class="status-grid">
@@ -2242,17 +2237,10 @@
                 setStatus("Buscando torneo...");
                 dom.torneoNombre.textContent = "Cargando...";
 
-                const torneosAbiertos = await fetchOldestOpenTournaments(5);
-
                 if (!APP.torneoId) {
-                    const torneoPorDefecto = torneosAbiertos[0] || await fetchOldestOpenTournament();
-                    if (!torneoPorDefecto?.id) {
-                        throw new Error("Esperando el próximo Torneo.");
-                    }
-                    APP.torneoId = torneoPorDefecto.id;
+                    window.location.href = "torneos_para_anotarse.html";
+                    throw new Error("Falta seleccionar torneo.");
                 }
-
-                renderTournamentSelector(torneosAbiertos);
 
                 state.torneo = await fetchTournament();
 
