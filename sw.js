@@ -1,16 +1,17 @@
-const CACHE_NAME = "vmgc-app-v7";
+const CACHE_NAME = "vmgc-app-v8";
 
 const ASSETS = [
-    "./escudo.png",
-    "./manifest.json"
+    "/escudo.png",
+    "/manifest.json",
+    "/icon-192.png",
+    "/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
     self.skipWaiting();
 
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
     );
 });
 
@@ -29,7 +30,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-    if (event.data && event.data.type === "SKIP_WAITING") {
+    if (event.data?.type === "SKIP_WAITING") {
         self.skipWaiting();
     }
 });
@@ -38,26 +39,25 @@ self.addEventListener("fetch", (event) => {
     const request = event.request;
     const url = new URL(request.url);
 
-    // Solo manejar archivos de la misma web
-    if (url.origin !== location.origin) {
-        event.respondWith(fetch(request));
+    if (url.origin !== self.location.origin) {
         return;
     }
 
-    // HTML: siempre intenta traer nuevo
-    if (request.mode === "navigate" || request.destination === "document") {
+    if (
+        request.mode === "navigate" ||
+        request.destination === "document"
+    ) {
         event.respondWith(
             fetch(request, { cache: "no-store" })
-                .catch(() => {
-                    return caches.match(request).then((cached) => {
-                        return cached || Response.error();
-                    });
+                .catch(async () => {
+                    const cached = await caches.match(request);
+                    return cached || Response.error();
                 })
         );
+
         return;
     }
 
-    // Imágenes, manifest, iconos: cache primero
     if (
         request.destination === "image" ||
         url.pathname.endsWith(".png") ||
@@ -65,37 +65,39 @@ self.addEventListener("fetch", (event) => {
         url.pathname.endsWith(".jpeg") ||
         url.pathname.endsWith(".webp") ||
         url.pathname.endsWith(".svg") ||
-        url.pathname.endsWith("manifest.json")
+        url.pathname.endsWith("/manifest.json")
     ) {
         event.respondWith(
-            caches.match(request)
-                .then((cached) => {
-                    return cached || fetch(request).then((response) => {
-                        const copy = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(request, copy);
-                        });
-                        return response;
-                    });
-                })
+            caches.match(request).then(async (cached) => {
+                if (cached) return cached;
+
+                const response = await fetch(request);
+
+                if (response.ok) {
+                    const cache = await caches.open(CACHE_NAME);
+                    await cache.put(request, response.clone());
+                }
+
+                return response;
+            })
         );
+
         return;
     }
 
-    // JS/CSS: red primero, backup cache
     event.respondWith(
         fetch(request)
-            .then((response) => {
-                const copy = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(request, copy);
-                });
+            .then(async (response) => {
+                if (response.ok) {
+                    const cache = await caches.open(CACHE_NAME);
+                    await cache.put(request, response.clone());
+                }
+
                 return response;
             })
-            .catch(() => {
-                return caches.match(request).then((cached) => {
-                    return cached || Response.error();
-                });
+            .catch(async () => {
+                const cached = await caches.match(request);
+                return cached || Response.error();
             })
     );
 });

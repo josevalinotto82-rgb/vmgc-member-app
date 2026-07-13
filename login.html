@@ -2,7 +2,7 @@
 <html lang="es">
 
 <head>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
     <title>Login - Villa María Golf</title>
@@ -96,7 +96,26 @@
     </script>
     <script>
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("./sw.js");
+            window.addEventListener("load", async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register(
+                        "/sw.js?v=8",
+                        { scope: "/" }
+                    );
+
+                    await registration.update();
+
+                    console.log(
+                        "Service Worker activo:",
+                        registration.scope
+                    );
+                } catch (error) {
+                    console.error(
+                        "No se pudo registrar el Service Worker:",
+                        error
+                    );
+                }
+            });
         }
     </script>
 </body>

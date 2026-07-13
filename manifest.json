@@ -1,21 +1,26 @@
 {
+    "id": "/",
     "name": "VMGC Members",
     "short_name": "VMGC",
-    "start_url": "login.html",
+    "description": "Aplicación para miembros de Villa María Golf Club",
+    "start_url": "/login.html",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#f5f8f3",
     "theme_color": "#166534",
     "orientation": "portrait",
     "icons": [
         {
-            "src": "icon-192.png",
+            "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "icon-512.png",
+            "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         }
     ]
 }

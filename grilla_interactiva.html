@@ -4,7 +4,7 @@
 <head>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=4"></script>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -4811,7 +4811,8 @@
                             try {
                                 await navigator.share({
                                     files: [archivo],
-                                    title: state.torneo?.name || "Grilla de juego"
+                                    title: "Planilla Actualizada ⛳",
+                                    text: "Planilla Actualizada ⛳"
                                 });
 
                                 compartido = true;
