@@ -1219,6 +1219,12 @@
             sessionLockId: sessionStorage.getItem("vmg_lock_session") || crypto.randomUUID(),
         };
 
+        const btnManualPopup = document.getElementById("btnManualPopup");
+
+        if (btnManualPopup) {
+            btnManualPopup.style.display = APP.esAdmin ? "block" : "none";
+        }
+
         sessionStorage.setItem("vmg_lock_session", APP.sessionLockId);
 
         // ==============================
@@ -1397,6 +1403,14 @@
         }
 
         function abrirCargaManualPopup() {
+            if (!APP.esAdmin) {
+                showTransientMessage(
+                    "Solamente la administración puede crear jugadores manualmente.",
+                    "error"
+                );
+                return;
+            }
+
             const wrap = document.getElementById("playerManualPopup");
             if (!wrap || !slotBusquedaActivo) return;
 
@@ -1404,25 +1418,31 @@
             wrap.style.display = "block";
 
             const popup = document.getElementById("playerSearchPopup");
+
             if (popup) {
                 popup.style.maxHeight = "360px";
                 popup.style.overflow = "hidden";
             }
 
             wrap.innerHTML = `
-      <div class="manual-form">
-        <input id="popup-nombre" placeholder="Nombre *" />
-        <input id="popup-apellido" placeholder="Apellido *" />
-        <input id="popup-index" placeholder="Índice" />
-        <select id="popup-genero">
-          <option value="">Género *</option>
-          <option value="male">Caballero</option>
-          <option value="female">Dama</option>
-        </select>
-        <input id="popup-pais" placeholder="País" />
-        <button id="btnGuardarManualPopup" type="button">Guardar jugador</button>
-      </div>
-    `;
+                <div class="manual-form">
+                    <input id="popup-nombre" placeholder="Nombre *" />
+                    <input id="popup-apellido" placeholder="Apellido *" />
+                    <input id="popup-index" placeholder="Índice" />
+
+                    <select id="popup-genero">
+                        <option value="">Género *</option>
+                        <option value="male">Caballero</option>
+                        <option value="female">Dama</option>
+                    </select>
+
+                    <input id="popup-pais" placeholder="País" />
+
+                    <button id="btnGuardarManualPopup" type="button">
+                        Guardar jugador
+                    </button>
+                </div>
+            `;
 
             reposicionarBuscadorJugador();
         }
@@ -2730,6 +2750,14 @@
         }
 
         function renderManualInline(slotId) {
+            if (!APP.esAdmin) {
+                showTransientMessage(
+                    "Solamente la administración puede crear jugadores manualmente.",
+                    "error"
+                );
+                return;
+            }
+
             const wrap = document.getElementById(`manual-${slotId}`);
             const input = document.getElementById(`input-${slotId}`);
             const modoPareja = input?.dataset?.modoPareja === "1";
@@ -2840,18 +2868,49 @@
 
         function renderInlineEditor(slotId) {
             return `
-        <div class="slot-inline-editor" id="inline-${slotId}" style="display:none;">
-          <div class="slot-inline-top">
-            <input class="slot-inline-input" id="input-${slotId}" placeholder="Buscar por nombre o matrícula" />
-            <button class="slot-inline-close" data-close-inline="${slotId}">×</button>
-          </div>
-          <div class="slot-inline-actions">
-            <button class="slot-inline-manual-btn" data-manual-inline="${slotId}">Carga manual</button>
-          </div>
-          <div class="slot-inline-results" id="results-${slotId}"></div>
-          <div class="slot-inline-manual-wrap" id="manual-${slotId}" style="display:none;"></div>
-        </div>
-      `;
+                <div
+                    class="slot-inline-editor"
+                    id="inline-${slotId}"
+                    style="display:none;"
+                >
+                    <div class="slot-inline-top">
+                        <input
+                            class="slot-inline-input"
+                            id="input-${slotId}"
+                            placeholder="Buscar por nombre o matrícula"
+                        />
+
+                        <button
+                            class="slot-inline-close"
+                            data-close-inline="${slotId}"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    ${APP.esAdmin ? `
+                        <div class="slot-inline-actions">
+                            <button
+                                class="slot-inline-manual-btn"
+                                data-manual-inline="${slotId}"
+                            >
+                                Carga manual
+                            </button>
+                        </div>
+                    ` : ""}
+
+                    <div
+                        class="slot-inline-results"
+                        id="results-${slotId}"
+                    ></div>
+
+                    <div
+                        class="slot-inline-manual-wrap"
+                        id="manual-${slotId}"
+                        style="display:none;"
+                    ></div>
+                </div>
+            `;
         }
 
         function renderFreeSlot(slot, torneoAbierto, bloqueadoPorOtro) {
@@ -3573,6 +3632,12 @@
         }
 
         async function createManualPlayer({ nombre, apellido, current_index, genero, pais }) {
+            if (!APP.esAdmin) {
+                throw new Error(
+                    "Solamente la administración puede crear jugadores manualmente."
+                );
+            }
+
             const first_name = String(nombre || "").trim();
             const last_name = String(apellido || "").trim();
 
@@ -3880,7 +3945,7 @@
                 if (results) {
                     results.innerHTML = `
             <div style="margin-bottom:8px; font-weight:700; color:#166534;">Primer jugador seleccionado: ${safeText(jugadorElegido.full_name)}</div>
-            <div class="helper-text">Ahora buscá o cargá manualmente al compañero.</div>
+            <div class="helper-text">Ahora buscá al compañero.</div>
           `;
                 }
                 return;
@@ -3892,6 +3957,12 @@
         }
 
         async function saveManualInline(slotId) {
+            if (!APP.esAdmin) {
+                throw new Error(
+                    "Solamente la administración puede crear jugadores manualmente."
+                );
+            }
+
             const nombre = document.getElementById(`m-nombre-${slotId}`)?.value.trim() || "";
             const apellido = document.getElementById(`m-apellido-${slotId}`)?.value.trim() || "";
             const indexTxt = document.getElementById(`m-index-${slotId}`)?.value.trim() || "";
@@ -3935,7 +4006,7 @@
                 if (results) {
                     results.innerHTML = `
             <div style="margin-bottom:8px; font-weight:700; color:#166534;">Primer jugador cargado: ${safeText(jugadorNuevo.full_name)}</div>
-            <div class="helper-text">Ahora buscá o cargá manualmente al compañero.</div>
+            <div class="helper-text">Ahora buscá al compañero.</div>
           `;
                 }
                 return;
@@ -4241,8 +4312,19 @@
                 }
 
                 const manualPopupBtn = e.target.closest("#btnManualPopup");
+
                 if (manualPopupBtn) {
                     e.preventDefault();
+                    e.stopPropagation();
+
+                    if (!APP.esAdmin) {
+                        showTransientMessage(
+                            "Solamente la administración puede crear jugadores manualmente.",
+                            "error"
+                        );
+                        return;
+                    }
+
                     abrirCargaManualPopup();
                     return;
                 }
@@ -4250,8 +4332,18 @@
                 const guardarManualPopupBtn = e.target.closest("#btnGuardarManualPopup");
                 if (guardarManualPopupBtn) {
                     e.preventDefault();
+                    e.stopPropagation();
+
+                    if (!APP.esAdmin) {
+                        showTransientMessage(
+                            "Solamente la administración puede crear jugadores manualmente.",
+                            "error"
+                        );
+                        return;
+                    }
 
                     try {
+
                         const nombre = document.getElementById("popup-nombre").value.trim();
                         const apellido = document.getElementById("popup-apellido").value.trim();
                         const index = parseIndex(document.getElementById("popup-index").value);
@@ -4294,7 +4386,7 @@
                   Primer jugador cargado: ${safeText(jugador.full_name)}
                 </div>
                 <div class="helper-text" style="padding:8px;">
-                  Ahora buscá o cargá manualmente al compañero.
+                  Ahora buscá al compañero.
                 </div>
               `;
                             }
@@ -4471,23 +4563,47 @@
                 }
 
                 const manualInlineTrigger = e.target.closest("[data-manual-inline]");
+                
                 if (manualInlineTrigger) {
                     e.preventDefault();
                     e.stopPropagation();
+
+                    if (!APP.esAdmin) {
+                        showTransientMessage(
+                            "Solamente la administración puede crear jugadores manualmente.",
+                            "error"
+                        );
+                        return;
+                    }
+
                     renderManualInline(manualInlineTrigger.dataset.manualInline);
                     return;
                 }
 
                 const saveManualTrigger = e.target.closest("[data-save-manual]");
+
                 if (saveManualTrigger) {
                     e.preventDefault();
                     e.stopPropagation();
+
+                    if (!APP.esAdmin) {
+                        showTransientMessage(
+                            "Solamente la administración puede crear jugadores manualmente.",
+                            "error"
+                        );
+                        return;
+                    }
+
                     try {
                         await saveManualInline(saveManualTrigger.dataset.saveManual);
                     } catch (error) {
                         console.error(error);
-                        alert(error.message || "No se pudo guardar el jugador manual.");
+                        showTransientMessage(
+                            error.message || "No se pudo guardar el jugador manual.",
+                            "error"
+                        );
                     }
+
                     return;
                 }
 
