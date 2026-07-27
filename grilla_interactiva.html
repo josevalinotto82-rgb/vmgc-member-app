@@ -1219,12 +1219,6 @@
             sessionLockId: sessionStorage.getItem("vmg_lock_session") || crypto.randomUUID(),
         };
 
-        const btnManualPopup = document.getElementById("btnManualPopup");
-
-        if (btnManualPopup) {
-            btnManualPopup.style.display = APP.esAdmin ? "block" : "none";
-        }
-
         sessionStorage.setItem("vmg_lock_session", APP.sessionLockId);
 
         // ==============================
@@ -1262,31 +1256,95 @@
         const registrationOperations = new Set();
 
         let slotBusquedaActivo = null;
-        // Mantiene explícitamente activo el flujo de dos jugadores mientras
-        // el buscador fue abierto desde "Agregar jugador" en un torneo de parejas.
-        let flujoAgregarParejaActivo = false;
-        // Conserva el primer jugador de la pareja aunque el input/popup se reconstruya.
-        let jugadorBaseParejaId = "";
-        // "self" cuando el socio pulsa Anotarme; "seleccion" para Agregar jugador.
-        let tipoFlujoParejaActivo = "";
-
-        // Estado exclusivo de "Agregar jugador" en torneos de pareja.
-        // No se comparte con el flujo "Anotarme".
-        const flujoSeleccionPareja = {
-            activo: false,
-            slotId: "",
-            primerJugadorId: ""
-        };
-
         let activeLockedLineId = null;
 
         let mobileMoveSlotOrigen = null;
 
         let realtimeChannel = null;
         let realtimeReloadTimer = null;
+        let pausaRealtimeInscripcion = false;
+
+        // Controla que una búsqueda vieja no pueda sobrescribir los resultados actuales.
+        let popupSearchSequence = 0;
+
+        // Conserva el slot y el primer jugador de la pareja fuera del DOM.
+        // Así la selección no se pierde aunque el popup se redibuje.
+        let seleccionParejaActual = {
+            slotId: null,
+            jugadorBaseId: null,
+            etapa: "primero"
+        };
+
+        function limpiarSeleccionParejaActual() {
+            seleccionParejaActual = {
+                slotId: null,
+                jugadorBaseId: null,
+                etapa: "primero"
+            };
+        }
+
+        function prepararBusquedaSegundoJugador(jugador, slotId) {
+            const popup = document.getElementById("playerSearchPopup");
+            const input = document.getElementById("playerSearchInput");
+            const results = document.getElementById("playerSearchResults");
+            const manual = document.getElementById("playerManualPopup");
+
+            seleccionParejaActual = {
+                slotId: String(slotId),
+                jugadorBaseId: String(jugador.id),
+                etapa: "segundo"
+            };
+            slotBusquedaActivo = String(slotId);
+            pausaRealtimeInscripcion = true;
+
+            // Cancela cualquier búsqueda pendiente del primer jugador.
+            window.clearTimeout(state.searchDebounceTimers.__popup);
+            window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+            popupSearchSequence += 1;
+
+            if (input) {
+                input.dataset.jugadorBaseId = String(jugador.id);
+                input.dataset.modoPareja = "1";
+                input.value = "";
+            }
+            if (manual) {
+                manual.style.display = "none";
+                manual.innerHTML = "";
+            }
+            if (results) {
+                results.innerHTML = `
+          <div style="margin-bottom:8px; font-weight:700; color:#166534;">
+            Primer jugador elegido: ${safeText(jugador.full_name)}
+          </div>
+          <div class="helper-text" style="padding:8px;">
+            Ahora buscá al compañero.
+          </div>
+        `;
+            }
+            if (popup) {
+                popup.dataset.slotId = String(slotId);
+                popup.dataset.jugadorBaseId = String(jugador.id);
+                popup.dataset.etapaPareja = "segundo";
+                popup.classList.remove("hidden");
+                popup.style.visibility = "visible";
+            }
+            requestAnimationFrame(() => {
+                reposicionarBuscadorJugador();
+                input?.focus();
+            });
+        }
 
         function abrirBuscadorJugador(slotId, elemento, opciones = {}) {
+            pausaRealtimeInscripcion = true;
             slotBusquedaActivo = slotId;
+
+            seleccionParejaActual = {
+                slotId: String(slotId),
+                jugadorBaseId: opciones.jugadorBaseId
+                    ? String(opciones.jugadorBaseId)
+                    : null,
+                etapa: opciones.jugadorBaseId ? "segundo" : "primero"
+            };
 
             const popup = document.getElementById("playerSearchPopup");
             const input = document.getElementById("playerSearchInput");
@@ -1299,18 +1357,8 @@
             }
 
             input.value = "";
-
-            // Guardamos el tipo de flujo al abrir el popup. Así "Agregar jugador"
-            // no puede terminar guardando una sola persona si el torneo exige pareja.
-            flujoAgregarParejaActivo =
-                requiresPartner() ||
-                String(opciones.modoPareja || "") === "1";
-
-            input.dataset.modoPareja = flujoAgregarParejaActivo ? "1" : "0";
-            jugadorBaseParejaId = String(opciones.jugadorBaseId ?? "");
-            tipoFlujoParejaActivo = String(opciones.tipoFlujoPareja || "");
-            input.dataset.jugadorBaseId = jugadorBaseParejaId;
-            input.dataset.tipoFlujoPareja = tipoFlujoParejaActivo;
+            input.dataset.modoPareja = opciones.modoPareja || (requiresPartner() ? "1" : "0");
+            input.dataset.jugadorBaseId = opciones.jugadorBaseId || "";
             results.innerHTML = opciones.mensaje || "";
 
             if (manual) {
@@ -1327,6 +1375,11 @@
                 window.scrollX + window.innerWidth - anchoPopup - margen
             );
 
+            popup.dataset.slotId = String(slotId);
+            popup.dataset.jugadorBaseId = opciones.jugadorBaseId
+                ? String(opciones.jugadorBaseId)
+                : "";
+            popup.dataset.etapaPareja = opciones.jugadorBaseId ? "segundo" : "primero";
             popup.classList.remove("hidden");
             popup.style.visibility = "hidden";
             popup.style.maxHeight = "360px";
@@ -1430,14 +1483,6 @@
         }
 
         function abrirCargaManualPopup() {
-            if (!APP.esAdmin) {
-                showTransientMessage(
-                    "Solamente la administración puede crear jugadores manualmente.",
-                    "error"
-                );
-                return;
-            }
-
             const wrap = document.getElementById("playerManualPopup");
             if (!wrap || !slotBusquedaActivo) return;
 
@@ -1445,36 +1490,34 @@
             wrap.style.display = "block";
 
             const popup = document.getElementById("playerSearchPopup");
-
             if (popup) {
                 popup.style.maxHeight = "360px";
                 popup.style.overflow = "hidden";
             }
 
             wrap.innerHTML = `
-                <div class="manual-form">
-                    <input id="popup-nombre" placeholder="Nombre *" />
-                    <input id="popup-apellido" placeholder="Apellido *" />
-                    <input id="popup-index" placeholder="Índice" />
-
-                    <select id="popup-genero">
-                        <option value="">Género *</option>
-                        <option value="male">Caballero</option>
-                        <option value="female">Dama</option>
-                    </select>
-
-                    <input id="popup-pais" placeholder="País" />
-
-                    <button id="btnGuardarManualPopup" type="button">
-                        Guardar jugador
-                    </button>
-                </div>
-            `;
+      <div class="manual-form">
+        <input id="popup-nombre" placeholder="Nombre *" />
+        <input id="popup-apellido" placeholder="Apellido *" />
+        <input id="popup-index" placeholder="Índice" />
+        <select id="popup-genero">
+          <option value="">Género *</option>
+          <option value="male">Caballero</option>
+          <option value="female">Dama</option>
+        </select>
+        <input id="popup-pais" placeholder="País" />
+        <button id="btnGuardarManualPopup" type="button">Guardar jugador</button>
+      </div>
+    `;
 
             reposicionarBuscadorJugador();
         }
 
         async function cerrarBuscadorJugador() {
+            window.clearTimeout(state.searchDebounceTimers.__popup);
+            window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+            popupSearchSequence += 1;
+
             const popup = document.getElementById("playerSearchPopup");
             const input = document.getElementById("playerSearchInput");
             const results = document.getElementById("playerSearchResults");
@@ -1484,7 +1527,6 @@
                 input.value = "";
                 input.dataset.modoPareja = "0";
                 input.dataset.jugadorBaseId = "";
-                input.dataset.tipoFlujoPareja = "";
             }
             if (results) results.innerHTML = "";
 
@@ -1492,6 +1534,9 @@
                 popup.style.top = "";
                 popup.style.bottom = "";
                 popup.style.position = "";
+                popup.dataset.slotId = "";
+                popup.dataset.jugadorBaseId = "";
+                popup.dataset.etapaPareja = "";
             }
 
             if (slotBusquedaActivo) {
@@ -1499,17 +1544,77 @@
             }
 
             slotBusquedaActivo = null;
-            flujoAgregarParejaActivo = false;
-            jugadorBaseParejaId = "";
-            tipoFlujoParejaActivo = "";
-            flujoSeleccionPareja.activo = false;
-            flujoSeleccionPareja.slotId = "";
-            flujoSeleccionPareja.primerJugadorId = "";
+            limpiarSeleccionParejaActual();
+            pausaRealtimeInscripcion = false;
         }
 
-        function renderPopupSearchResults(jugadores) {
+        function ocultarBuscadorJugadorSinDesbloquear() {
+            window.clearTimeout(state.searchDebounceTimers.__popup);
+            window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+            popupSearchSequence += 1;
+
+            const popup = document.getElementById("playerSearchPopup");
+            const input = document.getElementById("playerSearchInput");
+            const results = document.getElementById("playerSearchResults");
+            const manual = document.getElementById("playerManualPopup");
+
+            if (popup) {
+                popup.classList.add("hidden");
+                popup.style.top = "";
+                popup.style.bottom = "";
+                popup.style.position = "";
+                popup.style.visibility = "";
+                popup.dataset.slotId = "";
+                popup.dataset.jugadorBaseId = "";
+                popup.dataset.etapaPareja = "";
+            }
+
+            if (input) {
+                input.value = "";
+                input.dataset.modoPareja = "0";
+                input.dataset.jugadorBaseId = "";
+            }
+
+            if (results) {
+                results.innerHTML = "";
+            }
+
+            if (manual) {
+                manual.style.display = "none";
+                manual.innerHTML = "";
+            }
+
+            slotBusquedaActivo = null;
+            limpiarSeleccionParejaActual();
+            pausaRealtimeInscripcion = false;
+        }
+
+        function renderPopupSearchResults(jugadores, slotIdBusqueda = null) {
             const cont = document.getElementById("playerSearchResults");
-            if (!cont || !slotBusquedaActivo) return;
+            const popup = document.getElementById("playerSearchPopup");
+            const input = document.getElementById("playerSearchInput");
+
+            const slotIdFinal =
+                slotIdBusqueda ||
+                seleccionParejaActual.slotId ||
+                slotBusquedaActivo ||
+                popup?.dataset?.slotId ||
+                "";
+
+            const jugadorBaseIdFinal =
+                seleccionParejaActual.jugadorBaseId ||
+                input?.dataset?.jugadorBaseId ||
+                "";
+
+            const etapaFinal = jugadorBaseIdFinal ? "segundo" : "primero";
+
+            if (!cont) return;
+
+            // La búsqueda puede terminar después de un refresco del DOM.
+            // Recuperamos el slot de la propia búsqueda para no dejar el cartel cargando.
+            if (slotIdFinal) {
+                slotBusquedaActivo = String(slotIdFinal);
+            }
 
             if (!jugadores?.length) {
                 cont.innerHTML = `<div class="helper-text" style="padding:8px;">No se encontraron coincidencias.</div>`;
@@ -1518,7 +1623,13 @@
 
             cont.innerHTML = jugadores.map((j) => `
       <div class="slot-result-item">
-        <button class="slot-result-btn" data-pick-player="${slotBusquedaActivo}" data-player-id="${j.id}">
+        <button
+          class="slot-result-btn"
+          data-pick-player="${safeText(slotIdFinal || "")}"
+          data-player-id="${safeText(j.id)}"
+          data-jugador-base-id="${safeText(jugadorBaseIdFinal)}"
+          data-etapa-pareja="${safeText(etapaFinal)}"
+        >
           <strong>${safeText(j.full_name || `${j.first_name || ""} ${j.last_name || ""}`.trim())}</strong>
           <span class="slot-result-meta">
             ${j.aag_member_number ? `Matrícula: ${safeText(j.aag_member_number)}` : "Sin matrícula"}
@@ -1762,14 +1873,7 @@
         }
 
         function requiresPartner() {
-            const relacion = state.torneo?.game_modes;
-            const modo = Array.isArray(relacion) ? relacion[0] : relacion;
-            const valor = modo?.requires_partner;
-
-            return valor === true ||
-                valor === 1 ||
-                String(valor || "").toLowerCase() === "true" ||
-                String(valor || "") === "1";
+            return state.torneo?.game_modes?.requires_partner === true;
         }
 
         function statusLabelFromTournament(status) {
@@ -2232,6 +2336,7 @@
         }
 
         async function recargarGrillaRealtime() {
+            if (pausaRealtimeInscripcion) return;
             if (!state.torneo?.id || !state.lines?.length) return;
 
             try {
@@ -2250,6 +2355,10 @@
 
         function programarRecargaRealtime() {
             clearTimeout(realtimeReloadTimer);
+
+            if (pausaRealtimeInscripcion) {
+                return;
+            }
 
             realtimeReloadTimer = setTimeout(() => {
                 recargarGrillaRealtime();
@@ -2298,10 +2407,17 @@
                 setStatus("Buscando torneo...");
                 dom.torneoNombre.textContent = "Cargando...";
 
+                const torneosAbiertos = await fetchOldestOpenTournaments(5);
+
                 if (!APP.torneoId) {
-                    window.location.href = "torneos_para_anotarse.html";
-                    throw new Error("Falta seleccionar torneo.");
+                    const torneoPorDefecto = torneosAbiertos[0] || await fetchOldestOpenTournament();
+                    if (!torneoPorDefecto?.id) {
+                        throw new Error("Esperando el próximo Torneo.");
+                    }
+                    APP.torneoId = torneoPorDefecto.id;
                 }
+
+                renderTournamentSelector(torneosAbiertos);
 
                 state.torneo = await fetchTournament();
 
@@ -2422,39 +2538,75 @@
             const texto = String(term || "").trim();
             if (!texto || texto.length < 2) return [];
 
-            const cacheKey = normalizarBusqueda(texto);
-            if (searchCache.has(cacheKey)) return searchCache.get(cacheKey);
+            const buscadoNormalizado = normalizarBusqueda(texto);
+            const palabras = buscadoNormalizado.split(" ").filter(Boolean);
+            const patronCompleto = `%${texto.replace(/[%_,]/g, " ").replace(/\s+/g, "%")}%`;
+            const primeraPalabra = palabras[0] || buscadoNormalizado;
+            const patronPalabra = `%${primeraPalabra}%`;
+            const matricula = texto.replace(/\s+/g, "");
+            const esMatricula = /^\d+$/.test(matricula);
 
-            const q = normalizarBusqueda(texto).replace(/\s+/g, "%");
+            const conTimeout = (promesa, milisegundos, valorFallback) =>
+                Promise.race([
+                    Promise.resolve(promesa),
+                    new Promise(resolve => setTimeout(() => resolve(valorFallback), milisegundos))
+                ]);
 
-            const { data: playersData, error: playersError } = await db
+            const consultaPlayers = db
                 .from("players")
                 .select("id, first_name, last_name, full_name, aag_member_number, current_index, gender, club_name, country, is_club_member, search_text")
-                .ilike("search_text", `%${q}%`)
-                .limit(15);
+                .or([
+                    `search_text.ilike.${patronCompleto}`,
+                    `full_name.ilike.${patronCompleto}`,
+                    `first_name.ilike.${patronPalabra}`,
+                    `last_name.ilike.${patronPalabra}`,
+                    ...(esMatricula ? [`aag_member_number.eq.${matricula}`] : [])
+                ].join(","))
+                .limit(40);
 
-            if (playersError) throw playersError;
-
-            const { data: aagData, error: aagError } = await db
+            let consultaAag = db
                 .from("aag_enrolleds")
-                .select("enrollment_number, first_name, last_name, full_name, gender, current_index, option_club_id, club_name, search_text")
-                .ilike("search_text", `%${q}%`)
-                .limit(15);
+                .select("enrollment_number, first_name, last_name, full_name, gender, current_index, option_club_id, club_name, search_text");
 
-            if (aagError) throw aagError;
+            consultaAag = esMatricula
+                ? consultaAag.eq("enrollment_number", matricula)
+                : consultaAag.ilike("search_text", patronCompleto);
 
-            console.log("AAG DATA:", aagData, aagError);
+            consultaAag = consultaAag.limit(40);
 
-            const players = (playersData || []).map(p => ({
+            const fallbackRespuesta = { data: [], error: null, timedOut: true };
+            const [playersRespuesta, aagRespuesta] = await Promise.all([
+                conTimeout(consultaPlayers, 3500, fallbackRespuesta),
+                conTimeout(consultaAag, 3500, fallbackRespuesta)
+            ]);
+
+            let playersData = [];
+            let aagData = [];
+
+            if (playersRespuesta?.error) {
+                console.error("Error buscando en players:", playersRespuesta.error);
+            } else {
+                playersData = playersRespuesta?.data || [];
+            }
+
+            if (aagRespuesta?.error) {
+                console.error("Error buscando en aag_enrolleds:", aagRespuesta.error);
+            } else {
+                aagData = aagRespuesta?.data || [];
+            }
+
+            const players = playersData.map(p => ({
                 ...p,
                 origen_busqueda: "players"
             }));
 
             const yaEstanEnPlayers = new Set(
-                players.map(p => String(p.aag_member_number || ""))
+                players
+                    .map(p => String(p.aag_member_number || ""))
+                    .filter(Boolean)
             );
 
-            const externos = (aagData || [])
+            const externos = aagData
                 .filter(p => !yaEstanEnPlayers.has(String(p.enrollment_number || "")))
                 .map(p => ({
                     id: `aag:${p.enrollment_number}`,
@@ -2473,40 +2625,26 @@
                 }));
 
             function scoreJugador(p) {
-                const buscado = normalizarBusqueda(texto);
-                const partes = buscado.split(" ").filter(Boolean);
-
                 const nombre = normalizarBusqueda(
                     `${p.full_name || ""} ${p.last_name || ""} ${p.first_name || ""} ${p.aag_member_number || p.enrollment_number || ""}`
                 );
 
+                // Excluir resultados que no contienen todas las palabras escritas.
+                if (!palabras.every(parte => nombre.includes(parte))) return -1;
+
                 let score = 0;
-
-                // Prioridad Villa María
                 if (Number(p.option_club_id) === 408 || p.is_club_member === true) score += 10000;
-
-                // Coincidencia exacta de matrícula
-                if (String(p.aag_member_number || p.enrollment_number || "") === texto) score += 8000;
-
-                // Coincidencia fuerte de nombre completo
-                if (nombre.includes(buscado)) score += 4000;
-
-                // Todas las palabras encontradas
-                if (partes.every(parte => nombre.includes(parte))) score += 2500;
-
-                // Suma parcial
-                score += partes.filter(parte => nombre.includes(parte)).length * 500;
-
+                if (String(p.aag_member_number || p.enrollment_number || "") === texto.replace(/\s+/g, "")) score += 8000;
+                if (nombre.includes(buscadoNormalizado)) score += 4000;
+                score += palabras.filter(parte => nombre.includes(parte)).length * 500;
                 return score;
             }
 
-            const resultado = [...players, ...externos]
+            return [...players, ...externos]
                 .map(p => ({ ...p, _score: scoreJugador(p) }))
+                .filter(p => p._score >= 0)
                 .sort((a, b) => b._score - a._score)
-                .slice(0, 4);
-
-            searchCache.set(cacheKey, resultado);
-            return resultado;
+                .slice(0, 15);
         }
 
         async function asegurarJugadorEnPlayers(jugador) {
@@ -2791,14 +2929,6 @@
         }
 
         function renderManualInline(slotId) {
-            if (!APP.esAdmin) {
-                showTransientMessage(
-                    "Solamente la administración puede crear jugadores manualmente.",
-                    "error"
-                );
-                return;
-            }
-
             const wrap = document.getElementById(`manual-${slotId}`);
             const input = document.getElementById(`input-${slotId}`);
             const modoPareja = input?.dataset?.modoPareja === "1";
@@ -2909,49 +3039,18 @@
 
         function renderInlineEditor(slotId) {
             return `
-                <div
-                    class="slot-inline-editor"
-                    id="inline-${slotId}"
-                    style="display:none;"
-                >
-                    <div class="slot-inline-top">
-                        <input
-                            class="slot-inline-input"
-                            id="input-${slotId}"
-                            placeholder="Buscar por nombre o matrícula"
-                        />
-
-                        <button
-                            class="slot-inline-close"
-                            data-close-inline="${slotId}"
-                        >
-                            ×
-                        </button>
-                    </div>
-
-                    ${APP.esAdmin ? `
-                        <div class="slot-inline-actions">
-                            <button
-                                class="slot-inline-manual-btn"
-                                data-manual-inline="${slotId}"
-                            >
-                                Carga manual
-                            </button>
-                        </div>
-                    ` : ""}
-
-                    <div
-                        class="slot-inline-results"
-                        id="results-${slotId}"
-                    ></div>
-
-                    <div
-                        class="slot-inline-manual-wrap"
-                        id="manual-${slotId}"
-                        style="display:none;"
-                    ></div>
-                </div>
-            `;
+        <div class="slot-inline-editor" id="inline-${slotId}" style="display:none;">
+          <div class="slot-inline-top">
+            <input class="slot-inline-input" id="input-${slotId}" placeholder="Buscar por nombre o matrícula" />
+            <button class="slot-inline-close" data-close-inline="${slotId}">×</button>
+          </div>
+          <div class="slot-inline-actions">
+            <button class="slot-inline-manual-btn" data-manual-inline="${slotId}">Carga manual</button>
+          </div>
+          <div class="slot-inline-results" id="results-${slotId}"></div>
+          <div class="slot-inline-manual-wrap" id="manual-${slotId}" style="display:none;"></div>
+        </div>
+      `;
         }
 
         function renderFreeSlot(slot, torneoAbierto, bloqueadoPorOtro) {
@@ -3685,12 +3784,6 @@
         }
 
         async function createManualPlayer({ nombre, apellido, current_index, genero, pais }) {
-            if (!APP.esAdmin) {
-                throw new Error(
-                    "Solamente la administración puede crear jugadores manualmente."
-                );
-            }
-
             const first_name = String(nombre || "").trim();
             const last_name = String(apellido || "").trim();
 
@@ -3797,10 +3890,10 @@
             jugador,
             registrationFallbackType = "aag_match"
         ) {
-            // Protección central: un torneo de parejas nunca puede guardar
-            // una inscripción individual, aunque algún botón llegue por error acá.
             if (requiresPartner()) {
-                throw new Error("Este torneo es de parejas. Debés completar los dos jugadores.");
+                throw new Error(
+                    "Este torneo es en parejas. Debés seleccionar los dos jugadores antes de guardar."
+                );
             }
 
             const operationKey = `${state.torneo.id}:${slotId}:${jugador.id}`;
@@ -3886,7 +3979,29 @@
         }
 
         async function occupySlotWithPair(slotId, jugador1, jugador2) {
-            const idsJugadores = [jugador1.id, jugador2.id].sort().join(":");
+            if (!requiresPartner()) {
+                throw new Error(
+                    "Este torneo no está configurado para inscripciones en pareja."
+                );
+            }
+
+            if (!jugador1?.id || !jugador2?.id) {
+                throw new Error(
+                    "No se recibieron correctamente los dos jugadores de la pareja."
+                );
+            }
+
+            if (String(jugador1.id) === String(jugador2.id)) {
+                throw new Error(
+                    "No podés elegir el mismo jugador dos veces."
+                );
+            }
+
+            const idsJugadores = [jugador1.id, jugador2.id]
+                .map(String)
+                .sort()
+                .join(":");
+
             const operationKey = `${state.torneo.id}:pair:${slotId}:${idsJugadores}`;
 
             if (registrationOperations.has(operationKey)) {
@@ -3902,28 +4017,62 @@
                 await validateSlotPriority(slotId);
 
                 const bloque = getPartnerBlock(slotActual.slot_number);
-                if (!bloque) throw new Error("No se pudo determinar el bloque de pareja.");
+
+                if (!bloque) {
+                    throw new Error("No se pudo determinar el bloque de pareja.");
+                }
 
                 validateOwnGroupLimit(2);
+
                 await validatePlayerNotDuplicated(jugador1.id);
                 await validatePlayerNotDuplicated(jugador2.id);
 
-                const slotsLinea = await fetchLineSlotsFresh(slotActual.starting_line_id);
-                const slot1 = slotsLinea.find((s) => s.slot_number === bloque.inicio);
-                const slot2 = slotsLinea.find((s) => s.slot_number === bloque.fin);
-                if (!slot1 || !slot2) throw new Error("No se encontraron ambos casilleros de la pareja.");
-                const slot1Ocupado = !isSlotEmpty(slot1) && String(slot1.id) !== String(slotId);
-                const slot2Ocupado = !isSlotEmpty(slot2) && String(slot2.id) !== String(slotId);
+                const slotsLinea = await fetchLineSlotsFresh(
+                    slotActual.starting_line_id
+                );
 
-                if (slot1Ocupado || slot2Ocupado) {
-                    throw new Error(`Para anotar una pareja, los casilleros ${bloque.inicio}-${bloque.fin} deben estar ambos libres.`);
+                const slot1 = slotsLinea.find(
+                    (slot) => Number(slot.slot_number) === Number(bloque.inicio)
+                );
+
+                const slot2 = slotsLinea.find(
+                    (slot) => Number(slot.slot_number) === Number(bloque.fin)
+                );
+
+                if (!slot1 || !slot2) {
+                    throw new Error(
+                        "No se encontraron ambos casilleros de la pareja."
+                    );
                 }
 
-                const payload1 = buildSlotPayloadFromPlayer(jugador1, participantTypeForGrid(jugador1));
-                const payload2 = buildSlotPayloadFromPlayer(jugador2, participantTypeForGrid(jugador2));
+                /*
+                 * Los dos casilleros deben estar libres.
+                 * No hacemos una excepción con slotId porque el casillero
+                 * seleccionado también debe continuar libre.
+                 */
+                if (!isSlotEmpty(slot1) || !isSlotEmpty(slot2)) {
+                    throw new Error(
+                        `Para anotar una pareja, los casilleros ${bloque.inicio}-${bloque.fin} deben estar ambos libres.`
+                    );
+                }
+
+                const payload1 = buildSlotPayloadFromPlayer(
+                    jugador1,
+                    participantTypeForGrid(jugador1)
+                );
+
+                const payload2 = buildSlotPayloadFromPlayer(
+                    jugador2,
+                    participantTypeForGrid(jugador2)
+                );
 
                 console.log("REG1:", jugador1);
                 console.log("REG2:", jugador2);
+
+                /*
+                 * No borrar previamente las inscripciones.
+                 * Los índices únicos de Supabase deben impedir duplicados.
+                 */
 
                 const reg1 = await createRegistration({
                     tournament_id: state.torneo.id,
@@ -3932,7 +4081,10 @@
                     linked_player_id: jugador1.id,
                     created_by_player_id: APP.miPlayerId || null,
                     display_name: jugador1.full_name,
-                    participant_type: registrationTypeForPlayer(jugador1, "aag_match"),
+                    participant_type: registrationTypeForPlayer(
+                        jugador1,
+                        "aag_match"
+                    ),
                     aag_member_number: jugador1.aag_member_number || null,
                     club_name: jugador1.club_name || null,
                     country: jugador1.country || null,
@@ -3941,124 +4093,109 @@
                     needs_admin_review: !jugador1.aag_member_number,
                 });
 
-                const reg2 = await createRegistration({
-                    tournament_id: state.torneo.id,
-                    starting_line_id: slotActual.starting_line_id,
-                    line_slot_id: slot2.id,
-                    linked_player_id: jugador2.id,
-                    created_by_player_id: APP.miPlayerId || null,
-                    display_name: jugador2.full_name,
-                    participant_type: registrationTypeForPlayer(jugador2, "aag_match"),
-                    aag_member_number: jugador2.aag_member_number || null,
-                    club_name: jugador2.club_name || null,
-                    country: jugador2.country || null,
-                    reported_index: jugador2.current_index ?? null,
-                    registration_status: "pending",
-                    needs_admin_review: !jugador2.aag_member_number,
-                });
+                let reg2 = null;
 
-                await linkPartnerRegistrations(reg1.id, reg2.id);
+                try {
+                    reg2 = await createRegistration({
+                        tournament_id: state.torneo.id,
+                        starting_line_id: slotActual.starting_line_id,
+                        line_slot_id: slot2.id,
+                        linked_player_id: jugador2.id,
+                        created_by_player_id: APP.miPlayerId || null,
+                        display_name: jugador2.full_name,
+                        participant_type: registrationTypeForPlayer(
+                            jugador2,
+                            "aag_match"
+                        ),
+                        aag_member_number: jugador2.aag_member_number || null,
+                        club_name: jugador2.club_name || null,
+                        country: jugador2.country || null,
+                        reported_index: jugador2.current_index ?? null,
+                        registration_status: "pending",
+                        needs_admin_review: !jugador2.aag_member_number,
+                    });
+                } catch (error) {
+                    /*
+                     * Si falla el segundo jugador, retiramos el primer registro
+                     * que acabamos de crear para no dejar una pareja incompleta.
+                     */
+                    const { error: rollbackError } = await db
+                        .from("registrations")
+                        .delete()
+                        .eq("id", reg1.id);
 
-                const { data: updatedSlot1, error: updateError1 } = await db
-                    .from("line_slots")
-                    .update(payload1)
-                    .eq("id", slot1.id)
-                    .select("id");
-
-                if (updateError1) throw updateError1;
-                if (!updatedSlot1?.length) {
-                    throw new Error(`Supabase no permitió actualizar el casillero ${bloque.inicio}. Revisá la política RLS de line_slots.`);
-                }
-
-                const { data: updatedSlot2, error: updateError2 } = await db
-                    .from("line_slots")
-                    .update(payload2)
-                    .eq("id", slot2.id)
-                    .select("id");
-
-                if (updateError2) throw updateError2;
-                if (!updatedSlot2?.length) {
-                    // Evitamos dejar media pareja cargada.
-                    await db.from("line_slots").update(buildSlotResetPayload()).eq("id", slot1.id);
-                    await db.from("registrations").delete().in("id", [reg1.id, reg2.id]);
-
-                    throw new Error(`Supabase no permitió actualizar el casillero ${bloque.fin}. No se guardó la pareja. Revisá la política RLS de line_slots.`);
-                }
-
-                // Primero liberamos solamente los bloqueos temporales.
-                // La verificación debe hacerse DESPUÉS de liberar/cerrar, porque en miembros
-                // una recarga Realtime podía pisar el primer casillero con el estado anterior.
-                await unlockLineFromSlot(slotId);
-                await cerrarBuscadorJugador();
-
-                async function asegurarDosCasillerosPareja() {
-                    let slotsConfirmados = await fetchLineSlotsFresh(slotActual.starting_line_id);
-                    let confirmado1 = slotsConfirmados.find((s) => String(s.id) === String(slot1.id));
-                    let confirmado2 = slotsConfirmados.find((s) => String(s.id) === String(slot2.id));
-
-                    const falta1 =
-                        !confirmado1 ||
-                        isSlotEmpty(confirmado1) ||
-                        String(confirmado1.linked_player_id || "") !== String(jugador1.id);
-
-                    const falta2 =
-                        !confirmado2 ||
-                        isSlotEmpty(confirmado2) ||
-                        String(confirmado2.linked_player_id || "") !== String(jugador2.id);
-
-                    // Reescribimos únicamente el casillero que haya sido pisado.
-                    if (falta1) {
-                        const { data, error } = await db
-                            .from("line_slots")
-                            .update(payload1)
-                            .eq("id", slot1.id)
-                            .select("id, linked_player_id, display_name");
-
-                        if (error) throw error;
-                        if (!data?.length) {
-                            throw new Error("Supabase no permitió confirmar el primer jugador de la pareja.");
-                        }
-                    }
-
-                    if (falta2) {
-                        const { data, error } = await db
-                            .from("line_slots")
-                            .update(payload2)
-                            .eq("id", slot2.id)
-                            .select("id, linked_player_id, display_name");
-
-                        if (error) throw error;
-                        if (!data?.length) {
-                            throw new Error("Supabase no permitió confirmar el segundo jugador de la pareja.");
-                        }
-                    }
-
-                    // Damos tiempo a cualquier recarga Realtime pendiente y confirmamos de nuevo.
-                    await new Promise((resolve) => setTimeout(resolve, 450));
-
-                    slotsConfirmados = await fetchLineSlotsFresh(slotActual.starting_line_id);
-                    confirmado1 = slotsConfirmados.find((s) => String(s.id) === String(slot1.id));
-                    confirmado2 = slotsConfirmados.find((s) => String(s.id) === String(slot2.id));
-
-                    const ok1 =
-                        confirmado1 &&
-                        !isSlotEmpty(confirmado1) &&
-                        String(confirmado1.linked_player_id || "") === String(jugador1.id);
-
-                    const ok2 =
-                        confirmado2 &&
-                        !isSlotEmpty(confirmado2) &&
-                        String(confirmado2.linked_player_id || "") === String(jugador2.id);
-
-                    if (!ok1 || !ok2) {
-                        throw new Error(
-                            `No se confirmó la pareja completa. Jugador 1: ${ok1 ? "OK" : "FALTA"} · Jugador 2: ${ok2 ? "OK" : "FALTA"}.`
+                    if (rollbackError) {
+                        console.error(
+                            "No se pudo revertir la primera inscripción de la pareja:",
+                            rollbackError
                         );
                     }
+
+                    throw error;
                 }
 
-                await asegurarDosCasillerosPareja();
+                try {
+                    await linkPartnerRegistrations(reg1.id, reg2.id);
+
+                    const { error: updateError1 } = await db
+                        .from("line_slots")
+                        .update(payload1)
+                        .eq("id", slot1.id);
+
+                    if (updateError1) throw updateError1;
+
+                    const { error: updateError2 } = await db
+                        .from("line_slots")
+                        .update(payload2)
+                        .eq("id", slot2.id);
+
+                    if (updateError2) throw updateError2;
+                } catch (error) {
+                    /*
+                     * Si falla el vínculo o la actualización de los slots,
+                     * eliminamos únicamente los registros creados en esta operación.
+                     */
+                    const { error: rollbackError } = await db
+                        .from("registrations")
+                        .delete()
+                        .in("id", [reg1.id, reg2.id]);
+
+                    if (rollbackError) {
+                        console.error(
+                            "No se pudo revertir la inscripción incompleta de la pareja:",
+                            rollbackError
+                        );
+                    }
+
+                    /*
+                     * Dejamos los slots visualmente limpios por si uno llegó
+                     * a actualizarse antes del error.
+                     */
+                    const resetPayload = buildSlotResetPayload();
+
+                    const { error: resetError } = await db
+                        .from("line_slots")
+                        .update(resetPayload)
+                        .in("id", [slot1.id, slot2.id]);
+
+                    if (resetError) {
+                        console.error(
+                            "No se pudieron limpiar los slots de la pareja:",
+                            resetError
+                        );
+                    }
+
+                    throw error;
+                }
+
+                await unlockLineFromSlot(slotId);
+
+                pausaRealtimeInscripcion = false;
+                clearTimeout(realtimeReloadTimer);
+
                 await loadGrid();
+
+                setStatus("Pareja agregada correctamente.", "ok");
 
             } finally {
                 registrationOperations.delete(operationKey);
@@ -4095,46 +4232,67 @@
 
         async function pickPlayerInline(slotId, playerId) {
             const jugadorElegido = await fetchPlayerById(playerId);
-            const input = document.getElementById(`input-${slotId}`) || document.getElementById("playerSearchInput");
-            const results = document.getElementById(`results-${slotId}`) || document.getElementById("playerSearchResults");
-            const manualWrap = document.getElementById(`manual-${slotId}`);
-            const modoPareja = input?.dataset?.modoPareja === "1";
-            const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
-            const exigePareja = modoPareja || requiresPartner();
 
-            if (!exigePareja) {
-                await occupySlotWithPlayer(slotId, jugadorElegido, "aag_match");
+            const input =
+                document.getElementById(`input-${slotId}`) ||
+                document.getElementById("playerSearchInput");
+
+            const results =
+                document.getElementById(`results-${slotId}`) ||
+                document.getElementById("playerSearchResults");
+
+            const manualWrap = document.getElementById(`manual-${slotId}`);
+            const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
+
+            if (!requiresPartner()) {
+                await occupySlotWithPlayer(
+                    slotId,
+                    jugadorElegido,
+                    "aag_match"
+                );
+
                 return;
             }
 
             if (!jugadorBaseId) {
-                input.dataset.jugadorBaseId = jugadorElegido.id;
-                if (input) input.value = "";
+                input.dataset.jugadorBaseId = String(jugadorElegido.id);
+                input.dataset.modoPareja = "1";
+                input.value = "";
+
                 if (manualWrap) {
                     manualWrap.style.display = "none";
                     manualWrap.innerHTML = "";
                 }
+
                 if (results) {
                     results.innerHTML = `
-            <div style="margin-bottom:8px; font-weight:700; color:#166534;">Primer jugador seleccionado: ${safeText(jugadorElegido.full_name)}</div>
-            <div class="helper-text">Ahora buscá al compañero.</div>
+            <div style="margin-bottom:8px; font-weight:700; color:#166534;">
+              Primer jugador seleccionado: ${safeText(jugadorElegido.full_name)}
+            </div>
+
+            <div class="helper-text">
+              Ahora buscá o cargá manualmente al compañero.
+            </div>
           `;
                 }
+
                 return;
             }
 
             const jugadorBase = await fetchPlayerById(jugadorBaseId);
-            if (jugadorBase.id === jugadorElegido.id) throw new Error("No podés elegir el mismo jugador dos veces.");
-            await occupySlotWithPair(slotId, jugadorBase, jugadorElegido);
+
+            if (String(jugadorBase.id) === String(jugadorElegido.id)) {
+                throw new Error("No podés elegir el mismo jugador dos veces.");
+            }
+
+            await occupySlotWithPair(
+                slotId,
+                jugadorBase,
+                jugadorElegido
+            );
         }
 
         async function saveManualInline(slotId) {
-            if (!APP.esAdmin) {
-                throw new Error(
-                    "Solamente la administración puede crear jugadores manualmente."
-                );
-            }
-
             const nombre = document.getElementById(`m-nombre-${slotId}`)?.value.trim() || "";
             const apellido = document.getElementById(`m-apellido-${slotId}`)?.value.trim() || "";
             const indexTxt = document.getElementById(`m-index-${slotId}`)?.value.trim() || "";
@@ -4160,17 +4318,21 @@
             const input = document.getElementById(`input-${slotId}`);
             const results = document.getElementById(`results-${slotId}`);
             const manualWrap = document.getElementById(`manual-${slotId}`);
-            const modoPareja = input?.dataset?.modoPareja === "1";
             const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
-            const exigePareja = modoPareja || requiresPartner();
 
-            if (!exigePareja) {
-                await occupySlotWithPlayer(slotId, jugadorNuevo, "manual_guest");
+            if (!requiresPartner()) {
+                await occupySlotWithPlayer(
+                    slotId,
+                    jugadorNuevo,
+                    "manual_guest"
+                );
+
                 return;
             }
 
             if (!jugadorBaseId) {
-                input.dataset.jugadorBaseId = jugadorNuevo.id;
+                input.dataset.jugadorBaseId = String(jugadorNuevo.id);
+                input.dataset.modoPareja = "1";
                 if (input) input.value = "";
                 if (manualWrap) {
                     manualWrap.style.display = "none";
@@ -4179,14 +4341,17 @@
                 if (results) {
                     results.innerHTML = `
             <div style="margin-bottom:8px; font-weight:700; color:#166534;">Primer jugador cargado: ${safeText(jugadorNuevo.full_name)}</div>
-            <div class="helper-text">Ahora buscá al compañero.</div>
+            <div class="helper-text">Ahora buscá o cargá manualmente al compañero.</div>
           `;
                 }
                 return;
             }
 
             const jugadorBase = await fetchPlayerById(jugadorBaseId);
-            if (jugadorBase.id === jugadorNuevo.id) throw new Error("No podés elegir el mismo jugador dos veces.");
+            if (String(jugadorBase.id) === String(jugadorNuevo.id)) {
+                throw new Error("No podés elegir el mismo jugador dos veces.");
+            }
+
             await occupySlotWithPair(slotId, jugadorBase, jugadorNuevo);
         }
 
@@ -4226,15 +4391,15 @@
             const fecha = formatFechaLargaCapitalizada(state.torneo?.tournament_date) || "";
 
             const texto = `
-            Hola, quisiera informar una baja de torneo.
+Hola, quisiera informar una baja de torneo.
 
-            Torneo: ${torneo}
-            Fecha: ${fecha}
-            Jugador: ${nombre}
-            Matrícula: ${matricula}
+Torneo: ${torneo}
+Fecha: ${fecha}
+Jugador: ${nombre}
+Matrícula: ${matricula}
 
-            Gracias.
-            `.trim();
+Gracias.
+  `.trim();
 
             return `https://api.whatsapp.com/send/?phone=5493535646926&text=${encodeURIComponent(texto)}&type=phone_number&app_absent=0`;
         }
@@ -4250,10 +4415,10 @@
             const matricula = slot?.aag_member_number || "Sin matrícula";
 
             texto.innerHTML = `
-                Ya no se puede desanotar desde la web.<br>
-                Informá la baja de <strong>${safeText(nombre)}</strong>
-                <br>Matrícula: <strong>${safeText(matricula)}</strong>
-            `;
+    Ya no se puede desanotar desde la web.<br>
+    Informá la baja de <strong>${safeText(nombre)}</strong>
+    <br>Matrícula: <strong>${safeText(matricula)}</strong>
+  `;
 
             btnWhatsapp.href = buildWhatsappBajaUrl(slot);
 
@@ -4470,16 +4635,9 @@
                         }
                         await lockLineFromSlot(slotId);
 
-                        // Reiniciamos exclusivamente el flujo "Agregar jugador".
-                        // Esto no modifica ni reutiliza el estado de "Anotarme".
-                        flujoSeleccionPareja.activo = requiresPartner();
-                        flujoSeleccionPareja.slotId = String(slotId);
-                        flujoSeleccionPareja.primerJugadorId = "";
-
                         abrirBuscadorJugador(slotId, openInlineTrigger, {
                             modoPareja: requiresPartner() ? "1" : "0",
                             jugadorBaseId: "",
-                            tipoFlujoPareja: "seleccion",
                             mensaje: requiresPartner()
                                 ? `<div style="padding:8px; font-weight:700; color:#166534;">Elegí el primer jugador de la pareja.</div>`
                                 : ""
@@ -4492,19 +4650,8 @@
                 }
 
                 const manualPopupBtn = e.target.closest("#btnManualPopup");
-
                 if (manualPopupBtn) {
                     e.preventDefault();
-                    e.stopPropagation();
-
-                    if (!APP.esAdmin) {
-                        showTransientMessage(
-                            "Solamente la administración puede crear jugadores manualmente.",
-                            "error"
-                        );
-                        return;
-                    }
-
                     abrirCargaManualPopup();
                     return;
                 }
@@ -4514,21 +4661,28 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    if (!APP.esAdmin) {
-                        showTransientMessage(
-                            "Solamente la administración puede crear jugadores manualmente.",
-                            "error"
-                        );
-                        return;
-                    }
+                    if (guardarManualPopupBtn.dataset.processing === "1") return;
+
+                    guardarManualPopupBtn.dataset.processing = "1";
+                    guardarManualPopupBtn.disabled = true;
+                    const textoOriginalManual = guardarManualPopupBtn.textContent;
 
                     try {
+                        guardarManualPopupBtn.textContent = "Guardando...";
 
-                        const nombre = document.getElementById("popup-nombre").value.trim();
-                        const apellido = document.getElementById("popup-apellido").value.trim();
-                        const index = parseIndex(document.getElementById("popup-index").value);
-                        const genero = document.getElementById("popup-genero").value;
-                        const pais = document.getElementById("popup-pais").value.trim();
+                        const nombre = document.getElementById("popup-nombre")?.value.trim() || "";
+                        const apellido = document.getElementById("popup-apellido")?.value.trim() || "";
+                        const index = parseIndex(document.getElementById("popup-index")?.value || "");
+                        const genero = document.getElementById("popup-genero")?.value || "";
+                        const pais = document.getElementById("popup-pais")?.value.trim() || "";
+
+                        const slotPareja =
+                            seleccionParejaActual.slotId ||
+                            slotBusquedaActivo;
+
+                        if (!slotPareja) {
+                            throw new Error("Se perdió el casillero elegido para la inscripción.");
+                        }
 
                         const jugador = await createManualPlayer({
                             nombre,
@@ -4542,121 +4696,71 @@
                         const results = document.getElementById("playerSearchResults");
                         const manualWrap = document.getElementById("playerManualPopup");
 
-                        // Flujo exclusivo de "Agregar jugador" también para
-                        // jugadores creados manualmente por administración.
-                        if (
-                            requiresPartner() &&
-                            flujoSeleccionPareja.activo === true &&
-                            flujoSeleccionPareja.slotId
-                        ) {
-                            const slotFlujo = String(flujoSeleccionPareja.slotId);
+                        const etapaParejaClick =
+                            pickPlayerTrigger.dataset.etapaPareja ||
+                            (pickPlayerTrigger.dataset.jugadorBaseId ? "segundo" : "primero");
 
-                            if (!flujoSeleccionPareja.primerJugadorId) {
-                                flujoSeleccionPareja.primerJugadorId = String(jugador.id);
-                                jugadorBaseParejaId = String(jugador.id);
-
-                                if (input) {
-                                    input.dataset.jugadorBaseId = String(jugador.id);
-                                    input.value = "";
-                                    input.focus();
-                                }
-
-                                if (manualWrap) {
-                                    manualWrap.style.display = "none";
-                                    manualWrap.innerHTML = "";
-                                }
-
-                                if (results) {
-                                    results.innerHTML = `
-                                        <div style="margin-bottom:8px; font-weight:700; color:#166534;">
-                                            Primer jugador elegido: ${safeText(jugador.full_name)}
-                                        </div>
-                                        <div class="helper-text" style="padding:8px;">
-                                            Ahora buscá y elegí al segundo jugador.
-                                        </div>
-                                    `;
-                                }
-
-                                reposicionarBuscadorJugador();
-                                return;
-                            }
-
-                            const jugadorBase = await fetchPlayerById(
-                                flujoSeleccionPareja.primerJugadorId
-                            );
-
-                            if (String(jugadorBase.id) === String(jugador.id)) {
-                                throw new Error("No podés elegir el mismo jugador dos veces.");
-                            }
-
-                            await occupySlotWithPair(slotFlujo, jugadorBase, jugador);
-
-                            flujoSeleccionPareja.activo = false;
-                            flujoSeleccionPareja.slotId = "";
-                            flujoSeleccionPareja.primerJugadorId = "";
-
-                            await cerrarBuscadorJugador();
-                            await loadGrid();
-                            return;
-                        }
-
-                        const modoPareja = input?.dataset?.modoPareja === "1";
-                        const tipoFlujoPareja =
-                            tipoFlujoParejaActivo ||
-                            input?.dataset?.tipoFlujoPareja ||
+                        const jugadorBaseId =
+                            pickPlayerTrigger.dataset.jugadorBaseId ||
+                            seleccionParejaActual.jugadorBaseId ||
+                            input?.dataset?.jugadorBaseId ||
                             "";
 
-                        // En "Anotarme", el jugador base nunca puede ser el elegido
-                        // en el buscador: siempre es el socio autenticado.
-                        const jugadorBaseId = tipoFlujoPareja === "self"
-                            ? String(APP.miPlayerId || "")
-                            : (jugadorBaseParejaId || input?.dataset?.jugadorBaseId || "");
+                        if (!requiresPartner()) {
+                            await occupySlotWithPlayer(
+                                slotPareja,
+                                jugador,
+                                "manual_guest"
+                            );
 
-                        const exigePareja =
-                            flujoAgregarParejaActivo ||
-                            modoPareja ||
-                            requiresPartner();
-
-                        if (!exigePareja) {
-                            await occupySlotWithPlayer(slotBusquedaActivo, jugador, "manual_guest");
-                            await cerrarBuscadorJugador();
+                            ocultarBuscadorJugadorSinDesbloquear();
                             return;
                         }
 
                         if (!jugadorBaseId) {
-                            jugadorBaseParejaId = String(jugador.id);
-                            input.dataset.jugadorBaseId = jugadorBaseParejaId;
-                            input.value = "";
-
-                            if (manualWrap) {
-                                manualWrap.style.display = "none";
-                                manualWrap.innerHTML = "";
-                            }
-
-                            if (results) {
-                                results.innerHTML = `
-                <div style="margin-bottom:8px; font-weight:700; color:#166534;">
-                  Primer jugador cargado: ${safeText(jugador.full_name)}
-                </div>
-                <div class="helper-text" style="padding:8px;">
-                  Ahora buscá al compañero.
-                </div>
-              `;
-                            }
-
+                            prepararBusquedaSegundoJugador(jugador, slotPareja);
                             return;
                         }
 
                         const jugadorBase = await fetchPlayerById(jugadorBaseId);
 
-                        if (jugadorBase.id === jugador.id) {
+                        if (String(jugadorBase.id) === String(jugador.id)) {
                             throw new Error("No podés elegir el mismo jugador dos veces.");
                         }
 
-                        await occupySlotWithPair(slotBusquedaActivo, jugadorBase, jugador);
+                        await occupySlotWithPair(
+                            slotPareja,
+                            jugadorBase,
+                            jugador
+                        );
+
+                        ocultarBuscadorJugadorSinDesbloquear();
                     } catch (error) {
-                        console.error(error);
-                        showTransientMessage(error.message || "No se pudo guardar el jugador manual.", "error");
+                        console.error("ERROR COMPLETO CARGA MANUAL:", error);
+
+                        const detalle = [
+                            error?.message,
+                            error?.details,
+                            error?.hint,
+                            error?.code
+                        ]
+                            .filter(Boolean)
+                            .join("\n");
+
+                        alert(
+                            `No se pudo guardar el jugador.\n\n${detalle || "Error desconocido"}`
+                        );
+
+                        showTransientMessage(
+                            error?.message || "No se pudo guardar el jugador manual.",
+                            "error"
+                        );
+                    } finally {
+                        if (guardarManualPopupBtn?.isConnected) {
+                            guardarManualPopupBtn.dataset.processing = "0";
+                            guardarManualPopupBtn.disabled = false;
+                            guardarManualPopupBtn.textContent = textoOriginalManual;
+                        }
                     }
 
                     return;
@@ -4712,17 +4816,9 @@
                             await cerrarBuscadorJugador();
                         }
                         await lockLineFromSlot(slotId);
-
-                        // "Anotarme" usa su flujo propio. Nunca reutiliza el estado de
-                        // "Agregar jugador".
-                        flujoSeleccionPareja.activo = false;
-                        flujoSeleccionPareja.slotId = "";
-                        flujoSeleccionPareja.primerJugadorId = "";
-
                         abrirBuscadorJugador(slotId, selfSlotTrigger, {
                             modoPareja: "1",
                             jugadorBaseId: jugador.id,
-                            tipoFlujoPareja: "self",
                             mensaje: `<div style="padding:8px; margin-bottom:6px; font-weight:700; color:#166534;">Anotándote a vos. Ahora buscá a tu compañero.</div>`
                         });
                     } catch (error) {
@@ -4738,9 +4834,7 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    if (pickPlayerTrigger.dataset.processing === "1") {
-                        return;
-                    }
+                    if (pickPlayerTrigger.dataset.processing === "1") return;
 
                     pickPlayerTrigger.dataset.processing = "1";
                     pickPlayerTrigger.disabled = true;
@@ -4748,12 +4842,25 @@
                     const textoOriginal = pickPlayerTrigger.innerHTML;
 
                     try {
-                        pickPlayerTrigger.innerHTML = "<strong>Guardando...</strong>";
+                        pickPlayerTrigger.innerHTML = "<strong>Procesando...</strong>";
 
-                        const slotId = pickPlayerTrigger.dataset.pickPlayer;
+                        const popup = document.getElementById("playerSearchPopup");
+                        const slotId =
+                            pickPlayerTrigger.dataset.pickPlayer ||
+                            seleccionParejaActual.slotId ||
+                            slotBusquedaActivo ||
+                            popup?.dataset?.slotId ||
+                            "";
+
                         const playerId = pickPlayerTrigger.dataset.playerId;
 
-                        // Continúa acá todo el código actual del evento.
+                        if (!slotId) {
+                            throw new Error("Se perdió el casillero elegido para la inscripción.");
+                        }
+
+                        if (!playerId) {
+                            throw new Error("No se pudo identificar al jugador seleccionado.");
+                        }
 
                         let elegido = null;
 
@@ -4792,121 +4899,67 @@
                         }
 
                         const jugador = await asegurarJugadorEnPlayers(elegido);
-
                         const input = document.getElementById("playerSearchInput");
                         const results = document.getElementById("playerSearchResults");
 
-                        // FLUJO EXCLUSIVO: "Agregar jugador" en torneo de parejas.
-                        // Primer clic: conserva el jugador y mantiene abierto el buscador.
-                        // Segundo clic: guarda ambos juntos.
-                        const esFlujoSeleccionPareja =
-                            requiresPartner() &&
-                            flujoSeleccionPareja.activo === true &&
-                            String(flujoSeleccionPareja.slotId || "") !== "";
+                        const etapaParejaClick =
+                            pickPlayerTrigger.dataset.etapaPareja ||
+                            (pickPlayerTrigger.dataset.jugadorBaseId ? "segundo" : "primero");
 
-                        if (esFlujoSeleccionPareja) {
-                            const slotFlujo = String(flujoSeleccionPareja.slotId || slotId);
+                        const jugadorBaseId =
+                            pickPlayerTrigger.dataset.jugadorBaseId ||
+                            seleccionParejaActual.jugadorBaseId ||
+                            input?.dataset?.jugadorBaseId ||
+                            "";
 
-                            if (!flujoSeleccionPareja.primerJugadorId) {
-                                flujoSeleccionPareja.slotId = slotFlujo;
-                                flujoSeleccionPareja.primerJugadorId = String(jugador.id);
-
-                                // También lo reflejamos en las variables anteriores por compatibilidad,
-                                // pero la fuente de verdad es flujoSeleccionPareja.
-                                jugadorBaseParejaId = String(jugador.id);
-                                if (input) {
-                                    input.dataset.jugadorBaseId = String(jugador.id);
-                                    input.value = "";
-                                    input.focus();
-                                }
-
-                                if (results) {
-                                    results.innerHTML = `
-                                        <div style="margin-bottom:8px; font-weight:700; color:#166534;">
-                                            Primer jugador elegido: ${safeText(jugador.full_name)}
-                                        </div>
-                                        <div class="helper-text" style="padding:8px;">
-                                            Ahora buscá y elegí al segundo jugador.
-                                        </div>
-                                    `;
-                                }
-
-                                reposicionarBuscadorJugador();
-                                return;
-                            }
-
-                            const jugadorBase = await fetchPlayerById(
-                                flujoSeleccionPareja.primerJugadorId
-                            );
-
-                            if (String(jugadorBase.id) === String(jugador.id)) {
-                                throw new Error("No podés elegir el mismo jugador dos veces.");
-                            }
-
-                            await occupySlotWithPair(slotFlujo, jugadorBase, jugador);
-
-                            flujoSeleccionPareja.activo = false;
-                            flujoSeleccionPareja.slotId = "";
-                            flujoSeleccionPareja.primerJugadorId = "";
-
-                            await cerrarBuscadorJugador();
-                            await loadGrid();
+                        if (!requiresPartner()) {
+                            await occupySlotWithPlayer(slotId, jugador, "aag_match");
+                            ocultarBuscadorJugadorSinDesbloquear();
                             return;
                         }
 
-                        const modoPareja = input?.dataset?.modoPareja === "1";
-                        const tipoFlujoPareja =
-                            tipoFlujoParejaActivo ||
-                            input?.dataset?.tipoFlujoPareja ||
-                            "";
-
-                        // En "Anotarme", el jugador base nunca puede ser el elegido
-                        // en el buscador: siempre es el socio autenticado.
-                        const jugadorBaseId = tipoFlujoPareja === "self"
-                            ? String(APP.miPlayerId || "")
-                            : (jugadorBaseParejaId || input?.dataset?.jugadorBaseId || "");
-
-                        const exigePareja =
-                            flujoAgregarParejaActivo ||
-                            modoPareja ||
-                            requiresPartner();
-
-                        if (!exigePareja) {
-                            await occupySlotWithPlayer(slotId, jugador, "aag_match");
-                            await cerrarBuscadorJugador();
-                            await loadGrid();
+                        if (etapaParejaClick === "primero") {
+                            prepararBusquedaSegundoJugador(jugador, slotId);
                             return;
                         }
 
                         if (!jugadorBaseId) {
-                            jugadorBaseParejaId = String(jugador.id);
-                            input.dataset.jugadorBaseId = jugadorBaseParejaId;
-                            input.value = "";
-                            document.getElementById("playerSearchResults").innerHTML = `
-                                <div style="margin-bottom:8px; font-weight:700; color:#166534;">
-                                Primer jugador elegido: ${safeText(jugador.full_name)}
-                                </div>
-                                <div class="helper-text" style="padding:8px;">
-                                Ahora buscá al compañero.
-                                </div>
-                            `;
-                            return;
+                            throw new Error(
+                                "Se perdió el primer jugador de la pareja. Cerrá el buscador y comenzá nuevamente."
+                            );
                         }
 
                         const jugadorBase = await fetchPlayerById(jugadorBaseId);
 
-                        if (jugadorBase.id === jugador.id) {
+                        if (String(jugadorBase.id) === String(jugador.id)) {
                             throw new Error("No podés elegir el mismo jugador dos veces.");
                         }
 
-                        await occupySlotWithPair(slotId, jugadorBase, jugador);
-                        await cerrarBuscadorJugador();
-                        await loadGrid();
+                        await occupySlotWithPair(
+                            slotId,
+                            jugadorBase,
+                            jugador
+                        );
 
+                        ocultarBuscadorJugadorSinDesbloquear();
                     } catch (error) {
-                        console.error(error);
+                        console.error("ERROR COMPLETO AL AGREGAR JUGADOR O PAREJA:", error);
+
+                        const detalle = [
+                            error?.message,
+                            error?.details,
+                            error?.hint,
+                            error?.code
+                        ]
+                            .filter(Boolean)
+                            .join("\n");
+
+                        alert(
+                            `No se pudo completar la inscripción.\n\n${detalle || "Error desconocido"}`
+                        );
+
                         showTransientMessage(
-                            error.message || "No se pudo agregar el jugador.",
+                            error?.message || "No se pudo agregar el jugador.",
                             "error"
                         );
                     } finally {
@@ -4921,47 +4974,23 @@
                 }
 
                 const manualInlineTrigger = e.target.closest("[data-manual-inline]");
-
                 if (manualInlineTrigger) {
                     e.preventDefault();
                     e.stopPropagation();
-
-                    if (!APP.esAdmin) {
-                        showTransientMessage(
-                            "Solamente la administración puede crear jugadores manualmente.",
-                            "error"
-                        );
-                        return;
-                    }
-
                     renderManualInline(manualInlineTrigger.dataset.manualInline);
                     return;
                 }
 
                 const saveManualTrigger = e.target.closest("[data-save-manual]");
-
                 if (saveManualTrigger) {
                     e.preventDefault();
                     e.stopPropagation();
-
-                    if (!APP.esAdmin) {
-                        showTransientMessage(
-                            "Solamente la administración puede crear jugadores manualmente.",
-                            "error"
-                        );
-                        return;
-                    }
-
                     try {
                         await saveManualInline(saveManualTrigger.dataset.saveManual);
                     } catch (error) {
                         console.error(error);
-                        showTransientMessage(
-                            error.message || "No se pudo guardar el jugador manual.",
-                            "error"
-                        );
+                        alert(error.message || "No se pudo guardar el jugador manual.");
                     }
-
                     return;
                 }
 
@@ -5050,25 +5079,96 @@
 
                 popupInput.addEventListener("input", () => {
                     const texto = String(popupInput.value || "").trim();
+
                     window.clearTimeout(state.searchDebounceTimers.__popup);
+                    window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+
+                    const secuenciaActual = ++popupSearchSequence;
+                    const slotIdBusqueda = String(
+                        seleccionParejaActual.slotId ||
+                        slotBusquedaActivo ||
+                        ""
+                    );
 
                     if (!texto) {
-                        if (popupResults) popupResults.innerHTML = "";
+                        if (popupResults) {
+                            popupResults.innerHTML = seleccionParejaActual.jugadorBaseId
+                                ? `<div class="helper-text" style="padding:8px;">Ahora buscá al compañero.</div>`
+                                : "";
+                        }
                         return;
                     }
 
-                    if (texto.length < 3) {
-                        if (popupResults) popupResults.innerHTML = `<div class="helper-text" style="padding:8px;">Escribí al menos 2 caracteres.</div>`;
+                    if (texto.length < 2) {
+                        if (popupResults) {
+                            popupResults.innerHTML = `<div class="helper-text" style="padding:8px;">Escribí al menos 2 caracteres.</div>`;
+                        }
                         return;
                     }
+
+                    if (popupResults) {
+                        popupResults.innerHTML = `<div class="helper-text" style="padding:8px;">Buscando jugadores...</div>`;
+                    }
+
+                    // Salvavidas visual: aunque una consulta o un refresco falle,
+                    // el popup nunca puede quedar indefinidamente en "Buscando".
+                    state.searchDebounceTimers.__popupWatchdog = window.setTimeout(() => {
+                        const sigueSiendoLaMismaBusqueda =
+                            secuenciaActual === popupSearchSequence &&
+                            String(popupInput.value || "").trim() === texto;
+
+                        if (
+                            sigueSiendoLaMismaBusqueda &&
+                            popupResults?.textContent?.includes("Buscando jugadores")
+                        ) {
+                            popupResults.innerHTML = `
+                <div class="helper-text" style="padding:8px;">
+                  La búsqueda tardó demasiado. Escribí una letra más o volvé a intentarlo.
+                </div>
+              `;
+                        }
+                    }, 5000);
 
                     state.searchDebounceTimers.__popup = window.setTimeout(async () => {
                         try {
                             const jugadores = await searchPlayers(texto);
-                            renderPopupSearchResults(jugadores);
+
+                            const sigueSiendoLaMismaBusqueda =
+                                secuenciaActual === popupSearchSequence &&
+                                String(popupInput.value || "").trim() === texto;
+
+                            if (!sigueSiendoLaMismaBusqueda) return;
+
+                            window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+
+                            const jugadorBaseId = String(
+                                seleccionParejaActual.jugadorBaseId ||
+                                popupInput.dataset.jugadorBaseId ||
+                                ""
+                            );
+
+                            const resultadosFiltrados = jugadorBaseId
+                                ? jugadores.filter(j => String(j.id) !== jugadorBaseId)
+                                : jugadores;
+
+                            renderPopupSearchResults(resultadosFiltrados, slotIdBusqueda);
                         } catch (error) {
-                            console.error(error);
-                            if (popupResults) popupResults.innerHTML = `<div class="error" style="padding:8px;">Error al buscar.</div>`;
+                            const sigueSiendoLaMismaBusqueda =
+                                secuenciaActual === popupSearchSequence &&
+                                String(popupInput.value || "").trim() === texto;
+
+                            if (!sigueSiendoLaMismaBusqueda) return;
+
+                            window.clearTimeout(state.searchDebounceTimers.__popupWatchdog);
+                            console.error("Error buscando jugadores en popup:", error);
+
+                            if (popupResults) {
+                                popupResults.innerHTML = `
+                  <div class="error" style="padding:8px;">
+                    No se pudo completar la búsqueda.
+                  </div>
+                `;
+                            }
                         }
                     }, CONFIG.SEARCH_DEBOUNCE_MS);
                 });
@@ -5076,13 +5176,25 @@
 
             document.addEventListener("click", async (e) => {
                 const popup = document.getElementById("playerSearchPopup");
+
                 if (!popup || popup.classList.contains("hidden")) return;
                 if (e.target.closest("#playerSearchPopup")) return;
-                if (e.target.closest("[data-open-inline]") || e.target.closest("[data-self-slot]")) return;
+                if (
+                    e.target.closest("[data-open-inline]") ||
+                    e.target.closest("[data-self-slot]")
+                ) {
+                    return;
+                }
 
-                const slotId = slotBusquedaActivo;
+                // Mientras falta elegir el segundo jugador, mantener abierto el popup.
+                if (requiresPartner() && seleccionParejaActual.jugadorBaseId) {
+                    const input = document.getElementById("playerSearchInput");
+                    popup.classList.remove("hidden");
+                    requestAnimationFrame(() => input?.focus());
+                    return;
+                }
+
                 await cerrarBuscadorJugador();
-                if (slotId) await unlockLineFromSlot(slotId);
             });
 
             if (dom.selectorTorneos) {
@@ -5221,7 +5333,6 @@
                         setTimeout(() => {
                             URL.revokeObjectURL(blobUrl);
                         }, 30000);
-
                         console.error("Error exportando grilla:", error);
 
                         if (error?.name !== "AbortError") {
@@ -5282,7 +5393,12 @@
         installAdminDragAndDrop();
         loadGrid();
 
+        document.getElementById("btnHome").addEventListener("click", () => {
+            window.location.href = "panel.html";
+        });
+
     </script>
+
 </body>
 
 </html>
