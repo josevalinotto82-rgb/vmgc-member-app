@@ -1262,6 +1262,22 @@
         const registrationOperations = new Set();
 
         let slotBusquedaActivo = null;
+        // Mantiene explícitamente activo el flujo de dos jugadores mientras
+        // el buscador fue abierto desde "Agregar jugador" en un torneo de parejas.
+        let flujoAgregarParejaActivo = false;
+        // Conserva el primer jugador de la pareja aunque el input/popup se reconstruya.
+        let jugadorBaseParejaId = "";
+        // "self" cuando el socio pulsa Anotarme; "seleccion" para Agregar jugador.
+        let tipoFlujoParejaActivo = "";
+
+        // Estado exclusivo de "Agregar jugador" en torneos de pareja.
+        // No se comparte con el flujo "Anotarme".
+        const flujoSeleccionPareja = {
+            activo: false,
+            slotId: "",
+            primerJugadorId: ""
+        };
+
         let activeLockedLineId = null;
 
         let mobileMoveSlotOrigen = null;
@@ -1283,8 +1299,18 @@
             }
 
             input.value = "";
-            input.dataset.modoPareja = opciones.modoPareja || (requiresPartner() ? "1" : "0");
-            input.dataset.jugadorBaseId = opciones.jugadorBaseId || "";
+
+            // Guardamos el tipo de flujo al abrir el popup. Así "Agregar jugador"
+            // no puede terminar guardando una sola persona si el torneo exige pareja.
+            flujoAgregarParejaActivo =
+                requiresPartner() ||
+                String(opciones.modoPareja || "") === "1";
+
+            input.dataset.modoPareja = flujoAgregarParejaActivo ? "1" : "0";
+            jugadorBaseParejaId = String(opciones.jugadorBaseId ?? "");
+            tipoFlujoParejaActivo = String(opciones.tipoFlujoPareja || "");
+            input.dataset.jugadorBaseId = jugadorBaseParejaId;
+            input.dataset.tipoFlujoPareja = tipoFlujoParejaActivo;
             results.innerHTML = opciones.mensaje || "";
 
             if (manual) {
@@ -1458,6 +1484,7 @@
                 input.value = "";
                 input.dataset.modoPareja = "0";
                 input.dataset.jugadorBaseId = "";
+                input.dataset.tipoFlujoPareja = "";
             }
             if (results) results.innerHTML = "";
 
@@ -1472,6 +1499,12 @@
             }
 
             slotBusquedaActivo = null;
+            flujoAgregarParejaActivo = false;
+            jugadorBaseParejaId = "";
+            tipoFlujoParejaActivo = "";
+            flujoSeleccionPareja.activo = false;
+            flujoSeleccionPareja.slotId = "";
+            flujoSeleccionPareja.primerJugadorId = "";
         }
 
         function renderPopupSearchResults(jugadores) {
@@ -1729,7 +1762,14 @@
         }
 
         function requiresPartner() {
-            return state.torneo?.game_modes?.requires_partner === true;
+            const relacion = state.torneo?.game_modes;
+            const modo = Array.isArray(relacion) ? relacion[0] : relacion;
+            const valor = modo?.requires_partner;
+
+            return valor === true ||
+                valor === 1 ||
+                String(valor || "").toLowerCase() === "true" ||
+                String(valor || "") === "1";
         }
 
         function statusLabelFromTournament(status) {
@@ -3757,6 +3797,12 @@
             jugador,
             registrationFallbackType = "aag_match"
         ) {
+            // Protección central: un torneo de parejas nunca puede guardar
+            // una inscripción individual, aunque algún botón llegue por error acá.
+            if (requiresPartner()) {
+                throw new Error("Este torneo es de parejas. Debés completar los dos jugadores.");
+            }
+
             const operationKey = `${state.torneo.id}:${slotId}:${jugador.id}`;
 
             if (registrationOperations.has(operationKey)) {
@@ -3913,22 +3959,105 @@
 
                 await linkPartnerRegistrations(reg1.id, reg2.id);
 
-                const { error: updateError1 } = await db
+                const { data: updatedSlot1, error: updateError1 } = await db
                     .from("line_slots")
                     .update(payload1)
-                    .eq("id", slot1.id);
+                    .eq("id", slot1.id)
+                    .select("id");
 
                 if (updateError1) throw updateError1;
+                if (!updatedSlot1?.length) {
+                    throw new Error(`Supabase no permitió actualizar el casillero ${bloque.inicio}. Revisá la política RLS de line_slots.`);
+                }
 
-                const { error: updateError2 } = await db
+                const { data: updatedSlot2, error: updateError2 } = await db
                     .from("line_slots")
                     .update(payload2)
-                    .eq("id", slot2.id);
+                    .eq("id", slot2.id)
+                    .select("id");
 
                 if (updateError2) throw updateError2;
+                if (!updatedSlot2?.length) {
+                    // Evitamos dejar media pareja cargada.
+                    await db.from("line_slots").update(buildSlotResetPayload()).eq("id", slot1.id);
+                    await db.from("registrations").delete().in("id", [reg1.id, reg2.id]);
 
+                    throw new Error(`Supabase no permitió actualizar el casillero ${bloque.fin}. No se guardó la pareja. Revisá la política RLS de line_slots.`);
+                }
+
+                // Primero liberamos solamente los bloqueos temporales.
+                // La verificación debe hacerse DESPUÉS de liberar/cerrar, porque en miembros
+                // una recarga Realtime podía pisar el primer casillero con el estado anterior.
                 await unlockLineFromSlot(slotId);
                 await cerrarBuscadorJugador();
+
+                async function asegurarDosCasillerosPareja() {
+                    let slotsConfirmados = await fetchLineSlotsFresh(slotActual.starting_line_id);
+                    let confirmado1 = slotsConfirmados.find((s) => String(s.id) === String(slot1.id));
+                    let confirmado2 = slotsConfirmados.find((s) => String(s.id) === String(slot2.id));
+
+                    const falta1 =
+                        !confirmado1 ||
+                        isSlotEmpty(confirmado1) ||
+                        String(confirmado1.linked_player_id || "") !== String(jugador1.id);
+
+                    const falta2 =
+                        !confirmado2 ||
+                        isSlotEmpty(confirmado2) ||
+                        String(confirmado2.linked_player_id || "") !== String(jugador2.id);
+
+                    // Reescribimos únicamente el casillero que haya sido pisado.
+                    if (falta1) {
+                        const { data, error } = await db
+                            .from("line_slots")
+                            .update(payload1)
+                            .eq("id", slot1.id)
+                            .select("id, linked_player_id, display_name");
+
+                        if (error) throw error;
+                        if (!data?.length) {
+                            throw new Error("Supabase no permitió confirmar el primer jugador de la pareja.");
+                        }
+                    }
+
+                    if (falta2) {
+                        const { data, error } = await db
+                            .from("line_slots")
+                            .update(payload2)
+                            .eq("id", slot2.id)
+                            .select("id, linked_player_id, display_name");
+
+                        if (error) throw error;
+                        if (!data?.length) {
+                            throw new Error("Supabase no permitió confirmar el segundo jugador de la pareja.");
+                        }
+                    }
+
+                    // Damos tiempo a cualquier recarga Realtime pendiente y confirmamos de nuevo.
+                    await new Promise((resolve) => setTimeout(resolve, 450));
+
+                    slotsConfirmados = await fetchLineSlotsFresh(slotActual.starting_line_id);
+                    confirmado1 = slotsConfirmados.find((s) => String(s.id) === String(slot1.id));
+                    confirmado2 = slotsConfirmados.find((s) => String(s.id) === String(slot2.id));
+
+                    const ok1 =
+                        confirmado1 &&
+                        !isSlotEmpty(confirmado1) &&
+                        String(confirmado1.linked_player_id || "") === String(jugador1.id);
+
+                    const ok2 =
+                        confirmado2 &&
+                        !isSlotEmpty(confirmado2) &&
+                        String(confirmado2.linked_player_id || "") === String(jugador2.id);
+
+                    if (!ok1 || !ok2) {
+                        throw new Error(
+                            `No se confirmó la pareja completa. Jugador 1: ${ok1 ? "OK" : "FALTA"} · Jugador 2: ${ok2 ? "OK" : "FALTA"}.`
+                        );
+                    }
+                }
+
+                await asegurarDosCasillerosPareja();
                 await loadGrid();
 
             } finally {
@@ -3971,8 +4100,9 @@
             const manualWrap = document.getElementById(`manual-${slotId}`);
             const modoPareja = input?.dataset?.modoPareja === "1";
             const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
+            const exigePareja = modoPareja || requiresPartner();
 
-            if (!requiresPartner() || !modoPareja) {
+            if (!exigePareja) {
                 await occupySlotWithPlayer(slotId, jugadorElegido, "aag_match");
                 return;
             }
@@ -4032,8 +4162,9 @@
             const manualWrap = document.getElementById(`manual-${slotId}`);
             const modoPareja = input?.dataset?.modoPareja === "1";
             const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
+            const exigePareja = modoPareja || requiresPartner();
 
-            if (!requiresPartner() || !modoPareja) {
+            if (!exigePareja) {
                 await occupySlotWithPlayer(slotId, jugadorNuevo, "manual_guest");
                 return;
             }
@@ -4339,9 +4470,16 @@
                         }
                         await lockLineFromSlot(slotId);
 
+                        // Reiniciamos exclusivamente el flujo "Agregar jugador".
+                        // Esto no modifica ni reutiliza el estado de "Anotarme".
+                        flujoSeleccionPareja.activo = requiresPartner();
+                        flujoSeleccionPareja.slotId = String(slotId);
+                        flujoSeleccionPareja.primerJugadorId = "";
+
                         abrirBuscadorJugador(slotId, openInlineTrigger, {
                             modoPareja: requiresPartner() ? "1" : "0",
                             jugadorBaseId: "",
+                            tipoFlujoPareja: "seleccion",
                             mensaje: requiresPartner()
                                 ? `<div style="padding:8px; font-weight:700; color:#166534;">Elegí el primer jugador de la pareja.</div>`
                                 : ""
@@ -4404,17 +4542,90 @@
                         const results = document.getElementById("playerSearchResults");
                         const manualWrap = document.getElementById("playerManualPopup");
 
-                        const modoPareja = input?.dataset?.modoPareja === "1";
-                        const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
+                        // Flujo exclusivo de "Agregar jugador" también para
+                        // jugadores creados manualmente por administración.
+                        if (
+                            requiresPartner() &&
+                            flujoSeleccionPareja.activo === true &&
+                            flujoSeleccionPareja.slotId
+                        ) {
+                            const slotFlujo = String(flujoSeleccionPareja.slotId);
 
-                        if (!requiresPartner() || !modoPareja) {
+                            if (!flujoSeleccionPareja.primerJugadorId) {
+                                flujoSeleccionPareja.primerJugadorId = String(jugador.id);
+                                jugadorBaseParejaId = String(jugador.id);
+
+                                if (input) {
+                                    input.dataset.jugadorBaseId = String(jugador.id);
+                                    input.value = "";
+                                    input.focus();
+                                }
+
+                                if (manualWrap) {
+                                    manualWrap.style.display = "none";
+                                    manualWrap.innerHTML = "";
+                                }
+
+                                if (results) {
+                                    results.innerHTML = `
+                                        <div style="margin-bottom:8px; font-weight:700; color:#166534;">
+                                            Primer jugador elegido: ${safeText(jugador.full_name)}
+                                        </div>
+                                        <div class="helper-text" style="padding:8px;">
+                                            Ahora buscá y elegí al segundo jugador.
+                                        </div>
+                                    `;
+                                }
+
+                                reposicionarBuscadorJugador();
+                                return;
+                            }
+
+                            const jugadorBase = await fetchPlayerById(
+                                flujoSeleccionPareja.primerJugadorId
+                            );
+
+                            if (String(jugadorBase.id) === String(jugador.id)) {
+                                throw new Error("No podés elegir el mismo jugador dos veces.");
+                            }
+
+                            await occupySlotWithPair(slotFlujo, jugadorBase, jugador);
+
+                            flujoSeleccionPareja.activo = false;
+                            flujoSeleccionPareja.slotId = "";
+                            flujoSeleccionPareja.primerJugadorId = "";
+
+                            await cerrarBuscadorJugador();
+                            await loadGrid();
+                            return;
+                        }
+
+                        const modoPareja = input?.dataset?.modoPareja === "1";
+                        const tipoFlujoPareja =
+                            tipoFlujoParejaActivo ||
+                            input?.dataset?.tipoFlujoPareja ||
+                            "";
+
+                        // En "Anotarme", el jugador base nunca puede ser el elegido
+                        // en el buscador: siempre es el socio autenticado.
+                        const jugadorBaseId = tipoFlujoPareja === "self"
+                            ? String(APP.miPlayerId || "")
+                            : (jugadorBaseParejaId || input?.dataset?.jugadorBaseId || "");
+
+                        const exigePareja =
+                            flujoAgregarParejaActivo ||
+                            modoPareja ||
+                            requiresPartner();
+
+                        if (!exigePareja) {
                             await occupySlotWithPlayer(slotBusquedaActivo, jugador, "manual_guest");
                             await cerrarBuscadorJugador();
                             return;
                         }
 
                         if (!jugadorBaseId) {
-                            input.dataset.jugadorBaseId = jugador.id;
+                            jugadorBaseParejaId = String(jugador.id);
+                            input.dataset.jugadorBaseId = jugadorBaseParejaId;
                             input.value = "";
 
                             if (manualWrap) {
@@ -4501,9 +4712,17 @@
                             await cerrarBuscadorJugador();
                         }
                         await lockLineFromSlot(slotId);
+
+                        // "Anotarme" usa su flujo propio. Nunca reutiliza el estado de
+                        // "Agregar jugador".
+                        flujoSeleccionPareja.activo = false;
+                        flujoSeleccionPareja.slotId = "";
+                        flujoSeleccionPareja.primerJugadorId = "";
+
                         abrirBuscadorJugador(slotId, selfSlotTrigger, {
                             modoPareja: "1",
                             jugadorBaseId: jugador.id,
+                            tipoFlujoPareja: "self",
                             mensaje: `<div style="padding:8px; margin-bottom:6px; font-weight:700; color:#166534;">Anotándote a vos. Ahora buscá a tu compañero.</div>`
                         });
                     } catch (error) {
@@ -4575,10 +4794,84 @@
                         const jugador = await asegurarJugadorEnPlayers(elegido);
 
                         const input = document.getElementById("playerSearchInput");
-                        const modoPareja = input?.dataset?.modoPareja === "1";
-                        const jugadorBaseId = input?.dataset?.jugadorBaseId || "";
+                        const results = document.getElementById("playerSearchResults");
 
-                        if (!requiresPartner() || !modoPareja) {
+                        // FLUJO EXCLUSIVO: "Agregar jugador" en torneo de parejas.
+                        // Primer clic: conserva el jugador y mantiene abierto el buscador.
+                        // Segundo clic: guarda ambos juntos.
+                        const esFlujoSeleccionPareja =
+                            requiresPartner() &&
+                            flujoSeleccionPareja.activo === true &&
+                            String(flujoSeleccionPareja.slotId || "") !== "";
+
+                        if (esFlujoSeleccionPareja) {
+                            const slotFlujo = String(flujoSeleccionPareja.slotId || slotId);
+
+                            if (!flujoSeleccionPareja.primerJugadorId) {
+                                flujoSeleccionPareja.slotId = slotFlujo;
+                                flujoSeleccionPareja.primerJugadorId = String(jugador.id);
+
+                                // También lo reflejamos en las variables anteriores por compatibilidad,
+                                // pero la fuente de verdad es flujoSeleccionPareja.
+                                jugadorBaseParejaId = String(jugador.id);
+                                if (input) {
+                                    input.dataset.jugadorBaseId = String(jugador.id);
+                                    input.value = "";
+                                    input.focus();
+                                }
+
+                                if (results) {
+                                    results.innerHTML = `
+                                        <div style="margin-bottom:8px; font-weight:700; color:#166534;">
+                                            Primer jugador elegido: ${safeText(jugador.full_name)}
+                                        </div>
+                                        <div class="helper-text" style="padding:8px;">
+                                            Ahora buscá y elegí al segundo jugador.
+                                        </div>
+                                    `;
+                                }
+
+                                reposicionarBuscadorJugador();
+                                return;
+                            }
+
+                            const jugadorBase = await fetchPlayerById(
+                                flujoSeleccionPareja.primerJugadorId
+                            );
+
+                            if (String(jugadorBase.id) === String(jugador.id)) {
+                                throw new Error("No podés elegir el mismo jugador dos veces.");
+                            }
+
+                            await occupySlotWithPair(slotFlujo, jugadorBase, jugador);
+
+                            flujoSeleccionPareja.activo = false;
+                            flujoSeleccionPareja.slotId = "";
+                            flujoSeleccionPareja.primerJugadorId = "";
+
+                            await cerrarBuscadorJugador();
+                            await loadGrid();
+                            return;
+                        }
+
+                        const modoPareja = input?.dataset?.modoPareja === "1";
+                        const tipoFlujoPareja =
+                            tipoFlujoParejaActivo ||
+                            input?.dataset?.tipoFlujoPareja ||
+                            "";
+
+                        // En "Anotarme", el jugador base nunca puede ser el elegido
+                        // en el buscador: siempre es el socio autenticado.
+                        const jugadorBaseId = tipoFlujoPareja === "self"
+                            ? String(APP.miPlayerId || "")
+                            : (jugadorBaseParejaId || input?.dataset?.jugadorBaseId || "");
+
+                        const exigePareja =
+                            flujoAgregarParejaActivo ||
+                            modoPareja ||
+                            requiresPartner();
+
+                        if (!exigePareja) {
                             await occupySlotWithPlayer(slotId, jugador, "aag_match");
                             await cerrarBuscadorJugador();
                             await loadGrid();
@@ -4586,7 +4879,8 @@
                         }
 
                         if (!jugadorBaseId) {
-                            input.dataset.jugadorBaseId = jugador.id;
+                            jugadorBaseParejaId = String(jugador.id);
+                            input.dataset.jugadorBaseId = jugadorBaseParejaId;
                             input.value = "";
                             document.getElementById("playerSearchResults").innerHTML = `
                                 <div style="margin-bottom:8px; font-weight:700; color:#166534;">
