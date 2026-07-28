@@ -541,14 +541,9 @@
     `).join("");
 
                 document.querySelectorAll(".ver-btn").forEach(btn => {
-                    btn.addEventListener("click", async () => {
+                    btn.addEventListener("click", () => {
                         const id = btn.dataset.id;
                         const q = document.getElementById("buscador").value || "";
-
-                        await registrarUsoPagina("consulta_torneos", "ver_resultado", {
-                            tournament_id: id
-                        });
-
                         window.location.href = `torneos.html?id=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`;
                     });
                 });
@@ -583,11 +578,35 @@
 
                     if (errorTorneos) throw errorTorneos;
 
-                    const { data: scorecardsData, error: errorScorecards } = await db
-                        .from("scorecards")
-                        .select("tournament_id, display_name");
+                    // =========================
+                    // SCORECARDS MODERNAS
+                    // Cargar todas, superando el límite de 1.000 filas
+                    // =========================
 
-                    if (errorScorecards) throw errorScorecards;
+                    let scorecardsData = [];
+                    let desdeScorecards = 0;
+                    const bloqueScorecards = 1000;
+
+                    while (true) {
+                        const { data, error } = await db
+                            .from("scorecards")
+                            .select("tournament_id, display_name")
+                            .order("id", { ascending: true })
+                            .range(
+                                desdeScorecards,
+                                desdeScorecards + bloqueScorecards - 1
+                            );
+
+                        if (error) throw error;
+
+                        scorecardsData.push(...(data || []));
+
+                        if (!data || data.length < bloqueScorecards) {
+                            break;
+                        }
+
+                        desdeScorecards += bloqueScorecards;
+                    }
 
                     // =========================
                     // TORNEOS HISTORICOS
@@ -690,23 +709,21 @@
                 }
             }
 
-            document.getElementById("buscador")?.addEventListener("input", () => {
+            document.getElementById("buscador").addEventListener("input", () => {
                 renderTorneos();
             });
 
-            document.getElementById("filtroAnio")?.addEventListener("change", () => {
+            document.getElementById("filtroAnio").addEventListener("change", () => {
                 renderTorneos();
             });
 
-            document.getElementById("filtroDia")?.addEventListener("change", () => {
+            document.getElementById("filtroDia").addEventListener("change", () => {
                 renderTorneos();
             });
-
-            registrarUsoPagina("consulta_torneos", "view");
 
             cargar();
 
-            document.getElementById("btnHome")?.addEventListener("click", () => {
+            document.getElementById("btnHome").addEventListener("click", () => {
                 window.location.href = "panel.html";
             });
         </script>
