@@ -1168,27 +1168,103 @@
                     <button class="btn light explain-btn" type="button" onclick="abrirFormulaModal()">Ver cómo se calculó</button>
                 `;
             } else {
-                const suma = a.base + b.base;
+                /*
+                 * FOURBALL CLÁSICO
+                 *
+                 * La diferencia entre los HCP base de ambos jugadores
+                 * no puede superar los 5 golpes.
+                 *
+                 * Si la diferencia es mayor, se reduce el HCP más alto
+                 * hasta que quede exactamente 5 golpes por encima del menor.
+                 */
+
+                a.baseAjustado = a.base;
+                b.baseAjustado = b.base;
+
+                const diferenciaOriginal = Math.abs(a.base - b.base);
+                let huboAjuste = false;
+
+                if (diferenciaOriginal > 5) {
+                    huboAjuste = true;
+
+                    if (a.base > b.base) {
+                        a.baseAjustado = b.base + 5;
+                    } else {
+                        b.baseAjustado = a.base + 5;
+                    }
+                }
+
+                const suma = a.baseAjustado + b.baseAjustado;
                 const aplicado = suma * 0.375;
                 const final = roundHalfUp(aplicado);
-                detalleUltimoCalculo = { modalidad: "clasico", jugadores: [a, b], suma, aplicado, final };
+
+                detalleUltimoCalculo = {
+                    modalidad: "clasico",
+                    jugadores: [a, b],
+                    diferenciaOriginal,
+                    huboAjuste,
+                    suma,
+                    aplicado,
+                    final
+                };
+
+                const avisoAjuste = huboAjuste
+                    ? `
+            <div class="warning">
+                La diferencia entre los HCP era de
+                <strong>${fmt(diferenciaOriginal, 2)}</strong> golpes.
+                Para Fourball Clásico se redujo el HCP más alto,
+                dejando una diferencia máxima de 5 golpes.
+            </div>
+        `
+                    : "";
 
                 result.innerHTML = `
-                    ${[a, b].map(x => `
-                        <div class="result-player-card ${clasePiedra(x.teeNombre)}">
-                            <div>
-                                <div class="name">${escaparHtml(x.nombre)}</div>
-                                <div class="detail">Salidas ${escaparHtml(x.teeNombre)} · Index ${fmt(x.index, 1)} · HCP base ${fmt(x.base, 2)}</div>
-                            </div>
-                            <div class="hcp" style="font-size:22px;">${fmt(x.base, 2)}</div>
+        ${avisoAjuste}
+
+        ${[a, b].map(x => {
+                    const fueAjustado =
+                        Math.abs(x.baseAjustado - x.base) > 0.000001;
+
+                    return `
+                <div class="result-player-card ${clasePiedra(x.teeNombre)}">
+                    <div>
+                        <div class="name">
+                            ${escaparHtml(x.nombre)}
                         </div>
-                    `).join("")}
-                    <div class="team-result">
-                        <div class="label">HCP de juego de la pareja</div>
-                        <div class="number">${final}</div>
+
+                        <div class="detail">
+                            Salidas ${escaparHtml(x.teeNombre)}
+                            · Index ${fmt(x.index, 1)}
+                            · HCP base ${fmt(x.base, 2)}
+
+                            ${fueAjustado
+                            ? ` · HCP ajustado <strong>${fmt(x.baseAjustado, 2)}</strong>`
+                            : ""
+                        }
+                        </div>
                     </div>
-                    <button class="btn light explain-btn" type="button" onclick="abrirFormulaModal()">Ver cómo se calculó</button>
-                `;
+
+                    <div class="hcp" style="font-size:22px;">
+                        ${fmt(x.baseAjustado, 2)}
+                    </div>
+                </div>
+            `;
+                }).join("")}
+
+        <div class="team-result">
+            <div class="label">HCP de juego de la pareja</div>
+            <div class="number">${final}</div>
+        </div>
+
+        <button
+            class="btn light explain-btn"
+            type="button"
+            onclick="abrirFormulaModal()"
+        >
+            Ver cómo se calculó
+        </button>
+    `;
             }
             result.className = "pair-result show";
         }
@@ -1215,17 +1291,64 @@
                 `).join("<hr style='border:none;border-top:1px solid #dfe6e0;margin:12px 0;'>");
             } else {
                 const [a, b] = detalleUltimoCalculo.jugadores;
-                document.getElementById("formulaTitle").textContent = "Cálculo Fourball Clásico";
-                document.getElementById("formulaIntro").textContent = "Se suman los HCP base de ambos jugadores y se toma 3/8 de esa suma.";
+
+                document.getElementById("formulaTitle").textContent =
+                    "Cálculo Fourball Clásico";
+
+                document.getElementById("formulaIntro").textContent =
+                    "Primero se limita a 5 golpes la diferencia entre ambos HCP base. Luego se suman y se aplica 3/8.";
+
+                const ajusteHtml = detalleUltimoCalculo.huboAjuste
+                    ? `
+            <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+
+            <strong>Límite de diferencia</strong><br>
+
+            Diferencia original:
+            ${fmt(detalleUltimoCalculo.diferenciaOriginal, 2)} golpes.<br>
+
+            Como supera los 5 golpes permitidos,
+            el HCP más alto se reduce.<br><br>
+
+            HCP utilizados para la suma:<br>
+
+            ${escaparHtml(a.nombre)}:
+            <strong>${fmt(a.baseAjustado, 4)}</strong><br>
+
+            ${escaparHtml(b.nombre)}:
+            <strong>${fmt(b.baseAjustado, 4)}</strong>
+        `
+                    : `
+            <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+
+            La diferencia es de
+            <strong>${fmt(detalleUltimoCalculo.diferenciaOriginal, 2)}</strong>
+            golpes, por lo que no fue necesario realizar ningún ajuste.
+        `;
+
                 content.innerHTML = `
-                    ${formulaBaseHtml(a)}
-                    <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
-                    ${formulaBaseHtml(b)}
-                    <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
-                    (${fmt(a.base, 2)} + ${fmt(b.base, 2)}) × 0,375<br>
-                    ${fmt(detalleUltimoCalculo.suma, 2)} × 0,375 = ${fmt(detalleUltimoCalculo.aplicado, 2)}<br>
-                    Redondeo final: <strong>${detalleUltimoCalculo.final}</strong>
-                `;
+        ${formulaBaseHtml(a)}
+
+        <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+
+        ${formulaBaseHtml(b)}
+
+        ${ajusteHtml}
+
+        <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+
+        <strong>Cálculo de la pareja</strong><br>
+
+        (${fmt(a.baseAjustado, 4)} + ${fmt(b.baseAjustado, 4)})
+        × 0,375<br>
+
+        ${fmt(detalleUltimoCalculo.suma, 4)}
+        × 0,375 =
+        ${fmt(detalleUltimoCalculo.aplicado, 4)}<br>
+
+        Redondeo final:
+        <strong>${detalleUltimoCalculo.final}</strong>
+    `;
             }
             document.getElementById("formulaModal").classList.add("show");
         }
