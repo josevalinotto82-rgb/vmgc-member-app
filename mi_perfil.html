@@ -398,6 +398,235 @@
 
             -webkit-tap-highlight-color: transparent;
         }
+
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .mode-btn {
+            border: 1px solid #d7ded8;
+            background: #f8faf8;
+            color: #374151;
+            border-radius: 14px;
+            padding: 13px 10px;
+            font-size: 13px;
+            font-weight: 900;
+            cursor: pointer;
+            min-height: 50px;
+        }
+
+        .mode-btn.active {
+            background: #166534;
+            border-color: #166534;
+            color: white;
+            box-shadow: 0 7px 18px rgba(22, 101, 52, .18);
+        }
+
+        .pair-help {
+            margin: -4px 0 14px;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .player-search-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .player-picker {
+            position: relative;
+            border: 1px solid #e5e7eb;
+            border-radius: 17px;
+            padding: 13px;
+            background: #fbfcfb;
+        }
+
+        .player-picker-title {
+            font-size: 13px;
+            font-weight: 900;
+            color: #166534;
+            margin-bottom: 7px;
+        }
+
+        .search-results {
+            position: absolute;
+            left: 13px;
+            right: 13px;
+            top: 78px;
+            z-index: 25;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 14px;
+            box-shadow: 0 14px 30px rgba(17, 24, 39, .16);
+            max-height: 245px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #edf0ed;
+            background: white;
+            padding: 11px 12px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .search-result strong {
+            display: block;
+            color: #111827;
+            font-size: 14px;
+        }
+
+        .search-result span {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .selected-player {
+            display: none;
+            margin-top: 10px;
+            background: white;
+            border: 1px solid #dfe6e0;
+            border-radius: 14px;
+            padding: 11px 12px;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .selected-player.show {
+            display: grid;
+        }
+
+        .selected-player-name {
+            font-size: 14px;
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .selected-player-detail {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 3px;
+        }
+
+        .clear-player {
+            border: none;
+            background: #eef2ef;
+            color: #166534;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .pair-result {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .pair-result.show {
+            display: block;
+        }
+
+        .result-player-card {
+            border: 1px solid #dfe6e0;
+            border-radius: 16px;
+            padding: 13px;
+            margin-top: 10px;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .result-player-card .name {
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .result-player-card .detail {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .result-player-card .hcp {
+            font-size: 29px;
+            font-weight: 900;
+            color: #166534;
+            min-width: 48px;
+            text-align: right;
+        }
+
+        .team-result {
+            background: #166534;
+            color: white;
+            border-radius: 18px;
+            padding: 17px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .team-result .label {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            opacity: .84;
+        }
+
+        .team-result .number {
+            font-size: 44px;
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 6px;
+        }
+
+        .explain-btn {
+            margin-top: 12px;
+        }
+
+        .formula-box {
+            background: #f4f7f4;
+            border: 1px solid #dfe6e0;
+            border-radius: 14px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #374151;
+            white-space: normal;
+        }
+
+        .formula-box strong {
+            color: #111827;
+        }
+
+        @media (max-width: 420px) {
+            .mode-selector {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -470,6 +699,46 @@
             </div>
         </section>
 
+
+
+        <section class="card">
+            <h2>Consultar HCP para torneo en pareja</h2>
+            <div class="mode-selector">
+                <button id="modeAmericana" class="mode-btn active" type="button"
+                    onclick="seleccionarModalidadPareja('americana')">
+                    Fourball Americana · 85%
+                </button>
+                <button id="modeClasico" class="mode-btn" type="button" onclick="seleccionarModalidadPareja('clasico')">
+                    Fourball Clásico · 3/8
+                </button>
+            </div>
+
+            <div id="pairHelp" class="pair-help">
+                Seleccioná dos jugadores. En Americana, cada uno juega con su propio HCP calculado al 85%.
+            </div>
+
+            <div class="player-search-grid">
+                <div class="player-picker">
+                    <div class="player-picker-title">Jugador 1</div>
+                    <input id="playerSearch1" type="search" autocomplete="off"
+                        placeholder="Nombre, apellido o matrícula">
+                    <div id="playerResults1" class="search-results"></div>
+                    <div id="selectedPlayer1" class="selected-player"></div>
+                </div>
+
+                <div class="player-picker">
+                    <div class="player-picker-title">Jugador 2</div>
+                    <input id="playerSearch2" type="search" autocomplete="off"
+                        placeholder="Nombre, apellido o matrícula">
+                    <div id="playerResults2" class="search-results"></div>
+                    <div id="selectedPlayer2" class="selected-player"></div>
+                </div>
+            </div>
+
+            <div id="pairStatus" class="status"></div>
+            <div id="pairResult" class="pair-result"></div>
+        </section>
+
         <section class="card">
             <h2>Cambiar contraseña</h2>
             <div class="form-grid">
@@ -504,6 +773,19 @@
         </div>
     </div>
 
+
+
+    <div id="formulaModal" class="modal-backdrop">
+        <div class="modal">
+            <h3 id="formulaTitle">Cómo se calculó</h3>
+            <p id="formulaIntro">Detalle del cálculo aplicado.</p>
+            <div id="formulaContent" class="formula-box"></div>
+            <div class="modal-actions" style="grid-template-columns: 1fr;">
+                <button class="btn" type="button" onclick="cerrarFormulaModal()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const TEE_NAMES_MALE = ["Negras", "Amarillas", "Blancas"];
         const TEE_NAMES_FEMALE = ["Rojas"];
@@ -514,6 +796,11 @@
         let perfil = null;
         let jugador = null;
         let modalTipo = null;
+        let reglasHcpCache = [];
+        let modalidadPareja = "americana";
+        const jugadoresPareja = { 1: null, 2: null };
+        let detalleUltimoCalculo = null;
+        const searchTimers = { 1: null, 2: null };
 
         function num(v) {
             if (v === null || v === undefined || v === "") return null;
@@ -529,7 +816,7 @@
 
         function roundHalfUp(value) {
             if (!Number.isFinite(value)) return null;
-            return Math.floor(value + 0.5);
+            return value >= 0 ? Math.floor(value + 0.5) : Math.ceil(value - 0.5);
         }
 
         function calcularHcpJuego(index, slope, courseRating, par) {
@@ -539,6 +826,412 @@
             const p = num(par);
             if ([i, s, cr, p].some(v => v === null)) return null;
             return Math.min(54, roundHalfUp((i * (s / 113)) + (cr - p)));
+        }
+
+
+        function calcularHcpBase(index, slope, courseRating, par) {
+            const i = num(index);
+            const s = num(slope);
+            const cr = num(courseRating);
+            const p = num(par);
+            if ([i, s, cr, p].some(v => v === null)) return null;
+            return (i * (s / 113)) + (cr - p);
+        }
+
+        function normalizarGeneroJugador(value) {
+            const g = limpiar(value).toLowerCase();
+            if (["female", "f", "dama", "damas", "mujer", "women"].includes(g)) return "female";
+            return "male";
+        }
+
+        function indexDeJugador(j) {
+            return num(j?.current_index ?? j?.index ?? j?.handicap_index);
+        }
+
+        function matriculaDeJugador(j) {
+            return limpiar(j?.aag_member_number ?? j?.matricula ?? j?.member_number);
+        }
+
+        function teeRecomendado(index, genero) {
+            if (genero === "female") return "Rojas";
+            if (index <= 9) return "Negras";
+            if (index <= 15) return "Amarillas";
+            return "Blancas";
+        }
+
+        function buscarReglaJugador(j) {
+            const index = indexDeJugador(j);
+            const genero = normalizarGeneroJugador(j?.gender);
+            if (index === null) return { error: "El jugador no tiene Index cargado." };
+            if (index < -10 || index > 54) return { error: `El Index ${fmt(index, 1)} está fuera del rango local (-10 a 54).` };
+
+            const teeNombre = teeRecomendado(index, genero);
+            const regla = reglasHcpCache.find(r =>
+                normalizarGeneroJugador(r.gender) === genero &&
+                limpiar(r.segment) === DEFAULT_SEGMENT &&
+                limpiar(r.tees?.name).toLowerCase() === teeNombre.toLowerCase()
+            );
+
+            if (!regla) return { error: `No encontré la regla de salidas ${teeNombre} para este jugador.` };
+            return { regla, index, genero, teeNombre };
+        }
+
+        async function cargarReglasHcpCache() {
+            const { data, error } = await db
+                .from("tee_handicap_rules")
+                .select("tee_id, gender, segment, slope, course_rating, par, tees(id, name, display_order)")
+                .eq("segment", DEFAULT_SEGMENT);
+
+            if (error) throw error;
+            reglasHcpCache = data || [];
+        }
+
+        function seleccionarModalidadPareja(tipo) {
+            modalidadPareja = tipo === "clasico" ? "clasico" : "americana";
+            document.getElementById("modeAmericana").classList.toggle("active", modalidadPareja === "americana");
+            document.getElementById("modeClasico").classList.toggle("active", modalidadPareja === "clasico");
+            document.getElementById("pairHelp").textContent = modalidadPareja === "americana"
+                ? "Seleccioná dos jugadores. En Americana, cada uno juega con su propio HCP calculado al 85%."
+                : "Seleccioná dos jugadores. En Clásico, la pareja juega con un único HCP: 3/8 de la suma de ambos HCP base.";
+            calcularPareja();
+        }
+
+        function escaparHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function configurarBuscadoresJugadores() {
+            [1, 2].forEach(slot => {
+                const input = document.getElementById(`playerSearch${slot}`);
+                input.addEventListener("input", () => {
+                    clearTimeout(searchTimers[slot]);
+                    searchTimers[slot] = setTimeout(() => buscarJugadoresPareja(slot, input.value), 280);
+                });
+                input.addEventListener("focus", () => {
+                    if (input.value.trim().length >= 2) buscarJugadoresPareja(slot, input.value);
+                });
+            });
+
+            document.addEventListener("click", e => {
+                [1, 2].forEach(slot => {
+                    const picker = document.getElementById(`playerSearch${slot}`).closest(".player-picker");
+                    if (!picker.contains(e.target)) document.getElementById(`playerResults${slot}`).classList.remove("show");
+                });
+            });
+        }
+
+        async function buscarJugadoresPareja(slot, texto) {
+            const term = limpiar(texto);
+            const results = document.getElementById(`playerResults${slot}`);
+
+            if (term.length < 2) {
+                results.classList.remove("show");
+                results.innerHTML = "";
+                return;
+            }
+
+            results.innerHTML = `
+        <div class="search-result">
+            <span>Buscando...</span>
+        </div>
+    `;
+            results.classList.add("show");
+
+            try {
+                const normalizarBusqueda = value => {
+                    return limpiar(value)
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[,.()-]/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                };
+
+                const terminoNormalizado = normalizarBusqueda(term);
+
+                const palabrasBuscadas = terminoNormalizado
+                    .split(" ")
+                    .filter(Boolean);
+
+                const esMatricula = /^\d+$/.test(terminoNormalizado);
+
+                /*
+                 * Consultamos candidatos por cada palabra.
+                 * Esto permite encontrar:
+                 * "Juan Pérez"
+                 * "Pérez Juan"
+                 * "Juan"
+                 * "Pérez"
+                 * o la matrícula.
+                 */
+                const filtros = palabrasBuscadas
+                    .map(palabra => `full_name.ilike.%${palabra}%`);
+
+                if (esMatricula) {
+                    filtros.push(`aag_member_number.eq.${terminoNormalizado}`);
+                }
+
+                const { data, error } = await db
+                    .from("players")
+                    .select(`
+                id,
+                full_name,
+                aag_member_number,
+                current_index,
+                gender
+            `)
+                    .or(filtros.join(","))
+                    .order("full_name", { ascending: true })
+                    .limit(50);
+
+                if (error) throw error;
+
+                const jugadorOtroSlot =
+                    jugadoresPareja[slot === 1 ? 2 : 1]?.id;
+
+                const lista = (data || [])
+                    .filter(j => j.id !== jugadorOtroSlot)
+                    .filter(j => {
+                        const nombreNormalizado =
+                            normalizarBusqueda(nombreCompletoDesdeJugador(j));
+
+                        const matriculaNormalizada =
+                            normalizarBusqueda(matriculaDeJugador(j));
+
+                        if (
+                            esMatricula &&
+                            matriculaNormalizada.includes(terminoNormalizado)
+                        ) {
+                            return true;
+                        }
+
+                        /*
+                         * Todas las palabras escritas deben aparecer en el nombre,
+                         * sin importar el orden.
+                         */
+                        return palabrasBuscadas.every(palabra =>
+                            nombreNormalizado.includes(palabra)
+                        );
+                    })
+                    .slice(0, 10);
+
+                if (!lista.length) {
+                    results.innerHTML = `
+                <div class="search-result">
+                    <span>No encontré jugadores.</span>
+                </div>
+            `;
+                    return;
+                }
+
+                results.innerHTML = lista.map((j, idx) => `
+            <button
+                class="search-result"
+                type="button"
+                data-slot="${slot}"
+                data-index="${idx}"
+            >
+                <strong>
+                    ${escaparHtml(
+                    nombreCompletoDesdeJugador(j) || "Sin nombre"
+                )}
+                </strong>
+
+                <span>
+                    Matrícula ${escaparHtml(
+                    matriculaDeJugador(j) || "-"
+                )}
+                    · Index ${fmt(indexDeJugador(j), 1)}
+                </span>
+            </button>
+        `).join("");
+
+                results
+                    .querySelectorAll("button[data-index]")
+                    .forEach(btn => {
+                        btn.addEventListener("click", () => {
+                            seleccionarJugadorPareja(
+                                slot,
+                                lista[Number(btn.dataset.index)]
+                            );
+                        });
+                    });
+
+            } catch (e) {
+                results.innerHTML = `
+            <div class="search-result">
+                <span>
+                    ${escaparHtml(
+                    e.message || "No se pudo buscar."
+                )}
+                </span>
+            </div>
+        `;
+            }
+        }
+
+        function seleccionarJugadorPareja(slot, j) {
+            jugadoresPareja[slot] = j;
+            const input = document.getElementById(`playerSearch${slot}`);
+            input.value = "";
+            input.style.display = "none";
+            document.getElementById(`playerResults${slot}`).classList.remove("show");
+
+            const box = document.getElementById(`selectedPlayer${slot}`);
+            box.className = "selected-player show";
+            box.innerHTML = `
+                <div>
+                    <div class="selected-player-name">${escaparHtml(nombreCompletoDesdeJugador(j) || "Sin nombre")}</div>
+                    <div class="selected-player-detail">Matrícula ${escaparHtml(matriculaDeJugador(j) || "-")} · Index ${fmt(indexDeJugador(j), 1)}</div>
+                </div>
+                <button class="clear-player" type="button" aria-label="Quitar jugador" onclick="quitarJugadorPareja(${slot})">×</button>
+            `;
+            calcularPareja();
+        }
+
+        function quitarJugadorPareja(slot) {
+            jugadoresPareja[slot] = null;
+            const input = document.getElementById(`playerSearch${slot}`);
+            input.style.display = "block";
+            input.value = "";
+            document.getElementById(`selectedPlayer${slot}`).className = "selected-player";
+            document.getElementById(`selectedPlayer${slot}`).innerHTML = "";
+            limpiarStatus("pairStatus");
+            document.getElementById("pairResult").className = "pair-result";
+            document.getElementById("pairResult").innerHTML = "";
+            detalleUltimoCalculo = null;
+            input.focus();
+        }
+
+        function datosCalculoJugador(j) {
+            const encontrada = buscarReglaJugador(j);
+            if (encontrada.error) return encontrada;
+            const { regla, index, teeNombre } = encontrada;
+            const base = calcularHcpBase(index, regla.slope, regla.course_rating, regla.par);
+            return {
+                jugador: j,
+                nombre: nombreCompletoDesdeJugador(j) || "Jugador",
+                matricula: matriculaDeJugador(j),
+                index,
+                teeNombre,
+                slope: num(regla.slope),
+                rating: num(regla.course_rating),
+                par: num(regla.par),
+                base
+            };
+        }
+
+        function calcularPareja() {
+            limpiarStatus("pairStatus");
+            const result = document.getElementById("pairResult");
+            if (!jugadoresPareja[1] || !jugadoresPareja[2]) {
+                result.className = "pair-result";
+                result.innerHTML = "";
+                detalleUltimoCalculo = null;
+                return;
+            }
+
+            const a = datosCalculoJugador(jugadoresPareja[1]);
+            const b = datosCalculoJugador(jugadoresPareja[2]);
+            const errores = [a.error, b.error].filter(Boolean);
+            if (errores.length) {
+                status("pairStatus", errores.join(" "), false);
+                result.className = "pair-result";
+                result.innerHTML = "";
+                return;
+            }
+
+            if (modalidadPareja === "americana") {
+                a.aplicado = a.base * 0.85;
+                b.aplicado = b.base * 0.85;
+                a.final = roundHalfUp(a.aplicado);
+                b.final = roundHalfUp(b.aplicado);
+                detalleUltimoCalculo = { modalidad: "americana", jugadores: [a, b] };
+
+                result.innerHTML = `
+                    <div class="warning">Cada jugador juega con su propio HCP.</div>
+                    ${[a, b].map(x => `
+                        <div class="result-player-card ${clasePiedra(x.teeNombre)}">
+                            <div>
+                                <div class="name">${escaparHtml(x.nombre)}</div>
+                                <div class="detail">Salidas ${escaparHtml(x.teeNombre)} · Index ${fmt(x.index, 1)} · HCP base ${fmt(x.base, 2)} · 85% ${fmt(x.aplicado, 2)}</div>
+                            </div>
+                            <div class="hcp">${x.final}</div>
+                        </div>
+                    `).join("")}
+                    <button class="btn light explain-btn" type="button" onclick="abrirFormulaModal()">Ver cómo se calculó</button>
+                `;
+            } else {
+                const suma = a.base + b.base;
+                const aplicado = suma * 0.375;
+                const final = roundHalfUp(aplicado);
+                detalleUltimoCalculo = { modalidad: "clasico", jugadores: [a, b], suma, aplicado, final };
+
+                result.innerHTML = `
+                    ${[a, b].map(x => `
+                        <div class="result-player-card ${clasePiedra(x.teeNombre)}">
+                            <div>
+                                <div class="name">${escaparHtml(x.nombre)}</div>
+                                <div class="detail">Salidas ${escaparHtml(x.teeNombre)} · Index ${fmt(x.index, 1)} · HCP base ${fmt(x.base, 2)}</div>
+                            </div>
+                            <div class="hcp" style="font-size:22px;">${fmt(x.base, 2)}</div>
+                        </div>
+                    `).join("")}
+                    <div class="team-result">
+                        <div class="label">HCP de juego de la pareja</div>
+                        <div class="number">${final}</div>
+                    </div>
+                    <button class="btn light explain-btn" type="button" onclick="abrirFormulaModal()">Ver cómo se calculó</button>
+                `;
+            }
+            result.className = "pair-result show";
+        }
+
+        function formulaBaseHtml(x) {
+            return `
+                <strong>${escaparHtml(x.nombre)}</strong><br>
+                Index ${fmt(x.index, 1)} · Salidas ${escaparHtml(x.teeNombre)}<br>
+                Slope ${fmt(x.slope, 0)} · Rating ${fmt(x.rating, 1)} · Par ${fmt(x.par, 0)}<br>
+                (${fmt(x.index, 1)} × (${fmt(x.slope, 0)} / 113)) + (${fmt(x.rating, 1)} − ${fmt(x.par, 0)}) = <strong>${fmt(x.base, 2)}</strong>
+            `;
+        }
+
+        function abrirFormulaModal() {
+            if (!detalleUltimoCalculo) return;
+            const content = document.getElementById("formulaContent");
+            if (detalleUltimoCalculo.modalidad === "americana") {
+                document.getElementById("formulaTitle").textContent = "Cálculo Fourball Americana";
+                document.getElementById("formulaIntro").textContent = "Primero se obtiene el HCP base de cada jugador y luego se aplica el 85%.";
+                content.innerHTML = detalleUltimoCalculo.jugadores.map(x => `
+                    ${formulaBaseHtml(x)}<br>
+                    ${fmt(x.base, 2)} × 0,85 = ${fmt(x.aplicado, 2)}<br>
+                    Redondeo final: <strong>${x.final}</strong>
+                `).join("<hr style='border:none;border-top:1px solid #dfe6e0;margin:12px 0;'>");
+            } else {
+                const [a, b] = detalleUltimoCalculo.jugadores;
+                document.getElementById("formulaTitle").textContent = "Cálculo Fourball Clásico";
+                document.getElementById("formulaIntro").textContent = "Se suman los HCP base de ambos jugadores y se toma 3/8 de esa suma.";
+                content.innerHTML = `
+                    ${formulaBaseHtml(a)}
+                    <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+                    ${formulaBaseHtml(b)}
+                    <hr style="border:none;border-top:1px solid #dfe6e0;margin:12px 0;">
+                    (${fmt(a.base, 2)} + ${fmt(b.base, 2)}) × 0,375<br>
+                    ${fmt(detalleUltimoCalculo.suma, 2)} × 0,375 = ${fmt(detalleUltimoCalculo.aplicado, 2)}<br>
+                    Redondeo final: <strong>${detalleUltimoCalculo.final}</strong>
+                `;
+            }
+            document.getElementById("formulaModal").classList.add("show");
+        }
+
+        function cerrarFormulaModal() {
+            document.getElementById("formulaModal").classList.remove("show");
         }
 
         function limpiar(v) { return String(v || "").trim(); }
@@ -945,6 +1638,13 @@
 
             renderDatos();
             activarGestoVolver();
+            configurarBuscadoresJugadores();
+
+            try {
+                await cargarReglasHcpCache();
+            } catch (e) {
+                status("pairStatus", "No se pudieron cargar las reglas de HCP: " + (e.message || "error desconocido"), false);
+            }
 
             setTimeout(() => {
                 cargarTeesYHcp();
