@@ -2,10 +2,6 @@
 <html lang="es">
 
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=10"></script>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultados del torneo</title>
@@ -607,6 +603,12 @@
     </div>
 
     <script type="module">
+        import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+        const supabase = createClient(
+            "https://bnnfolhrqxgxjmobclrm.supabase.co",
+            "sb_publishable_pNxU4AFpAZPpeJ0wICLvIw_6nW90njQ"
+        );
 
         const params = new URLSearchParams(window.location.search);
         const torneoId = (params.get("id") || "").trim();
@@ -2020,8 +2022,27 @@
             if (directo) return directo;
 
             const nombre = normalizarTexto(cat?.name || "");
-            if (nombre.includes("dama") || nombre.includes("damas")) return "female";
-            if (nombre.includes("caballero") || nombre.includes("caballeros")) return "male";
+
+            if (nombre.includes("dama") || nombre.includes("damas")) {
+                return "female";
+            }
+
+            /*
+             * En categorías NEW la categoría femenina puede llamarse
+             * simplemente "Rojas". Para el orden/render de resultados
+             * debe reconocerse como Damas.
+             */
+            if (
+                esCategoriaNuevaResultado(cat) &&
+                (nombre.includes("roja") || nombre.includes("rojas"))
+            ) {
+                return "female";
+            }
+
+            if (nombre.includes("caballero") || nombre.includes("caballeros")) {
+                return "male";
+            }
+
             return "";
         }
 
@@ -2037,7 +2058,10 @@
             if (idx === null) return false;
 
             if (genero === "male") return idx >= -6 && idx <= 9;
-            if (genero === "female") return idx >= -6 && idx <= 54;
+
+            // Damas: todas compiten por Scratch.
+            if (genero === "female") return idx >= -10 && idx <= 54;
+
             return false;
         }
 
@@ -2762,18 +2786,18 @@
               <tr>
                 <td class="label">Al Par</td>
                 ${idaConfig.map(x => {
-                const golpes = parseNumero(dataHoyos[x.h]);
-                const par = parseNumero(x.par);
-                const diff = golpes === null || par === null ? null : golpes - par;
-                return `<td>${toParHtmlONulo(diff)}</td>`;
-            }).join("")}
+                    const golpes = parseNumero(dataHoyos[x.h]);
+                    const par = parseNumero(x.par);
+                    const diff = golpes === null || par === null ? null : golpes - par;
+                    return `<td>${toParHtmlONulo(diff)}</td>`;
+                }).join("")}
                 <td class="sum">${toParHtmlONulo(idaPar)}</td>
                 ${vueltaConfig.map(x => {
-                const golpes = parseNumero(dataHoyos[x.h]);
-                const par = parseNumero(x.par);
-                const diff = golpes === null || par === null ? null : golpes - par;
-                return `<td>${toParHtmlONulo(diff)}</td>`;
-            }).join("")}
+                    const golpes = parseNumero(dataHoyos[x.h]);
+                    const par = parseNumero(x.par);
+                    const diff = golpes === null || par === null ? null : golpes - par;
+                    return `<td>${toParHtmlONulo(diff)}</td>`;
+                }).join("")}
                 <td class="sum">${toParHtmlONulo(vueltaPar)}</td>
                 <td class="sum">${toParHtmlONulo(totalPar)}</td>
               </tr>
@@ -2820,11 +2844,11 @@
               <tr>
                 <td class="label">Al Par</td>
                 ${hoyosConfig.map(x => {
-                const golpes = parseNumero(dataHoyos[x.h]);
-                const par = parseNumero(x.par);
-                const diff = golpes === null || par === null ? null : golpes - par;
-                return `<td>${toParHtmlONulo(diff)}</td>`;
-            }).join("")}
+                    const golpes = parseNumero(dataHoyos[x.h]);
+                    const par = parseNumero(x.par);
+                    const diff = golpes === null || par === null ? null : golpes - par;
+                    return `<td>${toParHtmlONulo(diff)}</td>`;
+                }).join("")}
                 <td class="sum">${toParHtmlONulo(alPar)}</td>
               </tr>
             </tbody>
@@ -3242,7 +3266,7 @@
         }
 
         async function cargarTorneoHistorico() {
-            const { data: torneo, error } = await db
+            const { data: torneo, error } = await supabase
                 .from("historical_tournaments")
                 .select("id, fecha, torneo, modalidad, players")
                 .eq("id", torneoId)
@@ -3346,7 +3370,7 @@
                     return;
                 }
 
-                const { data: torneo, error: errorTorneo } = await db
+                const { data: torneo, error: errorTorneo } = await supabase
                     .from("tournaments")
                     .select(`
                     id,
@@ -3374,7 +3398,7 @@
                 document.getElementById("subtitulo").textContent =
                     `${formatearFecha(torneo.tournament_date)} · ${torneo.game_modes?.name || ""}`;
 
-                const { data: cats, error: errorCats } = await db
+                const { data: cats, error: errorCats } = await supabase
                     .from("tournament_categories")
                     .select("id, category_id, category_system, name, display_order, gender, index_min, index_max, tee_id, hole_segment, slope, course_rating, par, tee_rules, playing_handicap_min, playing_handicap_max, playing_tee_aag_teeout_id")
                     .eq("tournament_id", torneoId)
@@ -3399,7 +3423,7 @@
                 // En Americana esto evita asumir que toda la pareja pertenece
                 // a la categoría guardada en la scorecard compartida.
                 const { data: regsResultado, error: errorRegsResultado } =
-                    await db
+                    await supabase
                         .from("registrations")
                         .select(`
                             id,
@@ -3420,7 +3444,7 @@
                     registrationsTorneo.map(r => [String(r.id), r])
                 );
 
-                const { data: scorecards, error: errorSc } = await db
+                const { data: scorecards, error: errorSc } = await supabase
                     .from("scorecards")
                     .select(`
                         id,
@@ -3462,7 +3486,7 @@
                 scorecardsSerie = [];
 
                 if (torneo.series_id) {
-                    const { data: rondas, error: errorRondas } = await db
+                    const { data: rondas, error: errorRondas } = await supabase
                         .from("tournaments")
                         .select("id, name, tournament_date, series_id, series_round_number")
                         .eq("series_id", torneo.series_id)
@@ -3477,7 +3501,7 @@
                     const idsRondas = torneosSerie.map(t => t.id);
 
                     if (idsRondas.length > 1) {
-                        const { data: scSerie, error: errorScSerie } = await db
+                        const { data: scSerie, error: errorScSerie } = await supabase
                             .from("scorecards")
                             .select(`
                                 id,
@@ -4078,6 +4102,18 @@
                     false
                 );
             } else {
+                const esNewMedal =
+                    torneoUsaSistemaNuevoResultado() &&
+                    esMedal();
+
+                /*
+                 * TORNEOS NEW:
+                 * Scratch Caballeros va siempre arriba de todo.
+                 */
+                if (esNewMedal) {
+                    renderScratch("male");
+                }
+
                 categorias
                     .slice()
                     .sort((a, b) => {
@@ -4101,8 +4137,24 @@
 
                         const generoCat = generoCategoria(cat);
 
-                        if (generoCat === "male") renderScratch("male");
-                        if (generoCat === "female") renderScratch("female");
+                        /*
+                         * NEW:
+                         * Scratch Caballeros ya se agregó arriba de todo.
+                         * Scratch Damas se agrega JUSTO antes de la categoría
+                         * femenina (Rojas).
+                         */
+                        if (esNewMedal) {
+                            if (generoCat === "female") {
+                                renderScratch("female");
+                            }
+                        } else {
+                            /*
+                             * LEGACY:
+                             * conservar exactamente el comportamiento anterior.
+                             */
+                            if (generoCat === "male") renderScratch("male");
+                            if (generoCat === "female") renderScratch("female");
+                        }
 
                         let lista = jugadoresParaMostrar
                             .filter(j => perteneceCategoriaSerie(j, cat))
@@ -4151,6 +4203,14 @@
 
                         renderTablaCategoria(cat.name, lista, false);
                     });
+
+                /*
+                 * Respaldo para NEW: si no hubo categoría femenina reconocible,
+                 * mostrar Scratch Damas igualmente una sola vez.
+                 */
+                if (esNewMedal && !scratchDamasAgregado) {
+                    renderScratch("female");
+                }
 
             }
 
