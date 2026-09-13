@@ -787,9 +787,11 @@
     </div>
 
     <script>
-        const TEE_NAMES_MALE = ["Negras", "Amarillas", "Blancas"];
-        const TEE_NAMES_FEMALE = ["Rojas"];
-        const DEFAULT_SEGMENT = "18";
+        const TEE_NAMES_MALE = ["Negro", "Amarillo", "Blanco"];
+        const TEE_NAMES_FEMALE = ["Rojo"];
+        const AAG_FIELD_ADULTOS = 1466;
+        const AAG_CATEGORY_MALE = 0;
+        const AAG_CATEGORY_FEMALE = 1;
         const EMAIL_REDIRECT_TO = "https://app.villamariagolf.com.ar/mi_perfil.html";
 
         let sessionUser = null;
@@ -853,34 +855,112 @@
         }
 
         function teeRecomendado(index, genero) {
-            if (genero === "female") return "Rojas";
-            if (index <= 9) return "Negras";
-            if (index <= 15) return "Amarillas";
-            return "Blancas";
+            if (genero === "female") return "Rojo";
+            if (index >= -10 && index <= 9.0) return "Negro";
+            if (index > 9.0 && index <= 15.0) return "Amarillo";
+            if (index > 15.0 && index <= 54.0) return "Blanco";
+            return null;
+        }
+
+        function normalizarNombreTeeAag(value) {
+            return limpiar(value)
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/\b(dama|damas|mujer|mujeres|female|femenino|femenina|caballero|caballeros|hombre|hombres|male|masculino|masculina)\b/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function claveColorTeeAag(value) {
+            const n = normalizarNombreTeeAag(value);
+            if (n.includes("negr")) return "negro";
+            if (n.includes("amarill")) return "amarillo";
+            if (n.includes("blanc")) return "blanco";
+            if (n.includes("roj")) return "rojo";
+            return n;
+        }
+
+        function parTotalDesdeAag(holes) {
+            if (!Array.isArray(holes) || !holes.length) return null;
+
+            const pares = holes
+                .map(h => num(h?.Par ?? h?.par ?? h?.par_value))
+                .filter(v => v !== null);
+
+            if (!pares.length) return null;
+            return pares.reduce((sum, par) => sum + par, 0);
+        }
+
+        function categoriaAagPorGenero(genero) {
+            return genero === "female"
+                ? AAG_CATEGORY_FEMALE
+                : AAG_CATEGORY_MALE;
         }
 
         function buscarReglaJugador(j) {
             const index = indexDeJugador(j);
             const genero = normalizarGeneroJugador(j?.gender);
+
             if (index === null) return { error: "El jugador no tiene Index cargado." };
-            if (index < -10 || index > 54) return { error: `El Index ${fmt(index, 1)} está fuera del rango local (-10 a 54).` };
+            if (index < -10 || index > 54) {
+                return { error: `El Index ${fmt(index, 1)} está fuera del rango local (-10 a 54).` };
+            }
 
             const teeNombre = teeRecomendado(index, genero);
+            const claveBuscada = claveColorTeeAag(teeNombre);
+            const categoriaAag = categoriaAagPorGenero(genero);
+
             const regla = reglasHcpCache.find(r =>
-                normalizarGeneroJugador(r.gender) === genero &&
-                limpiar(r.segment) === DEFAULT_SEGMENT &&
-                limpiar(r.tees?.name).toLowerCase() === teeNombre.toLowerCase()
+                Number(r.aag_field_id) === AAG_FIELD_ADULTOS &&
+                Number(r.category) === categoriaAag &&
+                claveColorTeeAag(r.tee_name) === claveBuscada
             );
 
-            if (!regla) return { error: `No encontré la regla de salidas ${teeNombre} para este jugador.` };
-            return { regla, index, genero, teeNombre };
+            if (!regla) {
+                return {
+                    error: `No encontré la salida ${teeNombre} vigente en aag_teeouts para este jugador.`
+                };
+            }
+
+            const par = parTotalDesdeAag(regla.holes);
+
+            if (num(regla.slope_total) === null ||
+                num(regla.calification_total) === null ||
+                par === null) {
+                return {
+                    error: `La salida ${regla.tee_name || teeNombre} no tiene Slope, Rating o Par completos en aag_teeouts.`
+                };
+            }
+
+            return {
+                regla: {
+                    ...regla,
+                    slope: num(regla.slope_total),
+                    course_rating: num(regla.calification_total),
+                    par
+                },
+                index,
+                genero,
+                teeNombre: regla.tee_name || teeNombre
+            };
         }
 
         async function cargarReglasHcpCache() {
             const { data, error } = await db
-                .from("tee_handicap_rules")
-                .select("tee_id, gender, segment, slope, course_rating, par, tees(id, name, display_order)")
-                .eq("segment", DEFAULT_SEGMENT);
+                .from("aag_teeouts")
+                .select(`
+                    id,
+                    aag_field_id,
+                    aag_teeout_id,
+                    teeout_number,
+                    tee_name,
+                    category,
+                    slope_total,
+                    calification_total,
+                    holes
+                `)
+                .eq("aag_field_id", AAG_FIELD_ADULTOS);
 
             if (error) throw error;
             reglasHcpCache = data || [];
@@ -1505,10 +1585,10 @@
 
         function clasePiedra(nombre) {
             const n = limpiar(nombre).toLowerCase();
-            if (n.includes("negra")) return "stone-negras";
-            if (n.includes("amarilla")) return "stone-amarillas";
-            if (n.includes("blanca")) return "stone-blancas";
-            if (n.includes("roja")) return "stone-rojas";
+            if (n.includes("negr")) return "stone-negras";
+            if (n.includes("amarill")) return "stone-amarillas";
+            if (n.includes("blanc")) return "stone-blancas";
+            if (n.includes("roj")) return "stone-rojas";
             return "";
         }
 
@@ -1522,23 +1602,35 @@
                 return;
             }
 
-            const { data: reglas, error } = await db
-                .from("tee_handicap_rules")
-                .select("tee_id, gender, segment, slope, course_rating, par, tees(id, name, display_order)")
-                .eq("gender", genero)
-                .eq("segment", DEFAULT_SEGMENT);
+            const categoriaAag = categoriaAagPorGenero(genero);
 
-            if (error) {
-                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No se pudieron cargar las reglas de tees. Revisar permisos RLS de tee_handicap_rules y tees.</div>`;
-                return;
-            }
+            const filtradas = teesPermitidos
+                .map(nombreTee => {
+                    const clave = claveColorTeeAag(nombreTee);
 
-            const filtradas = (reglas || [])
-                .filter(r => teesPermitidos.some(t => limpiar(r.tees?.name).toLowerCase() === t.toLowerCase()))
-                .sort((a, b) => (a.tees?.display_order ?? 999) - (b.tees?.display_order ?? 999));
+                    const tee = reglasHcpCache.find(r =>
+                        Number(r.aag_field_id) === AAG_FIELD_ADULTOS &&
+                        Number(r.category) === categoriaAag &&
+                        claveColorTeeAag(r.tee_name) === clave
+                    );
+
+                    if (!tee) return null;
+
+                    return {
+                        ...tee,
+                        slope: num(tee.slope_total),
+                        course_rating: num(tee.calification_total),
+                        par: parTotalDesdeAag(tee.holes),
+                        tees: {
+                            name: tee.tee_name || nombreTee
+                        }
+                    };
+                })
+                .filter(Boolean);
 
             if (!filtradas.length) {
-                document.getElementById("hcpVMGC").innerHTML = `<div class="warning">No encontré reglas para ${genero === "female" ? "Damas" : "Caballeros"} en tees ${teesPermitidos.join(", ")}.</div>`;
+                document.getElementById("hcpVMGC").innerHTML =
+                    `<div class="warning">No encontré salidas AAG vigentes para ${genero === "female" ? "Damas" : "Caballeros"} en la cancha ${AAG_FIELD_ADULTOS}.</div>`;
                 return;
             }
 
