@@ -91,6 +91,117 @@
             font-weight: 700;
         }
 
+        .categoria-toggle {
+            width: 100%;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            text-align: left;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .categoria-toggle:hover {
+            filter: brightness(1.05);
+        }
+
+        .categoria-toggle-main {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 850;
+        }
+
+        .tee-color-dot {
+            width: 15px;
+            height: 15px;
+            flex: 0 0 15px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .tee-color-negro {
+            background: #111827;
+        }
+
+        .tee-color-amarillo {
+            background: #facc15;
+        }
+
+        .tee-color-blanco {
+            background: #ffffff;
+        }
+
+        .tee-color-rojo {
+            background: #dc2626;
+        }
+
+        .tee-color-azul {
+            background: #2563eb;
+        }
+
+        .tee-color-verde {
+            background: #22c55e;
+        }
+
+        .categoria-chevron {
+            flex: 0 0 auto;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .categoria-card.expanded .categoria-chevron {
+            transform: rotate(180deg);
+        }
+
+        .categoria-card:not(.expanded) .categoria-extra-row {
+            display: none;
+        }
+
+        .scratch-card {
+            border: 1px solid #d6b65a;
+        }
+
+        .scratch-card .categoria-header {
+            background: #26384a;
+        }
+
+        .scratch-resumen {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            min-width: 0;
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .scratch-ganador {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scratch-gross {
+            flex: 0 0 auto;
+            min-width: 42px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #d6b65a;
+            color: #172235;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        .scratch-card:not(.expanded) .tabla-wrap {
+            display: none;
+        }
+
         .tabla-wrap {
             overflow-x: auto;
         }
@@ -481,6 +592,22 @@
             .categoria-header {
                 padding: 14px 14px;
                 font-size: 18px;
+            }
+
+            .scratch-resumen {
+                gap: 7px;
+                font-size: 13px;
+            }
+
+            .tee-color-dot {
+                width: 13px;
+                height: 13px;
+                flex-basis: 13px;
+            }
+
+            .scratch-gross {
+                min-width: 34px;
+                padding: 4px 7px;
             }
 
             .ranking-table {
