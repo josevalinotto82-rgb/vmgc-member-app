@@ -1,11 +1,8 @@
 <!DOCTYPE html>
+<!-- VMGC: tarjeta móvil CSS Grid v3 -->
 <html lang="es">
 
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=10"></script>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultados del torneo</title>
@@ -1036,6 +1033,12 @@
     </div>
 
     <script type="module">
+        import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+        const supabase = createClient(
+            "https://bnnfolhrqxgxjmobclrm.supabase.co",
+            "sb_publishable_pNxU4AFpAZPpeJ0wICLvIw_6nW90njQ"
+        );
 
         const params = new URLSearchParams(window.location.search);
         const torneoId = (params.get("id") || "").trim();
@@ -3746,7 +3749,7 @@
         }
 
         async function cargarTorneoHistorico() {
-            const { data: torneo, error } = await db
+            const { data: torneo, error } = await supabase
                 .from("historical_tournaments")
                 .select("id, fecha, torneo, modalidad, players")
                 .eq("id", torneoId)
@@ -3925,9 +3928,9 @@
                 loading = true;
                 try {
                     const [{ data: cards, error }, { data: names, error: namesError }, { data: cats, error: catsError }] = await Promise.all([
-                        db.from("scorecards").select("*").eq("tournament_id", torneoId),
-                        db.from("players").select("aag_member_number,full_name").in("aag_member_number", ALL_MEMBER_NUMBERS),
-                        db.from("tournament_categories").select("*").eq("tournament_id", torneoId)
+                        supabase.from("scorecards").select("*").eq("tournament_id", torneoId),
+                        supabase.from("players").select("aag_member_number,full_name").in("aag_member_number", ALL_MEMBER_NUMBERS),
+                        supabase.from("tournament_categories").select("*").eq("tournament_id", torneoId)
                     ]);
                     if (error) throw error;
                     if (catsError) throw catsError;
@@ -3978,7 +3981,7 @@
                     return;
                 }
 
-                const { data: torneo, error: errorTorneo } = await db
+                const { data: torneo, error: errorTorneo } = await supabase
                     .from("tournaments")
                     .select(`
                     id,
@@ -4013,7 +4016,7 @@
                 document.getElementById("subtitulo").textContent =
                     `${formatearFecha(torneo.tournament_date)} · ${torneo.game_modes?.name || ""}`;
 
-                const { data: cats, error: errorCats } = await db
+                const { data: cats, error: errorCats } = await supabase
                     .from("tournament_categories")
                     .select("id, category_id, category_system, name, display_order, gender, index_min, index_max, tee_id, hole_segment, slope, course_rating, par, tee_rules, playing_handicap_min, playing_handicap_max, playing_tee_aag_teeout_id")
                     .eq("tournament_id", torneoId)
@@ -4057,7 +4060,7 @@
                 // En Americana esto evita asumir que toda la pareja pertenece
                 // a la categoría guardada en la scorecard compartida.
                 const { data: regsResultado, error: errorRegsResultado } =
-                    await db
+                    await supabase
                         .from("registrations")
                         .select(`
                             id,
@@ -4078,7 +4081,7 @@
                     registrationsTorneo.map(r => [String(r.id), r])
                 );
 
-                const { data: scorecards, error: errorSc } = await db
+                const { data: scorecards, error: errorSc } = await supabase
                     .from("scorecards")
                     .select(`
                         id,
@@ -4120,7 +4123,7 @@
                 scorecardsSerie = [];
 
                 if (torneo.series_id) {
-                    const { data: rondas, error: errorRondas } = await db
+                    const { data: rondas, error: errorRondas } = await supabase
                         .from("tournaments")
                         .select("id, name, tournament_date, series_id, series_round_number, data_schema_version")
                         .eq("series_id", torneo.series_id)
@@ -4135,7 +4138,7 @@
                     const idsRondas = torneosSerie.map(t => t.id);
 
                     if (idsRondas.length > 1) {
-                        const { data: scSerie, error: errorScSerie } = await db
+                        const { data: scSerie, error: errorScSerie } = await supabase
                             .from("scorecards")
                             .select(`
                                 id,
