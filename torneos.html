@@ -1043,31 +1043,18 @@
 
         let indiceAutoAbrir = null;
 
-        const LEGACY_HOYOS = [
-            { h: 1, par: 4, hp: 15 },
-            { h: 2, par: 4, hp: 3 },
-            { h: 3, par: 3, hp: 5 },
-            { h: 4, par: 4, hp: 11 },
-            { h: 5, par: 3, hp: 9 },
-            { h: 6, par: 4, hp: 1 },
-            { h: 7, par: 4, hp: 13 },
-            { h: 8, par: 4, hp: 7 },
-            { h: 9, par: 5, hp: 17 },
-            { h: 10, par: 4, hp: 8 },
-            { h: 11, par: 3, hp: 14 },
-            { h: 12, par: 5, hp: 10 },
-            { h: 13, par: 3, hp: 2 },
-            { h: 14, par: 4, hp: 16 },
-            { h: 15, par: 4, hp: 18 },
-            { h: 16, par: 4, hp: 6 },
-            { h: 17, par: 5, hp: 12 },
-            { h: 18, par: 4, hp: 4 }
-        ];
 
-        const LEGACY_PAR_IDA = 35;
-        const LEGACY_PAR_VUELTA = 36;
-        const LEGACY_PAR_TOTAL = 71;
-
+        // Rangos inclusivos y orden estable: no truncar al límite de la API.
+        async function consultarTodas(crearConsulta) {
+            const filas = [];
+            const limite = 500;
+            for (let desde = 0; ; desde += limite) {
+                const { data, error } = await crearConsulta().range(desde, desde + limite - 1);
+                if (error) throw error;
+                filas.push(...(data || []));
+                if (!data || data.length < limite) return { data: filas, error: null };
+            }
+        }
         let torneoActual = null;
         let categorias = [];
         let jugadores = [];
@@ -1164,12 +1151,6 @@
                 );
                 if (porId) return porId;
 
-                // Compatibilidad con tarjetas que hubieran guardado
-                // categories.id en vez del id del snapshot.
-                const porCategoryId = categorias.find(c =>
-                    String(c.category_id || "").trim() === idScorecard
-                );
-                if (porCategoryId) return porCategoryId;
             }
 
             // Último recurso de asociación: nombre congelado.
@@ -1187,42 +1168,8 @@
             return null;
         }
 
-        function versionDatosTorneo(torneo) {
-            return Number(torneo?.data_schema_version) === 2 ? 2 : 1;
-        }
-
-        function torneoUsaSistemaNuevoResultado() {
-            return versionDatosTorneo(torneoActual) === 2;
-        }
-
-        function torneoUsaSistemaLegacyResultado() {
-            return !torneoUsaSistemaNuevoResultado();
-        }
-
-        function torneoDeScorecard(j) {
-            const tournamentId = String(j?.tournament_id || "").trim();
-
-            if (
-                tournamentId &&
-                String(torneoActual?.id || "") === tournamentId
-            ) {
-                return torneoActual;
-            }
-
-            return (torneosSerie || []).find(t =>
-                String(t?.id || "") === tournamentId
-            ) || torneoActual;
-        }
-
         function esCategoriaNuevaResultado(cat) {
-            // La versión del torneo es la autoridad. category_system queda
-            // únicamente como control de integridad del snapshot.
-            return torneoUsaSistemaNuevoResultado();
-        }
-
-        function esScorecardNueva(j) {
-            // En una serie, cada tarjeta usa la versión de su propia fecha.
-            return versionDatosTorneo(torneoDeScorecard(j)) === 2;
+            return String(cat?.category_system || '').toLowerCase() === 'new';
         }
 
         function normalizarNombreTeeResultado(valor) {
@@ -1317,7 +1264,7 @@
         }
 
         function reglaTeeTournamentCategoryParaScorecard(j) {
-            if (!esScorecardNueva(j)) return null;
+            if (!j) return null;
 
             const cat = categoriaMetaScorecard(j);
             if (!cat) return null;
@@ -1416,44 +1363,25 @@
             );
         }
 
+        const configuracionesCancha = new WeakMap();
         function configuracionHoyosScorecard(j) {
-            if (esScorecardNueva(j)) {
-                // =========================================================
-                // TORNEO NEW
-                //
-                // AUTORIDAD DE CANCHA:
-                // tournament_categories del torneo.
-                //
-                // scorecard.hole_scores NO define par, HCP ni yardas.
-                // Sólo contiene lo jugado por el jugador.
-                //
-                // categories y LEGACY_HOYOS NO participan.
-                // =========================================================
-                return Array.from({ length: 18 }, (_, i) => {
-                    const h = i + 1;
-                    const meta = metadataHoyoTournamentCategory(j, h);
-
-                    return {
-                        h,
-                        par: meta.par,
-                        hp: meta.hp,
-                        yards: meta.yards,
-                        fuente: meta.fuente
-                    };
-                });
-            }
-
-            // =========================================================
-            // TORNEO LEGACY
-            // Se conserva la cancha histórica embebida en el HTML.
-            // =========================================================
-            return LEGACY_HOYOS.map(base => ({
-                h: base.h,
-                par: base.par,
-                hp: base.hp,
-                yards: null,
-                fuente: "legacy"
-            }));
+            if (configuracionesCancha.has(j)) return configuracionesCancha.get(j);
+            const resuelta = reglaTeeTournamentCategoryParaScorecard(j);
+            const holes = Array.isArray(resuelta?.reference?.holes) ? resuelta.reference.holes : [];
+            const mapa = new Map(holes.map(h => [numeroHoyoReferencia(h), h]));
+            const configuracion = Array.from({ length: 18 }, (_, i) => {
+                const h = i + 1;
+                const dato = mapa.get(h);
+                return {
+                    h,
+                    par: parseNumero(dato?.par ?? dato?.Par),
+                    hp: parseNumero(dato?.handicap ?? dato?.Handicap ?? dato?.hcp ?? dato?.Hcp ?? dato?.stroke_index),
+                    yards: parseNumero(dato?.yards ?? dato?.Yards ?? dato?.yardage),
+                    fuente: resuelta?.fuente || null
+                };
+            });
+            configuracionesCancha.set(j, configuracion);
+            return configuracion;
         }
 
         function sumaParConfiguracion(hoyosConfig, desde, hasta) {
@@ -1481,21 +1409,6 @@
 
         function datosCanchaScorecard(j) {
             const cat = categoriaMetaScorecard(j);
-
-            if (!esScorecardNueva(j)) {
-                return {
-                    slope: parseNumero(j?.slope ?? cat?.slope),
-                    course_rating: parseNumero(
-                        j?.course_rating ?? cat?.course_rating
-                    ),
-                    par: parseNumero(
-                        j?.par ??
-                        cat?.par ??
-                        LEGACY_PAR_TOTAL
-                    ),
-                    fuente: "legacy"
-                };
-            }
 
             // NEW: slope, CR y par salen del mismo snapshot histórico
             // de tournament_categories que define los 18 hoyos.
@@ -2442,52 +2355,7 @@
         function scorecardPerteneceCategoriaTorneo(j, cat) {
             if (!j || !cat) return false;
 
-            const categoriaEsNew = esCategoriaNuevaResultado(cat);
             const participantes = registrosParticipantesScorecard(j);
-
-            if (!categoriaEsNew) {
-                const registrosConCategoria = participantes.filter(reg =>
-                    String(reg?.category_id || "").trim()
-                );
-
-                if (registrosConCategoria.length) {
-                    return registrosConCategoria.some(reg =>
-                        categoriaCoincideIdResultado(reg.category_id, cat)
-                    );
-                }
-
-                const categoryIdScorecard = String(j?.category_id || "").trim();
-
-                if (categoryIdScorecard) {
-                    return categoriaCoincideIdResultado(
-                        categoryIdScorecard,
-                        cat
-                    );
-                }
-
-                const nombreSc = normalizarTexto(
-                    j.category_name ||
-                    j.tournament_categories?.name ||
-                    ""
-                );
-
-                if (nombreSc) {
-                    return nombreSc === normalizarTexto(cat.name || "");
-                }
-
-                const generoCat = generoCategoria(cat);
-                const generoSc = generoJugador(j);
-
-                if (
-                    generoCat &&
-                    generoSc &&
-                    generoCat !== generoSc
-                ) {
-                    return false;
-                }
-
-                return categoriaPorRangoResultado(j, cat);
-            }
 
             if (
                 participantes.some(reg =>
@@ -3662,242 +3530,6 @@
       `;
         }
 
-        function limpiarValorHistorico(valor) {
-            if (valor === undefined || valor === null) return "";
-
-            const texto = String(valor).trim();
-
-            if (!texto) return "";
-
-            return texto;
-        }
-
-        function detectarEstadoHistorico(p) {
-            const valores = [
-                p.gross,
-                p.neto,
-                p.total
-            ].map(v => String(v || "").toUpperCase().trim());
-
-            if (valores.includes("NPT")) return "npt";
-            if (valores.includes("DESC")) return "desc";
-
-            return "valid";
-        }
-
-        function detectarGeneroCategoria(nombreCategoria) {
-            const n = normalizarTexto(nombreCategoria);
-
-            if (n.includes("dama")) return "female";
-            if (n.includes("damas")) return "female";
-            if (n.includes("seniora")) return "female";
-
-            if (n.includes("caballero")) return "male";
-            if (n.includes("caballeros")) return "male";
-            if (n.includes("senior")) return "male";
-
-            return "";
-        }
-
-        function ordenCategoriaHistorica(nombreCategoria) {
-            const n = normalizarTexto(nombreCategoria);
-
-            /*
-             * Orden histórico VMGC:
-             * Scratch Caballeros
-             * Negras
-             * Amarillas
-             * Blancas A
-             * Blancas B
-             * Scratch Damas
-             * Damas Rojas
-             *
-             * Los Scratch no forman parte de tournament_categories:
-             * se insertan dinámicamente antes del primer grupo de cada género.
-             * Acá ordenamos las categorías normales para que esa inserción
-             * quede exactamente en el lugar correcto.
-             */
-
-            if (n.includes("scratch")) return 0;
-
-            /*
-             * FOURBALL CLÁSICO LEGACY
-             * Orden histórico por categoría de HCP de pareja.
-             * Se reconoce por el nombre, antes de aplicar las reglas
-             * de categorías Medal.
-             */
-            if (n.includes("clasico") || n.includes("clásico")) {
-                if (
-                    n.includes("0 a 7") ||
-                    n.includes("0 7") ||
-                    n.includes("hasta 7")
-                ) return 10;
-
-                if (
-                    n.includes("8 a 14") ||
-                    n.includes("8 14") ||
-                    n.includes("8 a 15") ||
-                    n.includes("8 15")
-                ) return 20;
-
-                if (
-                    n.includes("15 a 54") ||
-                    n.includes("15 54") ||
-                    n.includes("16 a 54") ||
-                    n.includes("16 54")
-                ) return 30;
-
-                return 90;
-            }
-
-            // NEGRAS
-            if (
-                n.includes("negra") ||
-                n.includes("negras") ||
-                n.includes("0 9") ||
-                n.includes("0 a 9") ||
-                n.includes("hasta 9")
-            ) return 10;
-
-            // AMARILLAS
-            if (
-                n.includes("amarilla") ||
-                n.includes("amarillas") ||
-                n.includes("9 1") ||
-                n.includes("9.1") ||
-                n.includes("9,1")
-            ) return 20;
-
-            // BLANCAS A
-            if (
-                n.includes("blancas a") ||
-                n.includes("blanca a") ||
-                n.includes("15 1") ||
-                n.includes("15.1") ||
-                n.includes("15,1") ||
-                n.includes("15 a 21")
-            ) return 30;
-
-            // BLANCAS B
-            if (
-                n.includes("blancas b") ||
-                n.includes("blanca b") ||
-                n.includes("21 1") ||
-                n.includes("21.1") ||
-                n.includes("21,1") ||
-                n.includes("21 a 54")
-            ) return 40;
-
-            // DAMAS ROJAS
-            if (
-                n.includes("dama") ||
-                n.includes("damas") ||
-                n.includes("roja") ||
-                n.includes("rojas")
-            ) return 50;
-
-            return 99;
-        }
-
-        async function cargarTorneoHistorico() {
-            const { data: torneo, error } = await db
-                .from("historical_tournaments")
-                .select("id, fecha, torneo, modalidad, players")
-                .eq("id", torneoId)
-                .single();
-
-            if (error || !torneo) {
-                document.getElementById("titulo").textContent = "Torneo histórico no encontrado";
-                document.getElementById("subtitulo").textContent = "";
-                document.getElementById("contenido").innerHTML =
-                    `<div class="empty">No hay datos históricos para mostrar.</div>`;
-                return;
-            }
-
-            torneoActual = {
-                id: torneo.id,
-                name: torneo.torneo,
-                tournament_date: torneo.fecha,
-                game_modes: {
-                    name: torneo.modalidad || ""
-                },
-                data_schema_version: 1,
-                legacy: true
-            };
-
-            document.getElementById("titulo").textContent = torneo.torneo;
-            document.getElementById("subtitulo").textContent =
-                `${formatearFecha(torneo.fecha)} · ${torneo.modalidad || ""}`;
-
-            const players = torneo.players || [];
-
-            const categoriasMap = new Map();
-
-            players.forEach(p => {
-                const nombreCat = String(p.categoria || "Sin categoría").trim();
-
-                if (!categoriasMap.has(nombreCat)) {
-                    categoriasMap.set(nombreCat, {
-                        id: nombreCat,
-                        name: nombreCat,
-                        display_order: categoriasMap.size + 1,
-                        gender: detectarGeneroCategoria(nombreCat),
-                        category_system: "legacy"
-                    });
-                }
-            });
-
-            categorias = Array.from(categoriasMap.values())
-                .sort((a, b) => {
-
-                    const oa = ordenCategoriaHistorica(a.name);
-                    const ob = ordenCategoriaHistorica(b.name);
-
-                    if (oa !== ob) return oa - ob;
-
-                    return String(a.name || "")
-                        .localeCompare(String(b.name || ""), "es");
-                });
-
-            jugadores = players.map((p, index) => {
-                const categoriaNombre = String(p.categoria || "Sin categoría").trim();
-                const cat = categoriasMap.get(categoriaNombre);
-
-                const estado = detectarEstadoHistorico(p);
-
-                return {
-                    id: `legacy_player_${index}`,
-                    display_name: p.jugador || "",
-                    gross: limpiarValorHistorico(p.gross),
-                    net: limpiarValorHistorico(p.neto),
-                    total: limpiarValorHistorico(p.total),
-                    card_status: estado,
-                    category_id: cat?.id || categoriaNombre,
-                    official_index: limpiarValorHistorico(p.index),
-                    playing_handicap: limpiarValorHistorico(p.hp),
-                    player_gender: cat?.gender || "",
-                    legacy_position: p.posicion || "",
-                    hole_scores: p.hoyos || {}
-                };
-            });
-
-            hoyosPorScorecard = {};
-
-            jugadores.forEach(j => {
-                hoyosPorScorecard[j.id] = {};
-
-                const hoyos = j.hole_scores || {};
-
-                Object.entries(hoyos).forEach(([holeNumber, valor]) => {
-                    const hole = Number(holeNumber);
-                    hoyosPorScorecard[j.id][hole] = limpiarValorHistorico(valor);
-                });
-            });
-
-            renderTorneo();
-        }
-
-
         // Excepción exclusiva: 27° Campeonato Provincial Interclubes.
         async function cargarInterclubes() {
             const CATEGORIES = [
@@ -4027,11 +3659,6 @@
         async function cargarTorneo() {
             try {
 
-                if (torneoId.startsWith("legacy_")) {
-                    await cargarTorneoHistorico();
-                    return;
-                }
-
                 const { data: torneo, error: errorTorneo } = await db
                     .from("tournaments")
                     .select(`
@@ -4047,6 +3674,7 @@
                     )
                 `)
                     .eq("id", torneoId)
+                    .eq("data_schema_version", 2)
                     .single();
 
                 if (errorTorneo || !torneo) {
@@ -4067,51 +3695,12 @@
                 document.getElementById("subtitulo").textContent =
                     `${formatearFecha(torneo.tournament_date)} · ${torneo.game_modes?.name || ""}`;
 
-                const { data: cats, error: errorCats } = await db
+                const catsPromise = consultarTodas(() => db
                     .from("tournament_categories")
                     .select("id, category_id, category_system, name, display_order, gender, index_min, index_max, tee_id, hole_segment, slope, course_rating, par, tee_rules, playing_handicap_min, playing_handicap_max, playing_tee_aag_teeout_id")
                     .eq("tournament_id", torneoId)
-                    .order("display_order", { ascending: true });
-
-                if (errorCats) throw errorCats;
-                categorias = cats || [];
-
-                const sistemaEsperado = torneoUsaSistemaNuevoResultado()
-                    ? "new"
-                    : "legacy";
-
-                const categoriasConVersionInconsistente = categorias.filter(c =>
-                    String(c?.category_system || "legacy").toLowerCase() !== sistemaEsperado
-                );
-
-                if (categoriasConVersionInconsistente.length) {
-                    console.warn(
-                        `El torneo versión ${versionDatosTorneo(torneoActual)} contiene categorías con category_system inesperado. Se respetará la versión del torneo.`,
-                        categoriasConVersionInconsistente.map(c => ({
-                            id: c.id,
-                            name: c.name,
-                            category_system: c.category_system
-                        }))
-                    );
-                }
-
-                const categoriasNewIncompletas = categorias.filter(c =>
-                    esCategoriaNuevaResultado(c) &&
-                    (!Array.isArray(c.tee_rules) || !c.tee_rules.length)
-                );
-
-                if (categoriasNewIncompletas.length) {
-                    console.warn(
-                        "Categorías NEW sin tee_rules snapshot; no se usarán datos legacy del HTML:",
-                        categoriasNewIncompletas.map(c => c.name)
-                    );
-                }
-
-                // Categoría REAL por participante.
-                // En Americana esto evita asumir que toda la pareja pertenece
-                // a la categoría guardada en la scorecard compartida.
-                const { data: regsResultado, error: errorRegsResultado } =
-                    await db
+                    .order("display_order", { ascending: true }).order('id', { ascending: true }));
+                const regsPromise = consultarTodas(() => db
                         .from("registrations")
                         .select(`
                             id,
@@ -4123,16 +3712,8 @@
                             linked_player_id,
                             aag_member_number
                         `)
-                        .eq("tournament_id", torneoId);
-
-                if (errorRegsResultado) throw errorRegsResultado;
-
-                registrationsTorneo = regsResultado || [];
-                registrationsTorneoMap = new Map(
-                    registrationsTorneo.map(r => [String(r.id), r])
-                );
-
-                const { data: scorecards, error: errorSc } = await db
+                        .eq("tournament_id", torneoId).order('id', { ascending: true }));
+                const cardsPromise = consultarTodas(() => db
                     .from("scorecards")
                     .select(`
                         id,
@@ -4161,7 +3742,44 @@
                         hole_segment,
                         hole_scores
                     `)
-                    .eq("tournament_id", torneoId);
+                    .eq("tournament_id", torneoId).order('id', { ascending: true }));
+                // Esperar todas evita rechazos pendientes si una consulta falla.
+                await Promise.all([catsPromise, regsPromise, cardsPromise]);
+
+                const { data: cats, error: errorCats } = await catsPromise;
+
+                if (errorCats) throw errorCats;
+                categorias = cats || [];
+
+                if (categorias.some(c => !esCategoriaNuevaResultado(c))) {
+                    throw new Error('El torneo v2 contiene categorías con una versión inesperada.');
+                }
+
+                const categoriasNewIncompletas = categorias.filter(c =>
+                    esCategoriaNuevaResultado(c) &&
+                    (!Array.isArray(c.tee_rules) || !c.tee_rules.length)
+                );
+
+                if (categoriasNewIncompletas.length) {
+                    console.warn(
+                        "Categorías v2 sin tee_rules: no se inventarán datos de cancha.",
+                        categoriasNewIncompletas.map(c => c.name)
+                    );
+                }
+
+                // Categoría REAL por participante.
+                // En Americana esto evita asumir que toda la pareja pertenece
+                // a la categoría guardada en la scorecard compartida.
+                const { data: regsResultado, error: errorRegsResultado } = await regsPromise;
+
+                if (errorRegsResultado) throw errorRegsResultado;
+
+                registrationsTorneo = regsResultado || [];
+                registrationsTorneoMap = new Map(
+                    registrationsTorneo.map(r => [String(r.id), r])
+                );
+
+                const { data: scorecards, error: errorSc } = await cardsPromise;
 
                 if (errorSc) throw errorSc;
                 jugadores = scorecards || [];
@@ -4174,11 +3792,12 @@
                 scorecardsSerie = [];
 
                 if (torneo.series_id) {
-                    const { data: rondas, error: errorRondas } = await db
+                    const { data: rondas, error: errorRondas } = await consultarTodas(() => db
                         .from("tournaments")
                         .select("id, name, tournament_date, series_id, series_round_number, data_schema_version")
                         .eq("series_id", torneo.series_id)
-                        .order("series_round_number", { ascending: true });
+                        .eq("data_schema_version", 2)
+                        .order("series_round_number", { ascending: true }).order("id", { ascending: true }));
 
                     if (errorRondas) throw errorRondas;
 
@@ -4189,7 +3808,7 @@
                     const idsRondas = torneosSerie.map(t => t.id);
 
                     if (idsRondas.length > 1) {
-                        const { data: scSerie, error: errorScSerie } = await db
+                        const { data: scSerie, error: errorScSerie } = await consultarTodas(() => db
                             .from("scorecards")
                             .select(`
                                 id,
@@ -4232,7 +3851,7 @@
                                     playing_tee_aag_teeout_id
                                 )
                             `)
-                            .in("tournament_id", idsRondas);
+                            .in("tournament_id", idsRondas).order("id", { ascending: true }));
 
                         if (errorScSerie) throw errorScSerie;
 
@@ -4252,45 +3871,6 @@
                         });
 
                         prepararSerie();
-                    }
-                }
-
-                const ejemploNew = jugadores.find(j => esScorecardNueva(j));
-                if (ejemploNew) {
-                    const tc = categoriaMetaScorecard(ejemploNew);
-                    const regla = reglaTeeTournamentCategoryParaScorecard(ejemploNew);
-                    const cfg = configuracionHoyosScorecard(ejemploNew);
-                    const cancha = datosCanchaScorecard(ejemploNew);
-
-                    console.log("RESULTADOS NEW - TOURNAMENT_CATEGORIES AUTORITATIVO", {
-                        jugador: ejemploNew.display_name,
-                        category_id_scorecard: ejemploNew.category_id,
-                        tournament_category_id: tc?.id || null,
-                        tournament_category_name: tc?.name || null,
-                        tee_scorecard: ejemploNew.tee_name,
-                        tee_snapshot: regla?.reference?.tee_name || null,
-                        H2: cfg.find(x => x.h === 2),
-                        H9: cfg.find(x => x.h === 9),
-                        cancha
-                    });
-                }
-
-                if (esFourballAmericana()) {
-                    const ejemploAmericana = jugadores.find(j => esScorecardNueva(j)) || jugadores[0];
-
-                    if (ejemploAmericana) {
-                        const cfgAmericana = configuracionHoyosScorecard(ejemploAmericana);
-
-                        console.log("AMERICANA - HCP HOYOS VISIBLE", {
-                            jugador_o_pareja: ejemploAmericana.display_name,
-                            categoria: categoriaMetaScorecard(ejemploAmericana)?.name || ejemploAmericana.category_name || "",
-                            tee: reglaTeeTournamentCategoryParaScorecard(ejemploAmericana)?.reference?.tee_name || ejemploAmericana.tee_name || "",
-                            hcp_hoyos: cfgAmericana.map(x => ({
-                                hoyo: x.h,
-                                hcp: x.hp,
-                                fuente: x.fuente
-                            }))
-                        });
                     }
                 }
 
@@ -4653,7 +4233,7 @@
                 </tr>
                 <tr id="detail-${idx}" class="detail-row ${!esScratch && indiceLista >= 3 ? "categoria-extra-row" : ""}">
                     <td colspan="${colspanDetalle}" class="detail-cell">
-                        ${detalleJugadorHtml(j, posMostrar, empatados, titulo, esScratch, null, idx)}
+                        <!-- La tarjeta se genera al abrir el detalle. -->
                     </td>
                 </tr>
             `;
@@ -4782,95 +4362,13 @@
              * Todos los torneos NEW recorren las tournament_categories
              * creadas para ESE torneo y conservan exactamente sus nombres.
              */
-            console.log("CATEGORIAS REALES DEL TORNEO:", categorias.map(cat => ({
-                id: cat.id,
-                name: cat.name,
-                playing_handicap_min: cat.playing_handicap_min,
-                playing_handicap_max: cat.playing_handicap_max,
-                participantes: jugadores
-                    .filter(j => scorecardPerteneceCategoriaTorneo(j, cat))
-                    .map(j => j.display_name)
-            })));
-
-            console.log("CATEGORIAS ANTES DE ORDENAR:", categorias.map(c => c.name));
-            console.log("ORDENES:", categorias.map(c => ({
-                name: c.name,
-                orden: ordenCategoriaHistorica(c.name)
-            })));
-
             const jugadoresParaMostrar =
                 torneoTieneSerie() && criterioSerieSeleccionado !== "dia"
                     ? jugadoresRepresentativosSerie()
                     : jugadores;
 
-            /*
-             * =========================================================
-             * AMERICANA LEGACY
-             * =========================================================
-             *
-             * En los torneos viejos Fourball Americana no hay categorías
-             * competitivas: todas las parejas juegan contra todas.
-             *
-             * Por eso se ignoran las categorías históricas SOLO para la
-             * presentación del resultado y se muestra una única tabla.
-             *
-             * Los torneos NEW NO entran acá.
-             */
-            if (
-                torneoUsaSistemaLegacyResultado() &&
-                esFourballAmericana()
-            ) {
-                const unicosAmericana = new Map();
-
-                jugadoresParaMostrar.forEach(j => {
-                    const key = String(j?.id || "").trim() ||
-                        `${normalizarTexto(j?.display_name || "")}|${j?.gross ?? ""}|${j?.net ?? j?.total ?? ""}`;
-
-                    if (!unicosAmericana.has(key)) {
-                        unicosAmericana.set(key, j);
-                    }
-                });
-
-                let listaAmericanaLegacy = Array.from(unicosAmericana.values())
-                    .filter(j => {
-                        if (
-                            !torneoTieneSerie() ||
-                            criterioSerieSeleccionado === "dia"
-                        ) {
-                            return true;
-                        }
-
-                        return cumpleMinimoSerie(j, false);
-                    })
-                    .slice()
-                    .sort((a, b) => {
-                        if (!torneoTieneSerie()) {
-                            return compararJugadores(a, b);
-                        }
-
-                        if (criterioSerieSeleccionado === "dia") {
-                            return compararSeriePorRondaActual(a, b);
-                        }
-
-                        return compararClasificacionSerie(a, b, false);
-                    });
-
-                if (
-                    torneoTieneSerie() &&
-                    criterioSerieSeleccionado !== "dia"
-                ) {
-                    listaAmericanaLegacy = listaAmericanaLegacy.slice(0, 15);
-                }
-
-                renderTablaCategoria(
-                    "General",
-                    listaAmericanaLegacy,
-                    false
-                );
-            } else {
-                const esNewMedal =
-                    torneoUsaSistemaNuevoResultado() &&
-                    esMedal();
+            {
+                const esNewMedal = esMedal();
 
                 /*
                  * TORNEOS NEW:
@@ -4883,17 +4381,8 @@
                 categorias
                     .slice()
                     .sort((a, b) => {
-                        const usarOrdenHistorico =
-                            torneoActual?.legacy ||
-                            torneoUsaSistemaLegacyResultado();
-
-                        const oa = usarOrdenHistorico
-                            ? ordenCategoriaHistorica(a.name)
-                            : (a.display_order ?? 99);
-
-                        const ob = usarOrdenHistorico
-                            ? ordenCategoriaHistorica(b.name)
-                            : (b.display_order ?? 99);
+                        const oa = a.display_order ?? 99;
+                        const ob = b.display_order ?? 99;
 
                         if (oa !== ob) return oa - ob;
 
@@ -4915,13 +4404,6 @@
                             if (generoCat === "female") {
                                 renderScratch("female");
                             }
-                        } else {
-                            /*
-                             * LEGACY:
-                             * conservar exactamente el comportamiento anterior.
-                             */
-                            if (generoCat === "male") renderScratch("male");
-                            if (generoCat === "female") renderScratch("female");
                         }
 
                         let lista = jugadoresParaMostrar
