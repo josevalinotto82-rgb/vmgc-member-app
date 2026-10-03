@@ -85,6 +85,7 @@
         <button id="btnBuscar">Validar matrícula</button>
         <button id="btnRegistrar" style="margin-top:10px;">Registrarme</button>
 
+        <p style="text-align:center;font-size:14px"><a href="privacidad.html" style="color:#166534">Política de privacidad</a></p>
         <div id="msg" class="error"></div>
     </div>
 
@@ -158,7 +159,6 @@
 
             const email = emailEl.value.trim();
             const telefono = document.getElementById("telefono").value.trim();
-            console.log("TELÉFONO A GUARDAR:", telefono);
             const password = passwordEl.value;
 
             if (!email || !telefono || !password) {
