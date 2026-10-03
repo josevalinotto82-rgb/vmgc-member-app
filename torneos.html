@@ -1039,6 +1039,11 @@
 
         const params = new URLSearchParams(window.location.search);
         const torneoId = (params.get("id") || "").trim();
+        if (params.get("origen") === "estadisticas") {
+            const back = document.querySelector("a.back");
+            back.href = "estadisticas.html";
+            back.textContent = "← Volver a estadísticas";
+        }
         const busquedaJugador = params.get("q") || "";
 
         let indiceAutoAbrir = null;
@@ -4562,3 +4567,4 @@
 </body>
 
 </html>
+

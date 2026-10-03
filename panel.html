@@ -242,10 +242,10 @@
                 </div>
             </button>
 
-            <button class="app-card internal" onclick="window.location.href='torneos_internos.html'">
-                <div class="app-card-title">Crea tu Torneo</div>
+            <button class="app-card internal" onclick="window.location.href='estadisticas.html'">
+                <div class="app-card-title">Mis estadísticas</div>
                 <div class="app-card-desc">
-                    "NO OFICIAL" Divertite con amigos.
+                    Tus tarjetas, evolución y comparativo con el club.
                 </div>
             </button>
 
@@ -519,8 +519,25 @@
 
     <script>
         if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("./sw.js?v=7");
+            window.addEventListener("load", async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register(
+                        "/sw.js?v=8",
+                        { scope: "/" }
+                    );
+
+                    await registration.update();
+
+                    console.log(
+                        "Service Worker activo:",
+                        registration.scope
+                    );
+                } catch (error) {
+                    console.error(
+                        "No se pudo registrar el Service Worker:",
+                        error
+                    );
+                }
             });
         }
     </script>
