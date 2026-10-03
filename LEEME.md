@@ -36,3 +36,6 @@ Todas las estadísticas e historial se filtran por los torneos seleccionados. El
 Esto es revisión de resultados para el socio: no modifica, oficializa, corrige ni audita administrativamente tarjetas en Supabase. Selección vacía muestra cero tarjetas; no cambia silenciosamente a todos los torneos. Cancelar conserva la selección previa. Ver todos restablece el período completo.
 
 Pruebas: selección de 2 torneos recalcula las métricas a 2 tarjetas y 36 hoyos y limita al club/historial; búsqueda, cancelar, vaciar y restablecer comprobados. Revisión visual móvil del selector. La muestra usa nombres, fechas y resultados ficticios. Abrir estadisticas.html?vista=demo desde un servidor HTTP para probarla sin una cuenta.
+
+## Ajuste móvil del selector
+El buscador ya no recibe foco automático al abrir: se evita mostrar teclado o cambiar escala sin intervención. Campos de texto y período usan 16 px. Ventana limitada al ancho y alto disponibles, lista con desplazamiento interno y adaptación para pantallas bajas. No se bloquea el zoom manual: el viewport no incluye maximum-scale ni user-scalable=no. Verificado en la vista móvil: foco en cerrar, escala 1 y ventana dentro de la pantalla. Pendiente prueba específica en Safari/iPhone físico.

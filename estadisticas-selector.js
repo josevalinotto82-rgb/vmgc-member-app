@@ -21,8 +21,8 @@
     $('selectionScope').textContent=selected===null?'Analizando todos los torneos del período.':`${count} torneos elegidos: todas las tortas, promedios, hoyos y tarjetas se recalcularon con esa selección. El club se compara en los mismos torneos.`;
   }
   function persist(){sessionStorage.setItem(storageKey,JSON.stringify(selected===null?null:[...selected]));}
-  function close(){ $('tournamentDialog').close();$('chooseTournaments').focus(); }
-  $('chooseTournaments').addEventListener('click',()=>{draft=new Set(selected===null?tournaments.map(t=>t.id):tournaments.filter(t=>selected.has(t.id)).map(t=>t.id));$('tournamentSearch').value='';paint();$('tournamentDialog').showModal();$('tournamentSearch').focus();});
+  function close(){ $('tournamentDialog').close();$('chooseTournaments').focus({preventScroll:true}); }
+  $('chooseTournaments').addEventListener('click',()=>{draft=new Set(selected===null?tournaments.map(t=>t.id):tournaments.filter(t=>selected.has(t.id)).map(t=>t.id));$('tournamentSearch').value='';paint();$('tournamentDialog').showModal();$('closeTournaments').focus({preventScroll:true});});
   $('closeTournaments').addEventListener('click',close);
   $('tournamentSearch').addEventListener('input',paint);
   $('tournamentList').addEventListener('change',event=>{if(event.target.type!=='checkbox')return;if(event.target.checked)draft.add(event.target.value);else draft.delete(event.target.value);$('selectionCount').textContent=`${draft.size} de ${tournaments.length} torneos seleccionados`;$('applyTournaments').textContent=`Aplicar selección (${draft.size})`;});
@@ -44,3 +44,4 @@
     isFiltered(){return selected!==null;}
   };
 })();
+
