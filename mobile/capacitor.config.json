@@ -11,7 +11,7 @@
   },
   "ios": {
     "backgroundColor": "#f5f8f3",
-    "contentInset": "automatic",
+    "contentInset": "never",
     "zoomEnabled": true
   },
   "plugins": {

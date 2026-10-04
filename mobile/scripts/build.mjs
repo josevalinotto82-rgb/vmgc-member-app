@@ -18,9 +18,12 @@ for(const file of await readdir(dest)) {
     html=html.replace(/<head>/i,'<head>\n<script src="vendor-supabase.js"></script>');
   }
   html=html.replace(/if \("serviceWorker" in navigator\)/g,'if ("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform())');
-  html=html.replace(/<head>/i,'<head>\n<script defer src="native-runtime.js"></script>\n<link rel="stylesheet" href="native.css">');
+  html=html.replace(/<head>/i,'<head>\n<script defer src="native-runtime.js"></script>');
+  html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="native.css">\n</head>');
+  html=html.replace(/<body(?=[\s>])/i,'<body data-native-page="'+path.basename(file,'.html')+'"');
+  html=html.replace(/(<meta[^>]*name="viewport"[^>]*content=")([^"]*)(")/i,(_,start,value,end)=>start+(value.includes('viewport-fit')?value:value+', viewport-fit=cover')+end);
   await writeFile(filePath,html);
 }
-await writeFile(path.join(dest,'native.css'),'html{background:#f5f8f3}body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}input,select,textarea{font-size:16px!important}');
+await cp(path.join(root,'scripts/native.css'),path.join(dest,'native.css'));
 console.log('App empaquetada: pantallas y librerías locales en www/.');
 
