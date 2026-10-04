@@ -23,3 +23,46 @@ workflows:
           ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Debug-iphonesimulator/App.app build/VillaMariaGolf-simulador.zip
     artifacts:
       - mobile/build/VillaMariaGolf-simulador.zip
+  ios-testflight:
+    name: Villa Maria Golf - TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    integrations:
+      app_store_connect: Codemagic VMGC
+    environment:
+      xcode: latest
+      node: 22
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: ar.com.villamariagolf.members
+    scripts:
+      - name: Preparar app
+        script: |
+          set -e
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run build
+          npm run check
+          npx cap sync ios
+      - name: Configurar firma y numero de compilacion
+        script: |
+          set -e
+          keychain initialize
+          keychain add-certificates
+          cd mobile
+          xcode-project use-profiles
+          cd ios/App
+          agvtool new-version -all "$((BUILD_NUMBER + 1))"
+      - name: Generar IPA
+        script: |
+          set -e
+          cd mobile
+          xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
