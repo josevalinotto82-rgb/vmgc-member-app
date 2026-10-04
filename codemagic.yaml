@@ -1,4 +1,59 @@
 workflows:
+  android-preview:
+    name: Villa Maria Golf - Android prueba
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - name: Preparar Android
+        script: |
+          set -e
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run build
+          npm run check
+          npx cap sync android
+      - name: Generar APK de prueba
+        script: |
+          set -e
+          cd mobile/android
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - mobile/android/app/build/outputs/apk/debug/*.apk
+  android-google-play:
+    name: Villa Maria Golf - Android Google Play
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      node: 22
+      java: 21
+      android_signing:
+        - vmgc-android-upload
+    scripts:
+      - name: Preparar Android
+        script: |
+          set -e
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run build
+          npm run check
+          npx cap sync android
+      - name: Generar APK y AAB firmados
+        script: |
+          set -e
+          test -n "$CM_KEYSTORE_PATH"
+          test -n "$CM_KEY_ALIAS"
+          cd mobile/android
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease
+    artifacts:
+      - mobile/android/app/build/outputs/apk/release/*.apk
+      - mobile/android/app/build/outputs/bundle/release/*.aab
   ios-check:
     name: Villa Maria Golf - comprobar iOS
     instance_type: mac_mini_m2
