@@ -43,7 +43,7 @@ export async function setupPush() {
       let permission=await PushNotifications.checkPermissions();
       if(permission.receive==='prompt'||permission.receive==='prompt-with-rationale')permission=await PushNotifications.requestPermissions();
       if(permission.receive!=='granted'){
-        report('Las notificaciones están desactivadas. Podés habilitarlas en los ajustes de Android.');button.disabled=false;return;
+        report('Las notificaciones están desactivadas. Podés habilitarlas en los ajustes del tel�fono.');button.disabled=false;return;
       }
       report('Conectando los avisos del club…');
       clearRegistrationTimer();

@@ -13,5 +13,14 @@
     "backgroundColor": "#f5f8f3",
     "contentInset": "automatic",
     "zoomEnabled": true
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "sound",
+        "banner",
+        "list"
+      ]
+    }
   }
 }

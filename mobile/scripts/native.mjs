@@ -5,7 +5,7 @@ import { setupPush } from './push.mjs';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { noticeDestination } from './push-inbox.mjs';
 if(Capacitor.isNativePlatform()) {
-  if(Capacitor.getPlatform()==='android'){
+  if(['android','ios'].includes(Capacitor.getPlatform())){
     void setupPush();
     void PushNotifications.addListener('pushNotificationActionPerformed',event=>{
       location.href=noticeDestination(event.notification.data?.destination)||'panel.html';
