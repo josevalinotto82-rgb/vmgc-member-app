@@ -4,7 +4,7 @@ export function noticeDestination(value){
     return url.pathname+url.search;
   }catch{return null;}
 }
-export function connectInbox(box,bell){
+export function connectInbox(box,bell,acknowledge=()=>{}){
   const list=box.querySelector('.notice-empty');
   let userId=null;
   let revision=0;
@@ -28,7 +28,7 @@ export function connectInbox(box,bell){
       if(request!==revision)return;
       list.replaceChildren();
       clean.hidden=!data.length;
-      if(!data.length){list.textContent='No tenés avisos pendientes.';bell.dataset.unread='false';return;}
+      if(!data.length){list.textContent='No tenés avisos pendientes.';bell.dataset.unread='false';await acknowledge();return;}
       const read=localStorage.getItem('vmgc-notice-read:'+userId)||'';
       bell.dataset.unread=String(!box.open&&data[0].created_at>read);
       for(const notice of data){
@@ -49,7 +49,7 @@ export function connectInbox(box,bell){
         if(destination&&!destination.endsWith('panel.html')){const link=document.createElement('a');link.href=destination;link.textContent='Ver torneo';item.append(link);}
         item.append(remove);list.append(item);
       }
-      if(box.open)localStorage.setItem('vmgc-notice-read:'+userId,data[0].created_at);
+      if(box.open){localStorage.setItem('vmgc-notice-read:'+userId,data[0].created_at);await acknowledge();}
     }catch{list.textContent='No se pudieron cargar los avisos. Volvé a abrir la campanita para intentar nuevamente.';}
   }
   bell.addEventListener('click',()=>void refresh());

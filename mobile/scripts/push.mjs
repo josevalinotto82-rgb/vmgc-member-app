@@ -14,7 +14,16 @@ export async function setupPush() {
   const box=document.createElement('dialog');box.className='club-notices';box.setAttribute('aria-labelledby','notice-title');
   box.innerHTML='<div class="notice-heading"><h2 id="notice-title">Notificaciones</h2><button type="button" class="notice-close" aria-label="Cerrar">×</button></div><p>Recibí los avisos de torneos y resultados del club.</p><div class="notice-empty">Todavía no hay avisos nuevos.</div><p role="status"></p><details hidden><summary>Diagnóstico de notificaciones</summary><textarea readonly aria-label="Código del dispositivo"></textarea></details>';
   document.body.append(box);
-  const refresh=connectInbox(box,bell);
+  // La casilla confirma la lectura solamente después de cargar los avisos.
+  let pendingAcknowledgement=false;
+  async function acknowledge(){
+    pendingAcknowledgement=true;
+    try{
+      await PushNotifications.removeAllDeliveredNotifications();
+      pendingAcknowledgement=false;
+    }catch{ /* iOS puede necesitar terminar primero el registro. */ }
+  }
+  const refresh=connectInbox(box,bell,acknowledge);
   const copy=document.createElement('button');
   copy.type='button';copy.className='notice-enable';copy.textContent='Copiar código';
   box.querySelector('details').append(copy);
@@ -60,6 +69,7 @@ export async function setupPush() {
   const listenersReady=(async()=>{
   await PushNotifications.addListener('registration',async token=>{
     currentToken=token.value;
+    if(pendingAcknowledgement)await acknowledge();
     box.querySelector('textarea').value=token.value;
     box.querySelector('details').hidden=true;
     

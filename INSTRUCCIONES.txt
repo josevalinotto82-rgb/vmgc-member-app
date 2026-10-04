@@ -1,0 +1,13 @@
+CORRECCIÓN DEL INDICADOR DE NOTIFICACIONES
+
+1. Extraer este ZIP.
+2. En GitHub, abrir vmgc-member-app, rama main, en la raíz.
+3. Add file > Upload files. Arrastrar la carpeta mobile de este paquete.
+4. Guardar con Commit changes. Son solamente cuatro archivos. No subir INSTRUCCIONES.txt.
+5. En Codemagic generar Villa Maria Golf - Android Google Play. Descargar e instalar el APK nuevo en la tablet. Guardar también el AAB: versión 1.0, código 3.
+6. Generar Villa Maria Golf - TestFlight e instalar la actualización desde TestFlight en iPhone. No hace falta retirar la versión que está en revisión de Apple.
+7. Enviar un aviso con la app cerrada: iPhone debe mostrar el indicador rojo con 1. Abrir la campanita y comprobar que desaparezca el indicador y se limpien los avisos del centro de notificaciones. Repetir en Android.
+
+El 1 indica avisos pendientes; no es una suma de todos los avisos. La casilla conserva los avisos hasta que el usuario los elimine. La limpieza del indicador sucede cuando los avisos se cargan correctamente.
+
+Servidor actualizado a versión 6. Comprobaciones locales aprobadas; prueba final en dispositivos pendiente.

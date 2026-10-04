@@ -18,6 +18,7 @@
     "PushNotifications": {
       "presentationOptions": [
         "sound",
+        "badge",
         "banner",
         "list"
       ]
