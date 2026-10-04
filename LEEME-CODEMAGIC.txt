@@ -1,0 +1,6 @@
+Subir a la raíz de vmgc-member-app el archivo codemagic.yaml y la carpeta mobile completa.
+Conservar las páginas web existentes en la raíz.
+En Codemagic: Check for configuration files, workflow Villa Maria Golf - comprobar iOS.
+Este primer flujo comprueba la compilación para simulador. No produce todavía un IPA para TestFlight ni publica la app.
+La firma de Apple y las notificaciones de iOS se configurarán después.
+No subir claves privadas ni certificados a GitHub.
