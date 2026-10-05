@@ -5,7 +5,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
-    <title>VMGC Members</title>
+    <title>Villa Maria Golf</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -260,7 +260,7 @@
 
         <button id="btnLogout" class="logout">Cerrar sesión</button>
 
-        <div class="footer">VMGC Members</div>
+        <div class="footer">Villa Maria Golf</div>
 
         <div class="sponsor-bar">
             <div class="sponsor-track">
@@ -510,7 +510,10 @@
         }
 
         document.getElementById("btnLogout").addEventListener("click", async () => {
-            await db.auth.signOut();
+            try { await window.unregisterClubPush?.(); }
+            catch(error) { alert(error.message); return; }
+            const { error } = await db.auth.signOut({ scope: "local" });
+            if (error) { alert("No se pudo cerrar la sesión. Volvé a intentarlo."); return; }
             window.location.href = "login.html";
         });
 
@@ -560,3 +563,4 @@
 </body>
 
 </html>
+

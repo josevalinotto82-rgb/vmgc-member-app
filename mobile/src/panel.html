@@ -512,7 +512,8 @@
         document.getElementById("btnLogout").addEventListener("click", async () => {
             try { await window.unregisterClubPush?.(); }
             catch(error) { alert(error.message); return; }
-            await db.auth.signOut();
+            const { error } = await db.auth.signOut({ scope: "local" });
+            if (error) { alert("No se pudo cerrar la sesión. Volvé a intentarlo."); return; }
             window.location.href = "login.html";
         });
 

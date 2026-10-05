@@ -1,10 +1,38 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { setupPush } from './push.mjs';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { noticeDestination } from './push-inbox.mjs';
+import { setupAuthLinks } from './auth-links.mjs';
 if(Capacitor.isNativePlatform()) {
+  window.nativeAuthReady=setupAuthLinks(App).catch(()=>console.warn('No se pudo preparar el regreso desde el correo.'));
+  if(Capacitor.getPlatform()==='android') {
+    const autofill=registerPlugin('ClubAutofill');
+    window.commitClubLogin=async()=>{
+      try { await autofill.commit(); } catch { console.warn('No se pudo avisar al autocompletado del teléfono.'); }
+    };
+  }
+  if(Capacitor.getPlatform()==='ios' && document.getElementById('loginForm')) {
+    const credentials=registerPlugin('ClubCredentials');
+    const button=document.createElement('button');
+    button.type='button';button.textContent='Usar contraseña guardada';
+    button.style.marginTop='12px';
+    document.getElementById('loginForm').append(button);
+    button.addEventListener('click',async()=>{
+      button.disabled=true;
+      try {
+        const result=await credentials.savedPassword();
+        if(!result.cancelled && result.username && result.password) {
+          document.getElementById('email').value=result.username;
+          document.getElementById('password').value=result.password;
+          document.getElementById('loginBtn').focus();
+        }
+      } catch {
+        document.getElementById('msg').textContent='No se encontró una contraseña guardada. Podés ingresar con tu email y contraseña.';
+      } finally {button.disabled=false;}
+    });
+  }
   for(const back of document.querySelectorAll('.floating-back-btn, header a.back, .container>a.back, main.app>button.back')){
     back.classList.add('native-back');
     back.setAttribute('aria-label','Volver a la pantalla anterior');

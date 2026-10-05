@@ -127,14 +127,10 @@
             btn.disabled = true;
             btn.textContent = "Enviando...";
 
-            const redirectBase =
-                window.location.hostname === "127.0.0.1" ||
-                    window.location.hostname === "localhost"
-                    ? "http://127.0.0.1:5500"
-                    : "https://app.villamariagolf.com.ar";
-
             const { error } = await db.auth.resetPasswordForEmail(email, {
-                redirectTo: `${redirectBase}/cambiar_password.html`
+                redirectTo: window.Capacitor?.isNativePlatform()
+                    ? "ar.com.villamariagolf.members://auth/recovery"
+                    : "https://app.villamariagolf.com.ar/cambiar_password.html"
             });
 
             if (error) {

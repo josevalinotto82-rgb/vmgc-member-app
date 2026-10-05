@@ -21,10 +21,10 @@
 
         <h2>Ingreso VMGC</h2>
 
-        <form id="loginForm">
-            <input id="email" type="email" placeholder="Email" required autocomplete="email">
+        <form id="loginForm" method="post">
+            <input id="email" name="username" type="email" placeholder="Email" required autocomplete="username" autocapitalize="none" spellcheck="false">
 
-            <input id="password" type="password" placeholder="Contraseña" required autocomplete="current-password"
+            <input id="password" name="password" type="password" placeholder="Contraseña" required autocomplete="current-password"
                 onkeydown="if(event.key==='Enter'){document.getElementById('loginForm').requestSubmit();}">
 
             <button id="loginBtn" type="submit">Ingresar</button>
@@ -53,7 +53,10 @@
             }
         }
 
-        checkSession();
+        window.addEventListener('DOMContentLoaded',async()=>{
+            await window.nativeAuthReady;
+            if(!window.vmgcAuthNavigating)await checkSession();
+        });
 
         const emailEl = document.getElementById("email");
         const passwordEl = document.getElementById("password");
@@ -87,6 +90,7 @@
                 return;
             }
 
+            await window.commitClubLogin?.();
             window.location.href = "panel.html";
         }
 

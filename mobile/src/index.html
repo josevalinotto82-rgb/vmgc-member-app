@@ -3,12 +3,17 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=login.html">
     <title>Villa Maria Golf</title>
 </head>
 
 <body>
     Redirigiendo...
+    <script>
+      window.addEventListener('DOMContentLoaded',async()=>{
+        await window.nativeAuthReady;
+        if(!window.vmgcAuthNavigating)location.replace('login.html');
+      });
+    </script>
 </body>
 
 </html>
