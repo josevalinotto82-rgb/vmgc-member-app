@@ -85,7 +85,7 @@ workflows:
     integrations:
       app_store_connect: Codemagic VMGC
     environment:
-      xcode: latest
+      xcode: 26.2
       node: 22
       ios_signing:
         distribution_type: app_store
