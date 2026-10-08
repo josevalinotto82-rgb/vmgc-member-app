@@ -13,8 +13,12 @@ for(const file of await readdir(dest)) {
   const filePath=path.join(dest,file);let html=await readFile(filePath,'utf8');
   html=html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2/g,'vendor-supabase.js');
   html=html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/g,'vendor-html2canvas.js');
-  if(html.includes('from "https://esm.sh/@supabase/supabase-js@2"')) {
+  if(html.includes('import { createClient } from "https://esm.sh/@supabase/supabase-js@2";')) {
     html=html.replace(/import \{ createClient \} from "https:\/\/esm\.sh\/@supabase\/supabase-js@2";/g,'const createClient = window.supabase.createClient;');
+    html=html.replace(/<head>/i,'<head>\n<script src="vendor-supabase.js"></script>');
+  }
+  if(html.includes('import { createClient as createRawClient } from "https://esm.sh/@supabase/supabase-js@2";')) {
+    html=html.replace('import { createClient as createRawClient } from "https://esm.sh/@supabase/supabase-js@2";','const createRawClient = window.supabase.createClient;');
     html=html.replace(/<head>/i,'<head>\n<script src="vendor-supabase.js"></script>');
   }
   html=html.replace(/if \("serviceWorker" in navigator\)/g,'if ("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform())');

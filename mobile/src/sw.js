@@ -1,4 +1,4 @@
-const CACHE_NAME = "vmgc-app-v8";
+const CACHE_NAME = "vmgc-app-v9";
 
 const ASSETS = [
     "/escudo.png",

@@ -1,0 +1,70 @@
+[
+  {
+    "file": "cambiar_password.html",
+    "status": "diferente"
+  },
+  {
+    "file": "confirmado.html",
+    "status": "diferente"
+  },
+  {
+    "file": "consulta.html",
+    "status": "nuevo"
+  },
+  {
+    "file": "eliminar_cuenta.html",
+    "status": "diferente"
+  },
+  {
+    "file": "estadisticas.html",
+    "status": "diferente"
+  },
+  {
+    "file": "grilla_interactiva.html",
+    "status": "diferente"
+  },
+  {
+    "file": "index.html",
+    "status": "diferente"
+  },
+  {
+    "file": "login.html",
+    "status": "diferente"
+  },
+  {
+    "file": "mi_perfil.html",
+    "status": "diferente"
+  },
+  {
+    "file": "panel.html",
+    "status": "diferente"
+  },
+  {
+    "file": "recuperar.html",
+    "status": "diferente"
+  },
+  {
+    "file": "registro.html",
+    "status": "diferente"
+  },
+  {
+    "file": "resultados.html",
+    "status": "diferente"
+  },
+  {
+    "file": "snapshot-client.js",
+    "status": "nuevo"
+  },
+  {
+    "file": "supabase.js",
+    "status": "diferente"
+  },
+  {
+    "file": "torneos.html",
+    "status": "diferente"
+  },
+  {
+    "file": "torneos_para_anotarse.html",
+    "status": "diferente"
+  }
+]

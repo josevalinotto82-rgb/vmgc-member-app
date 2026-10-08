@@ -3,7 +3,8 @@
 
 <head>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=4"></script>
+    <script src="./snapshot-client.js"></script>
+<script src="supabase.js?v=4"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8" />
@@ -1091,7 +1092,22 @@
             background: #e5e7eb;
             color: #111827;
         }
-    </style>
+            .mobile-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .mobile-choice { width:100%; min-height:110px; padding:16px 10px; border:1px solid #b8d5bd; border-radius:16px; background:#fff; color:#166534; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; cursor:pointer; font-family:inherit; box-shadow:0 2px 5px #00000008; }
+        .mobile-choice-title { font-size:17px; font-weight:700; }
+        .mobile-choice-count { font-size:13px; }
+        .mobile-choice-full { background:#f1f3f2; border-color:#d5dad7; color:#7b827e; }
+        .mobile-choice-full .mobile-choice-title { text-decoration:line-through; text-decoration-color:#9ca3af; text-decoration-thickness:2px; }
+        .mobile-choice:disabled { cursor:default; }
+        .mobile-choice:focus-visible, .mobile-back:focus-visible { outline:3px solid #166534; outline-offset:3px; }
+        .mobile-nav-head { margin:0 0 18px; }
+        .mobile-nav-head h3, .mobile-nav-section h3 { margin:14px 0 10px; }
+        .mobile-nav-head p { color:#6b7280; font-size:14px; line-height:1.5; }
+        .mobile-nav-section { margin-bottom:24px; }
+        .mobile-back { border:1px solid #d5dad7; border-radius:10px; background:white; color:#166534; padding:10px 14px; font:inherit; cursor:pointer; }
+</style>
+<link rel="stylesheet" href="shared-back.css?v=1">
+<script defer src="shared-back.js?v=1"></script>
 </head>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1786,7 +1802,29 @@
             return texto.replace(/\b\w/g, l => l.toUpperCase());
         }
 
-        function sortLinesForDisplay(lines) {
+        function getBlocksForDisplay() {
+          const blocks = [...state.blocks];
+          if (!isSimultaneousTournament()) return blocks;
+    
+          // A igual horario, conservar el orden original de los bloques.
+          return blocks.sort((a, b) => {
+            const timeA = timeTextToMinutes(a.start_time) ?? Infinity;
+            const timeB = timeTextToMinutes(b.start_time) ?? Infinity;
+            if (timeA === timeB) return 0;
+            return timeA < timeB ? -1 : 1;
+          });
+        }
+    
+        function getLinesForExport() {
+          if (!isSimultaneousTournament()) return sortLinesForDisplay(state.lines);
+    
+          // Exportar cada bloque completo en el mismo orden que la pantalla.
+          return getBlocksForDisplay().flatMap(block => sortLinesForDisplay(
+            state.lines.filter(line => String(line.starting_block_id) === String(block.id))
+          ));
+        }
+    
+            function sortLinesForDisplay(lines) {
             const items = Array.isArray(lines) ? [...lines] : [];
 
             if (isSimultaneousTournament()) {
@@ -3360,7 +3398,7 @@
           <tbody>
     `;
 
-            const lines = sortLinesForDisplay(state.lines);
+            const lines = getLinesForExport();
 
             let lastHole = null;
             let lastBlockId = null;
@@ -3723,6 +3761,98 @@
   `;
         }
 
+        const mobileGridSelection = { tournamentId: null, group: null, lineId: null };
+
+        function getMobileLineAvailability(line) {
+            const byNumber = new Map(getLineSlots(line.id).map(slot => [Number(slot.slot_number), slot]));
+            let available = 0;
+            for (let number = 1; number <= CONFIG.SLOT_COUNT; number += 1) {
+                const slot = byNumber.get(number);
+                if (slot?.id && isSlotEmpty(slot) && !lockIsOther(slot)) available += 1;
+            }
+            return available;
+        }
+
+        function getMobileGroups() {
+            if (isSimultaneousTournament()) {
+                return getBlocksForDisplay().map(block => ({
+                    key: String(block.id),
+                    title: `Salida simultánea · ${timeText(block.start_time)}`,
+                    lines: sortLinesForDisplay(state.lines.filter(line => String(line.starting_block_id) === String(block.id)))
+                }));
+            }
+            const groups = [];
+            const holes = [...new Set(state.lines.map(line => Number(line.starting_hole)))].sort((a, b) => a - b);
+            for (const hole of holes) {
+                for (const period of ['morning', 'afternoon']) {
+                    const lines = sortLinesForDisplay(state.lines.filter(line => {
+                        const block = state.blocks.find(block => String(block.id) === String(line.starting_block_id));
+                        const minutes = timeTextToMinutes(line.line_time || block?.start_time);
+                        return Number(line.starting_hole) === hole && minutes !== null && (period === 'morning' ? minutes < 720 : minutes >= 720);
+                    }));
+                    groups.push({key: `${hole}-${period}`, hole, title: period === 'morning' ? 'Mañana' : 'Tarde', lines});
+                }
+            }
+            return groups;
+        }
+
+        function mobileAvailabilityText(count) {
+            return count === 0 ? 'Sin disponibilidad' : count === 1 ? '1 disponible' : `${count} disponibles`;
+        }
+
+        function renderMobileChoice(title, count, attribute, value, disabled = false) {
+            return `<button type="button" class="mobile-choice ${count === 0 ? 'mobile-choice-full' : ''}" ${attribute}="${safeText(value)}" ${disabled ? 'disabled' : ''}>
+                <span class="mobile-choice-title">${safeText(title)}</span>
+                <span class="mobile-choice-count">${mobileAvailabilityText(count)}</span>
+            </button>`;
+        }
+
+        function renderMobileNavigator() {
+            const tournamentId = String(state.torneo?.id || '');
+            if (mobileGridSelection.tournamentId !== tournamentId) {
+                mobileGridSelection.tournamentId = tournamentId;
+                mobileGridSelection.group = null;
+                mobileGridSelection.lineId = null;
+            }
+            const groups = getMobileGroups();
+            let selected = groups.find(group => group.key === mobileGridSelection.group);
+            if (!selected && mobileGridSelection.group !== '__all__' && isSimultaneousTournament()) {
+                const availableGroups = groups.filter(group => group.lines.some(line => getMobileLineAvailability(line) > 0));
+                if (availableGroups.length === 1) { selected = availableGroups[0]; mobileGridSelection.group = selected.key; }
+            }
+            if (selected) {
+                const line = selected.lines.find(line => String(line.id) === mobileGridSelection.lineId);
+                if (line) {
+                    return `<div class="mobile-nav-head"><button type="button" class="mobile-back" data-mobile-nav-back="lines">← Volver a ${isSimultaneousTournament() ? 'hoyos' : 'horarios'}</button>
+                        <p>${safeText(selected.title)}${selected.hole ? ` · Salida Hoyo ${selected.hole}` : ''}</p></div>${renderMobileLine(line)}`;
+                }
+                mobileGridSelection.lineId = null;
+                return `<div class="mobile-nav-head"><button type="button" class="mobile-back" data-mobile-nav-back="groups">← Ver todas las salidas</button>
+                    <h3>${safeText(selected.title)}${selected.hole ? ` · Hoyo ${selected.hole}` : ''}</h3>
+                    <p>Elegí ${isSimultaneousTournament() ? 'un hoyo' : 'un horario'} para ver los lugares.</p></div>
+                    <div class="mobile-choice-grid">${selected.lines.map(line => renderMobileChoice(
+                        isSimultaneousTournament() ? `Hoyo ${formatSimultaneousHoleLabel(line)}` : timeText(line.line_time),
+                        getMobileLineAvailability(line), 'data-mobile-nav-line', line.id
+                    )).join('')}</div>`;
+            }
+            const renderGroup = group => renderMobileChoice(group.title,
+                group.lines.reduce((total, line) => total + getMobileLineAvailability(line), 0),
+                'data-mobile-nav-group', group.key, group.lines.length === 0);
+            let choices;
+            if (isSimultaneousTournament()) {
+                choices = `<div class="mobile-choice-grid">${groups.map(renderGroup).join('')}</div>`;
+            } else {
+                choices = [...new Set(groups.map(group => group.hole))].map(hole => `<section class="mobile-nav-section"><h3>Salida Hoyo ${safeText(hole)}</h3>
+                    <div class="mobile-choice-grid">${groups.filter(group => group.hole === hole).map(renderGroup).join('')}</div></section>`).join('');
+            }
+            return `<div class="mobile-nav-head"><h3>Elegí tu salida</h3><p>Los lugares reservados o bloqueados descuentan disponibilidad.</p></div>${choices}`;
+        }
+
+        function refreshMobileNavigator() {
+            const container = dom.contenido.querySelector('.mobile-grid');
+            if (container) container.innerHTML = renderMobileNavigator();
+        }
+
         function renderView() {
             dom.torneoNombre.textContent = state.torneo?.name || "Sin nombre";
             setStatus(
@@ -3738,11 +3868,11 @@
 
             dom.contenido.innerHTML = `
     <div class="desktop-grid">
-      ${state.blocks.map(renderBlock).join("")}
+      ${getBlocksForDisplay().map(renderBlock).join("")}
     </div>
 
     <div class="mobile-grid">
-      ${state.blocks.map(renderMobileBlock).join("")}
+      ${renderMobileNavigator()}
     </div>
   `;
         }
@@ -4553,6 +4683,21 @@ Gracias.
         // Eventos
         // ==============================
         function installGlobalEvents() {
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-mobile-nav-group], [data-mobile-nav-line], [data-mobile-nav-back]');
+                if (!button || !button.closest('.mobile-grid') || button.disabled) return;
+                event.preventDefault();
+                if (button.hasAttribute('data-mobile-nav-group')) {
+                    mobileGridSelection.group = button.dataset.mobileNavGroup;
+                    mobileGridSelection.lineId = null;
+                } else if (button.hasAttribute('data-mobile-nav-line')) {
+                    mobileGridSelection.lineId = button.dataset.mobileNavLine;
+                } else {
+                    mobileGridSelection.lineId = null;
+                    if (button.dataset.mobileNavBack === 'groups') mobileGridSelection.group = '__all__';
+                }
+                refreshMobileNavigator();
+            });
             document.addEventListener("click", async (e) => {
 
                 const reserveBtn = e.target.closest("[data-reserve-slot]");

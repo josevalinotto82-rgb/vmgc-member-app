@@ -1,0 +1,57 @@
+COMPARACION WEB / MOBILE - 8 OCTUBRE 2026
+
+Archivos web comparados con mobile/src del ZIP entregado.
+
+1. Supabase: agregar snapshot-client.js a mobile/src y actualizar supabase.js.
+El adaptador sustituye columnas retiradas (gender, index_min/max, tee_id,
+slope, course_rating, par de tournament_categories; tee_id/net_1/net_2 de
+scorecards) en las consultas y recupera las clasificaciones desde tee_rules.
+No modifica tablas, permisos ni configuracion de la base.
+
+2. HTML sincronizados: cambiar_password, confirmado, eliminar_cuenta,
+estadisticas, grilla_interactiva, login, mi_perfil, panel, recuperar,
+registro, resultados, torneos y torneos_para_anotarse.
+La mayor parte de las diferencias era la carga del adaptador.
+Torneos ya tenia la misma logica principal en ambas copias del ZIP.
+Grilla tenia ademas una nueva navegacion por salida/horario, ahora incluida.
+
+3. Estadisticas: las diferencias de estadisticas-core.js eran solamente
+saltos de linea. Se preservo Villa Maria Golf como nombre en la copia movil.
+
+4. No se copio index.html web sobre el movil: el movil conserva la espera
+nativeAuthReady para no interrumpir el regreso desde el correo.
+consulta.html sigue como pantalla web; no se agrego a la app de jugadores.
+
+5. Boton Volver: nuevos shared-back.js y shared-back.css en web y mobile/src.
+Conservan los destinos y eventos originales. La pestaña lateral queda
+centrada verticalmente con el mismo SVG y tamaño de la app.
+Los botones internos de pasos de la grilla conservan sus controles propios.
+Se actualizo la version del cache web a v9.
+
+6. mobile/scripts/native.mjs usa el comportamiento compartido del boton.
+mobile/scripts/build.mjs ahora reconoce tambien createClient as createRawClient
+para empaquetar Supabase localmente. Las pantallas nuevas no necesitan el CDN
+en la app compilada. No se requieren cambios adicionales de firma o plugins
+por estos ajustes. No se cambiaron numeros de version.
+
+7. Se incluyeron los archivos .well-known y .nojekyll del paquete de acceso
+previamente preparado, que no estaban en el ZIP recibido. Preservalos en GitHub;
+el certificado de firma de Google Play no fue verificado en este trabajo.
+
+VERIFICACION
+- Empaquetado y comprobacion de referencias locales: correctos.
+- Analisis de sintaxis de 18 bloques JavaScript: correcto.
+- Pruebas del adaptador: consultas de tablas y relaciones, recuperacion de
+  clasificacion historica y bloqueo de escritura de reglas incompletas.
+- Flujo de entrada movil y reemplazo local de importaciones: verificados.
+- No se consulto la base real ni se probaron reservas/borrados reales.
+- No se genero APK/IPA ni se verifico visualmente Chrome/dispositivos.
+
+COMO USAR EL ZIP DE CAMBIOS
+Dentro de App estan solamente los archivos nuevos o modificados.
+Copiar sobre la carpeta App existente, conservando las demas carpetas.
+No reemplazar ni borrar el repositorio completo por este paquete parcial.
+Subir esos mismos archivos a GitHub manteniendo las rutas.
+Los HTML de la raiz son la web; mobile/src son los de las proximas apps.
+La app instalada conserva su version anterior hasta generar y distribuir
+una nueva compilacion. Nada se envio a las tiendas en este trabajo.
