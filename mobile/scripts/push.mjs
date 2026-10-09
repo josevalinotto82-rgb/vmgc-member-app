@@ -1,5 +1,5 @@
 import { PushNotifications } from '@capacitor/push-notifications';
-import { connectInbox } from './push-inbox.mjs';
+import { appendNoticeBody, noticeDestination, connectInbox } from './push-inbox.mjs';
 
 // Registro automático del dispositivo y casilla de avisos del jugador.
 export async function setupPush() {
@@ -24,6 +24,24 @@ export async function setupPush() {
     }catch{ /* iOS puede necesitar terminar primero el registro. */ }
   }
   const refresh=connectInbox(box,bell,acknowledge);
+  window.openClubNotice=async()=>{
+    let notification;
+    try{notification=JSON.parse(sessionStorage.getItem('vmgc-pending-notice')||'null');}catch{}
+    if(!box.open)box.showModal();
+    const loaded=await refresh(notification?.data?.notice_id);
+    if(notification && (!notification.data?.notice_id || !loaded)){
+      const list=box.querySelector('.notice-empty');list.replaceChildren();
+      const title=document.createElement('strong');title.textContent=notification.title||'Aviso del club';
+      const body=document.createElement('p');body.style.whiteSpace='pre-wrap';appendNoticeBody(body,notification.body);
+      list.append(title,body);
+      const destination=noticeDestination(notification.data?.destination);
+      if(destination){const link=document.createElement('a');link.href=destination;link.textContent='Abrir enlace';list.append(link);}
+    }
+    sessionStorage.removeItem('vmgc-pending-notice');
+    bell.dataset.unread='false';
+    box.querySelector('.notice-close').focus({preventScroll:true});
+  };
+  if(sessionStorage.getItem('vmgc-pending-notice'))void window.openClubNotice();
   const copy=document.createElement('button');
   copy.type='button';copy.className='notice-enable';copy.textContent='Copiar código';
   box.querySelector('details').append(copy);

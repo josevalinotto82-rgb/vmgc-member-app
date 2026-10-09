@@ -4,7 +4,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { setupPush } from './push.mjs';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { noticeDestination } from './push-inbox.mjs';
+
 import { setupAuthLinks } from './auth-links.mjs';
 if(Capacitor.isNativePlatform()) {
   window.nativeAuthReady=setupAuthLinks(App).catch(()=>console.warn('No se pudo preparar el regreso desde el correo.'));
@@ -37,7 +37,9 @@ if(Capacitor.isNativePlatform()) {
   if(['android','ios'].includes(Capacitor.getPlatform())){
     void setupPush();
     void PushNotifications.addListener('pushNotificationActionPerformed',event=>{
-      location.href=noticeDestination(event.notification.data?.destination)||'panel.html';
+      sessionStorage.setItem('vmgc-pending-notice',JSON.stringify(event.notification));
+      if(location.pathname.endsWith('/panel.html') && window.openClubNotice) window.openClubNotice();
+      else location.href='panel.html';
     });
   }
   const external = async value => {
