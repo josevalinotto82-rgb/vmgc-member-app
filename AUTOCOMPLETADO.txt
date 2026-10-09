@@ -1,0 +1,98 @@
+CONTRASEÑAS GUARDADAS — CONFIGURACIÓN Y PRUEBAS
+
+QUÉ VE EL USUARIO
+
+Al entrar a la pantalla de ingreso sin sesión, la app consulta al gestor
+del teléfono para ofrecer el acceso guardado. Elegirlo completa email y
+contraseña; el usuario todavía toca Ingresar. El botón “Usar contraseña
+guardada” permite abrir el gestor nuevamente si se cerró el selector.
+
+En Android, después de ingresar correctamente con datos escritos a mano,
+la app solicita guardarlos con Credential Manager. Si los datos llegaron
+del gestor y no se modificaron, no vuelve a solicitar guardar lo mismo.
+Si se cancela o no hay gestor disponible, el ingreso continúa.
+
+En iPhone se conserva ASAuthorizationPasswordProvider para acceder a
+contraseñas guardadas para app.villamariagolf.com.ar. No se requiere que
+los usuarios copien certificados, configuren archivos ni sepan nada de
+la asociación. Pueden tener que confirmar con Face ID/Touch ID u otro
+método de su teléfono. El sistema y los ajustes del gestor determinan
+si hay sugerencias y qué confirmación corresponde.
+
+No se guardan contraseñas en localStorage ni sessionStorage de la app.
+La nueva solicitud explícita de guardar se implementó en Android.
+
+VERIFICACIÓN DEL DOMINIO
+
+El 9 de octubre de 2026 se verificó:
+- /apple-app-site-association devuelve 200 y contiene el identificador
+  97Y2GWPWMP.ar.com.villamariagolf.members.
+- La CDN de Apple reconoce el mismo contenido y devuelve 200.
+- /.well-known/assetlinks.json devuelve 404: falta publicar la
+  asociación de Android para compartir contraseñas con la web.
+
+Se agregó una copia del archivo de Apple en .well-known y un .nojekyll
+para que GitHub Pages publique esa carpeta en el sitio estático.
+El archivo de Apple que ya existe en la raíz se conserva.
+
+PASO ÚNICO DEL ADMINISTRADOR PARA ANDROID
+
+Para compartir las contraseñas entre app y web hace falta publicar
+/.well-known/assetlinks.json con la huella pública SHA-256 del certificado
+que firma la app instalada.
+
+Para instalaciones desde Google Play:
+1. Abrir Play Console, Integridad de la app, Firma de aplicaciones.
+2. Copiar SHA-256 del certificado de la clave de FIRMA DE LA APLICACIÓN.
+   No usar el certificado de la clave de carga (upload).
+3. Desde la carpeta mobile ejecutar:
+   node scripts/create-assetlinks.mjs "LA_HUELLA_SHA256"
+4. Publicar el archivo .well-known/assetlinks.json generado en el
+   repositorio que sirve app.villamariagolf.com.ar. Debe responder con
+   HTTPS, estado 200 y contenido JSON, sin redirecciones.
+
+El script acepta más de una huella si también se prueban APK con otro
+certificado. Cada huella debe corresponder al certificado real de esa
+versión. No se generó un archivo con una huella inventada.
+
+Los usuarios nuevos no realizan ninguno de esos pasos. La asociación
+es una configuración pública del administrador que sirve para todos.
+
+PUBLICACIÓN Y PRUEBAS EN TELÉFONO
+
+Generar una nueva versión mobile con los flujos existentes de Codemagic
+e instalarla. Cambiar los HTML de GitHub no actualiza la app instalada.
+
+iPhone:
+- Tener una contraseña guardada para app.villamariagolf.com.ar.
+- Cerrar sesión y comprobar que el selector ofrece ese acceso.
+- Elegirlo, confirmar si iOS lo pide y tocar Ingresar.
+- Cancelar el selector y comprobar el ingreso manual y el botón.
+
+Android:
+- Ingresar manualmente con datos válidos y aceptar guardar.
+- Cerrar sesión y elegir la contraseña ofrecida por el gestor.
+- Comprobar que un ingreso incorrecto no pide guardar la contraseña.
+- Cancelar guardar/recuperar y comprobar que se puede continuar.
+- Después de publicar assetlinks.json, probar un acceso guardado en
+  Chrome para el dominio y su recuperación en la app firmada por Play.
+
+VERIFICACIÓN REALIZADA AQUÍ
+
+Pasaron las pruebas de lógica en navegador con un gestor simulado:
+consulta automática una sola vez, botón manual, llenado de los campos,
+cancelación, guardado posterior a ingreso correcto, ausencia de guardado
+ante ingreso incorrecto, alternativa si falla el gestor y ausencia de
+persistencia de contraseñas en almacenamiento del navegador.
+
+También compiló el código Java de Android contra las dependencias reales
+de Capacitor y Credential Manager. El enlace de recursos de la compilación
+completa falló en AAPT2 en este entorno; la comprobación Java se realizó
+excluyendo ese paso. No se generaron APK/IPA firmados. La interacción real
+con los gestores de iOS y Android sigue pendiente de una prueba instalada.
+
+REFERENCIAS OFICIALES
+
+https://support.apple.com/en-lamr/guide/security/sec8762eb992/web
+https://developer.android.com/identity/passwords
+https://developers.google.com/identity/credential-sharing/digital-asset-links

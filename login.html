@@ -53,6 +53,8 @@
 
             if (data.session) {
                 window.location.href = "panel.html";
+            } else {
+                await window.offerClubSavedPassword?.();
             }
         }
 
@@ -93,7 +95,7 @@
                 return;
             }
 
-            await window.commitClubLogin?.();
+            await window.commitClubLogin?.({email, password});
             window.location.href = "panel.html";
         }
 
