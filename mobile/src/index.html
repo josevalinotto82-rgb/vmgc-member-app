@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Villa Maria Golf</title>
+<link rel="stylesheet" href="shared-back.css?v=1">
+<script defer src="shared-back.js?v=1"></script>
+</head>
+
+<body>
+    Redirigiendo...
+    <script>
+      window.addEventListener('DOMContentLoaded',async()=>{
+        await window.nativeAuthReady;
+        if(!window.vmgcAuthNavigating)location.replace('login.html');
+      });
+    </script>
+</body>
+
+</html>
