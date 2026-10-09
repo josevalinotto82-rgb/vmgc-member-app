@@ -1,0 +1,69 @@
+MODIFICACIONES DE LA APP — 9 de octubre de 2026
+
+1. Al tocar una notificación del teléfono se abre la casilla automáticamente
+   y se resalta el aviso correspondiente. Si el aviso todavía no aparece en
+   la casilla, se muestra el título y el mensaje recibidos por el teléfono.
+   El aviso pendiente se conserva al navegar al panel y al ingresar con sesión.
+
+2. Los enlaces HTTP/HTTPS y www escritos dentro del mensaje son clickeables.
+   También se admite el enlace externo del campo destination.
+   Los enlaces externos usan la integración existente con el navegador mobile.
+
+3. Mi perfil: se quitó “App en desarrollo”.
+
+4. Grilla: la flecha flotante central izquierda vuelve a “Elegí tu salida”
+   cuando hay una salida seleccionada en la vista mobile. Desde el selector
+   de salidas vuelve a la lista de torneos, como antes.
+
+5. Se quitó la leyenda sobre lugares reservados o bloqueados.
+
+6. Se agregó “Ver grilla completa” en “Elegí tu salida”. Abre una vista
+   del mismo contenido del exportador del administrador, ajustada al ancho
+   del teléfono. El zoom se hace con dos dedos y se puede desplazar con
+   un dedo. Solo hay un botón Cerrar; no hay controles de zoom.
+
+7. Se corrigió un bloque catch faltante en el exportador de la grilla,
+   que generaba un error de sintaxis en el script de la pantalla.
+
+ARCHIVOS MODIFICADOS
+
+grilla_interactiva.html
+mi_perfil.html
+mobile/src/grilla_interactiva.html
+mobile/src/mi_perfil.html
+mobile/scripts/native.mjs
+mobile/scripts/push.mjs
+mobile/scripts/push-inbox.mjs
+mobile.zip (regenerado para incluir el código mobile actualizado)
+
+PUBLICACIÓN
+
+Web: reemplazar grilla_interactiva.html y mi_perfil.html en el repositorio
+que publica el sitio de GitHub.
+
+Mobile: usar la carpeta mobile actualizada (o el mobile.zip actualizado).
+Los flujos existentes de codemagic.yaml instalan dependencias, construyen
+las pantallas locales, verifican los archivos y sincronizan Capacitor.
+Generar y distribuir una nueva versión para Apple y Google con esos flujos.
+Actualizar únicamente GitHub no reemplaza las pantallas locales que ya
+están incluidas en las aplicaciones instaladas.
+
+VERIFICACIÓN REALIZADA
+
+- Sintaxis de los scripts de las pantallas modificadas y módulos mobile.
+- Igualdad de las pantallas modificadas de web y mobile/src.
+- Pruebas en navegador con datos simulados: enlaces del mensaje, rechazo
+  de protocolos no admitidos, selección del aviso, apertura automática,
+  mensaje alternativo, ajuste inicial al ancho, gestos reales de dos dedos
+  para ampliar/reducir, cierre y navegación de la flecha.
+
+No se publicó en GitHub ni se generaron binarios firmados de Apple/Google.
+Falta comprobar la entrega y apertura de notificaciones reales en iPhone
+y Android después de generar e instalar la nueva versión.
+
+Referencia técnica consultada para el evento de toque de notificaciones:
+https://next.capacitorjs.com/docs/apis/push-notifications
+
+CORRECCIÓN ADICIONAL
+Se quitaron las flechas superiores de la navegación mobile y la leyenda
+que pedía elegir un hoyo/horario para ver los lugares.

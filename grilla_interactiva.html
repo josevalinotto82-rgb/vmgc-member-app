@@ -1115,7 +1115,7 @@
 <body>
 
     <div style="padding: 10px 10px 0;">
-        <button class="floating-back-btn" onclick="window.location.href='torneos_para_anotarse.html'">
+        <button class="floating-back-btn" id="gridBackButton">
             &lt;
         </button>
     </div>
@@ -3823,13 +3823,13 @@
             if (selected) {
                 const line = selected.lines.find(line => String(line.id) === mobileGridSelection.lineId);
                 if (line) {
-                    return `<div class="mobile-nav-head"><button type="button" class="mobile-back" data-mobile-nav-back="lines">← Volver a ${isSimultaneousTournament() ? 'hoyos' : 'horarios'}</button>
+                    return `<div class="mobile-nav-head">
                         <p>${safeText(selected.title)}${selected.hole ? ` · Salida Hoyo ${selected.hole}` : ''}</p></div>${renderMobileLine(line)}`;
                 }
                 mobileGridSelection.lineId = null;
-                return `<div class="mobile-nav-head"><button type="button" class="mobile-back" data-mobile-nav-back="groups">← Ver todas las salidas</button>
+                return `<div class="mobile-nav-head">
                     <h3>${safeText(selected.title)}${selected.hole ? ` · Hoyo ${selected.hole}` : ''}</h3>
-                    <p>Elegí ${isSimultaneousTournament() ? 'un hoyo' : 'un horario'} para ver los lugares.</p></div>
+                    </div>
                     <div class="mobile-choice-grid">${selected.lines.map(line => renderMobileChoice(
                         isSimultaneousTournament() ? `Hoyo ${formatSimultaneousHoleLabel(line)}` : timeText(line.line_time),
                         getMobileLineAvailability(line), 'data-mobile-nav-line', line.id
@@ -3845,7 +3845,7 @@
                 choices = [...new Set(groups.map(group => group.hole))].map(hole => `<section class="mobile-nav-section"><h3>Salida Hoyo ${safeText(hole)}</h3>
                     <div class="mobile-choice-grid">${groups.filter(group => group.hole === hole).map(renderGroup).join('')}</div></section>`).join('');
             }
-            return `<div class="mobile-nav-head"><h3>Elegí tu salida</h3><p>Los lugares reservados o bloqueados descuentan disponibilidad.</p></div>${choices}`;
+            return `<div class="mobile-nav-head"><h3>Elegí tu salida</h3><button type="button" class="mobile-back" data-grid-preview>Ver grilla completa</button></div>${choices}`;
         }
 
         function refreshMobileNavigator() {
@@ -4682,7 +4682,98 @@ Gracias.
         // ==============================
         // Eventos
         // ==============================
+        let gridPreview = null;
+        function openGridPreview() {
+            if (gridPreview?.open) return;
+            if (!gridPreview) {
+                gridPreview = document.createElement('dialog');
+                gridPreview.className = 'grid-preview';
+                const style = document.createElement('style');
+                style.textContent = '.grid-preview[open]{display:flex;flex-direction:column}.grid-preview::backdrop{background:#142b2288}';
+                document.head.append(style);
+                gridPreview.setAttribute('aria-label', 'Grilla completa del torneo');
+                gridPreview.style.cssText = 'width:calc(100vw - 24px);max-width:1400px;height:calc(100dvh - 40px);max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:16px;background:#fff;overflow:hidden;';
+                gridPreview.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;flex-shrink:0;background:#f1f5f1"><strong>Grilla completa</strong><button type="button" data-preview-close style="min-height:44px;padding:0 16px;border:1px solid #cbd5cb;border-radius:8px;background:white;color:#166534;font-size:16px">Cerrar</button></div><div data-preview-scroll style="overflow:auto;flex:1;min-height:0;touch-action:none;overscroll-behavior:contain"><div data-preview-space style="position:relative"><div data-preview-sheet style="position:absolute;top:0;left:0;width:1200px;transform-origin:top left;pointer-events:none"></div></div></div>';
+                document.body.append(gridPreview);
+                const sheet = gridPreview.querySelector('[data-preview-sheet]');
+                const space = gridPreview.querySelector('[data-preview-space]');
+                const scroll = gridPreview.querySelector('[data-preview-scroll]');
+                const pointers = new Map();
+                let zoom = 1;
+                let gesture = null;
+                const minimumZoom = () => Math.min(1, scroll.clientWidth / 1200);
+                const update = () => {
+                    sheet.style.transform = 'scale(' + zoom + ')';
+                    space.style.width = (1200 * zoom) + 'px';
+                    space.style.height = (sheet.scrollHeight * zoom) + 'px';
+                };
+                const geometry = () => {
+                    const points = [...pointers.values()];
+                    const bounds = scroll.getBoundingClientRect();
+                    const first = points[0], second = points[1] || first;
+                    return {x: (first.x + second.x) / 2 - bounds.left,
+                        y: (first.y + second.y) / 2 - bounds.top,
+                        distance: Math.hypot(first.x - second.x, first.y - second.y)};
+                };
+                const rebase = () => {
+                    if (!pointers.size) { gesture = null; return; }
+                    const point = geometry();
+                    gesture = {...point, zoom, left: scroll.scrollLeft, top: scroll.scrollTop};
+                };
+                scroll.addEventListener('pointerdown', event => {
+                    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+                    pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
+                    scroll.setPointerCapture(event.pointerId);
+                    rebase();
+                });
+                scroll.addEventListener('pointermove', event => {
+                    if (!pointers.has(event.pointerId) || !gesture) return;
+                    event.preventDefault();
+                    pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
+                    const point = geometry();
+                    if (pointers.size >= 2 && gesture.distance > 0) {
+                        zoom = Math.max(minimumZoom(), Math.min(4, gesture.zoom * point.distance / gesture.distance));
+                        update();
+                        scroll.scrollLeft = (gesture.left + gesture.x) * zoom / gesture.zoom - point.x;
+                        scroll.scrollTop = (gesture.top + gesture.y) * zoom / gesture.zoom - point.y;
+                    } else {
+                        scroll.scrollLeft = gesture.left + gesture.x - point.x;
+                        scroll.scrollTop = gesture.top + gesture.y - point.y;
+                    }
+                });
+                const release = event => { pointers.delete(event.pointerId); rebase(); };
+                scroll.addEventListener('pointerup', release);
+                scroll.addEventListener('pointercancel', release);
+                scroll.addEventListener('lostpointercapture', release);
+                gridPreview.querySelector('[data-preview-close]').onclick = () => gridPreview.close();
+                gridPreview.addEventListener('close', () => { pointers.clear(); gesture = null; });
+                gridPreview.fit = () => {
+                    pointers.clear(); gesture = null;
+                    zoom = minimumZoom(); update(); scroll.scrollTo(0, 0);
+                };
+                new ResizeObserver(update).observe(sheet);
+                new ResizeObserver(() => {
+                    if (!gridPreview.open) return;
+                    zoom = Math.max(minimumZoom(), zoom); update();
+                }).observe(scroll);
+            }
+            gridPreview.querySelector('[data-preview-sheet]').innerHTML = renderShareGrid();
+            gridPreview.showModal();
+            requestAnimationFrame(() => gridPreview.fit());
+        }
+
         function installGlobalEvents() {
+            document.getElementById('gridBackButton').addEventListener('click', () => {
+                if (window.matchMedia('(max-width: 760px)').matches && mobileGridSelection.group && mobileGridSelection.group !== '__all__') {
+                    mobileGridSelection.group = '__all__';
+                    mobileGridSelection.lineId = null;
+                    refreshMobileNavigator();
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                } else window.location.href = 'torneos_para_anotarse.html';
+            });
+            document.addEventListener('click', event => {
+                if (event.target.closest('[data-grid-preview]')) void openGridPreview();
+            });
             document.addEventListener('click', (event) => {
                 const button = event.target.closest('[data-mobile-nav-group], [data-mobile-nav-line], [data-mobile-nav-back]');
                 if (!button || !button.closest('.mobile-grid') || button.disabled) return;
@@ -5478,6 +5569,7 @@ Gracias.
                         setTimeout(() => {
                             URL.revokeObjectURL(blobUrl);
                         }, 30000);
+                    } catch (error) {
                         console.error("Error exportando grilla:", error);
 
                         if (error?.name !== "AbortError") {
