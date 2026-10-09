@@ -105,7 +105,9 @@ workflows:
           keychain initialize
           keychain add-certificates
           cd mobile
-          xcode-project use-profiles
+          test -f ios/App/App.xcodeproj/project.pbxproj
+          plutil -lint ios/App/App.xcodeproj/project.pbxproj
+          xcode-project use-profiles --project ios/App/App.xcodeproj --verbose --code-signing-setup-verbose-logging
           cd ios/App
           agvtool new-version -all "$((BUILD_NUMBER + 1))"
       - name: Generar IPA
