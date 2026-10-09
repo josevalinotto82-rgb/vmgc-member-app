@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "222604239025",
+    "project_id": "villa-maria-golf",
+    "storage_bucket": "villa-maria-golf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222604239025:android:f7b1ae6dccbd19eb3b4290",
+        "android_client_info": {
+          "package_name": "ar.com.villamariagolf.members"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjIwWIPFbUn-Sl0SicqLhaLFTlky3gyI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
