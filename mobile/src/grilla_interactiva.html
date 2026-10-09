@@ -1108,7 +1108,7 @@
 </style>
 <link rel="stylesheet" href="shared-back.css?v=1">
 <script defer src="shared-back.js?v=1"></script>
-<link rel="stylesheet" href="grid-preview.css?v=3">
+<link rel="stylesheet" href="grid-preview.css?v=4">
 </head>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1144,9 +1144,9 @@
     <div id="contenido"></div>
 
     <div class="leyenda-slots">
-        <span><span class="dot dot-self"></span> Propio</span>
-        <span><span class="dot dot-guest"></span> Invitado</span>
-        <span><span class="dot dot-admin"></span> Administración</span>
+        <span><span class="dot dot-self"></span> Socio VMGC</span>
+        <span><span class="dot dot-guest"></span> Otro club</span>
+        <span><span class="dot dot-admin"></span> Jugador manual</span><span><span class="dot dot-reserved"></span> Reservado</span>
     </div>
 
     <div id="shareExportWrap" class="share-export-wrap" aria-hidden="true"></div>
@@ -3122,7 +3122,7 @@
 
                 if (APP.esAdmin && esReserva24) {
                     return `
-      <td class="slot-cell slot-empty slot-locked-other" data-slot-id="${slot.id}">
+      <td class="slot-cell slot-empty slot-reserved slot-locked-other" data-slot-id="${slot.id}">
         <div class="slot-box">
           <button
             class="slot-inline-manual-btn"
@@ -3137,7 +3137,7 @@
                 }
 
                 return `
-    <td class="slot-cell slot-empty slot-locked-other">
+    <td class="slot-cell slot-empty slot-reserved slot-locked-other">
       <div class="slot-box"><span class="slot-libre-link" style="text-decoration:none; cursor:not-allowed;">Reservado</span></div>
     </td>
   `;
@@ -3189,7 +3189,7 @@
 
                 if (puedeLiberar) {
                     return `
-      <td class="slot-cell slot-empty slot-locked-other" data-slot-id="${slot.id}" data-libre="0">
+      <td class="slot-cell slot-empty slot-reserved slot-locked-other" data-slot-id="${slot.id}" data-libre="0">
         <div class="slot-box">
           <button class="slot-inline-manual-btn" type="button" data-release-reserve-slot="${slot.id}">
             Liberar reserva
@@ -3200,7 +3200,7 @@
                 }
 
                 return `
-    <td class="slot-cell slot-empty slot-locked-other" data-libre="0">
+    <td class="slot-cell slot-empty slot-reserved slot-locked-other" data-libre="0">
       <div class="slot-box">
         <span class="slot-libre-link" style="text-decoration:none; cursor:not-allowed;">Reservado</span>
       </div>
@@ -3537,7 +3537,7 @@
             sub.textContent = sub.textContent.trim() + (state.torneo?.game_modes?.name ? ' · ' + state.torneo.game_modes.name : '') + ' · ' + (isSimultaneousTournament() ? 'SALIDA SIMULTÁNEA' : 'SALIDA SECUENCIAL');
             wrapper.querySelectorAll('.share-blocked').forEach(cell => { cell.textContent = 'BLOQUEADO'; });
             const legend = document.createElement('div'); legend.className = 'preview-legend';
-            legend.innerHTML = '<span>Socio VMGC</span><span>Invitado</span><span>Jugador manual</span><strong>Planilla actualizada</strong>';
+            legend.innerHTML = '<span>Socio VMGC</span><span>Otro club</span><span>Jugador manual</span><span>Reservado</span><strong>Planilla actualizada</strong>';
             wrapper.querySelector('.share-sheet').append(legend);
 
             return wrapper.innerHTML;
@@ -3728,7 +3728,7 @@
 
                 if (puedeLiberar) {
                     return `
-      <div class="mobile-slot mobile-slot-empty slot-locked-other" data-slot-id="${slot.id}" data-libre="0">
+      <div class="mobile-slot mobile-slot-empty slot-reserved slot-locked-other" data-slot-id="${slot.id}" data-libre="0">
         <div class="mobile-slot-name mobile-slot-empty">Reservado</div>
         <div class="mobile-actions">
           <button class="mobile-btn-soft" type="button" data-release-reserve-slot="${slot.id}">
@@ -3740,7 +3740,7 @@
                 }
 
                 return `
-    <div class="mobile-slot mobile-slot-empty slot-locked-other" data-libre="0">
+    <div class="mobile-slot mobile-slot-empty slot-reserved slot-locked-other" data-libre="0">
       <div class="mobile-slot-name mobile-slot-empty">Reservado</div>
       <div class="mobile-actions">
         <span class="helper-text">No disponible</span>

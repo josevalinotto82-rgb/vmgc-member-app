@@ -19,8 +19,6 @@
 .share-sheet td{border:2px solid #9db5a6;padding:9px 7px;height:44px;font-size:17px;line-height:1.18;text-align:center;vertical-align:middle}
 .share-sheet .share-col-ref{width:70px;background:#e3eee6;color:#103d2b;font-weight:800}
 .share-sheet .share-name{white-space:normal;overflow-wrap:anywhere;text-transform:uppercase;font-weight:700;background:#eaf7ed;color:#1e2d25}
-.share-sheet .share-name[data-player-type="guest"],.share-sheet .share-name[data-player-type="guest_member"]{background:#eaf4fa}
-.share-sheet .share-name[data-player-type="manual"],.share-sheet .share-name[data-player-type="admin"]{background:#f2eaf7}
 .share-sheet .share-name.share-empty{background:white;color:transparent}
 .share-sheet .share-name.share-blocked{background:#355544;color:#fff;font-size:13px}
 .share-sheet .share-name.share-reserved{background:#f7efdb;color:#63522d;font-size:14px}
@@ -36,8 +34,6 @@
 .share-sheet .share-name.preview-current{background:#ffdc67!important;box-shadow:inset 0 0 0 5px #9e6c00}
 @media(max-width:360px){.grid-preview .preview-toolbar{padding-left:8px;padding-right:8px;gap:5px}.grid-preview .preview-toolbar button{padding:8px}}
 
-.share-sheet .share-name[data-player-color='slot-otro-club']{background:#eaf4fa}
-.share-sheet .share-name[data-player-color='slot-manual']{background:#f2eaf7}
 
 .grid-preview .share-sheet{width:100%!important}
 .mobile-nav-head:has(.grid-preview-launch){text-align:center;margin-bottom:24px}
@@ -49,3 +45,18 @@
 .grid-preview-launch-arrow{margin-left:auto;color:#ebcf82;font-size:23px}
 .grid-preview-launch:active{transform:translateY(1px)}
 .grid-preview-launch:focus-visible{outline:3px solid #cda331;outline-offset:3px}
+
+/* Una misma clasificación y paleta en inscripción, vista completa y exportación. */
+.slot-vmg .slot-box,.mobile-slot.slot-vmg{background:#eaf7ed;border-color:#92bea1}
+.slot-otro-club .slot-box,.mobile-slot.slot-otro-club{background:#eaf4fa;border-color:#93bdd3}
+.slot-manual .slot-box,.mobile-slot.slot-manual{background:#f2eaf7;border-color:#ba9cce}
+.slot-reserved .slot-box,.mobile-slot.slot-reserved{background:#ffead3;border-color:#e7ab68;color:#75471e}
+.slot-vmg .slot-indicator,.dot-self{background:#55a36f}
+.slot-otro-club .slot-indicator,.dot-guest{background:#61a8cc}
+.slot-manual .slot-indicator,.dot-admin{background:#a973c5}
+.dot-reserved{background:#e39a43}
+.share-sheet .share-name[data-player-color='slot-vmg']:not(.share-empty):not(.share-blocked):not(.share-reserved){background:#eaf7ed}
+.share-sheet .share-name[data-player-color='slot-otro-club']:not(.share-empty):not(.share-blocked):not(.share-reserved){background:#eaf4fa}
+.share-sheet .share-name[data-player-color='slot-manual']:not(.share-empty):not(.share-blocked):not(.share-reserved){background:#f2eaf7}
+.share-sheet .share-name.share-reserved{background:#ffead3;color:#75471e}
+.share-sheet .preview-legend span:nth-child(4):before{background:#e39a43}
