@@ -106,7 +106,7 @@ workflows:
           keychain add-certificates
           cd mobile
           test -f ios/App/App.xcodeproj/project.pbxproj
-          plutil -lint ios/App/App.xcodeproj/project.pbxproj
+          ruby -rxcodeproj -e 'Xcodeproj::Project.open(ARGV.fetch(0)); puts "Proyecto Xcode leido correctamente"' ios/App/App.xcodeproj
           xcode-project use-profiles --project ios/App/App.xcodeproj --verbose --code-signing-setup-verbose-logging
           cd ios/App
           agvtool new-version -all "$((BUILD_NUMBER + 1))"
