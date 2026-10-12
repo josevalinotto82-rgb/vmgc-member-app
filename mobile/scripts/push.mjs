@@ -29,13 +29,13 @@ export async function setupPush() {
     try{notification=JSON.parse(sessionStorage.getItem('vmgc-pending-notice')||'null');}catch{}
     if(!box.open)box.showModal();
     const loaded=await refresh(notification?.data?.notice_id);
-    if(notification && (!notification.data?.notice_id || !loaded)){
+    if(notification && !notification.data?.notice_id){
       const list=box.querySelector('.notice-empty');list.replaceChildren();
-      const title=document.createElement('strong');title.textContent=notification.title||'Aviso del club';
+      const title=document.createElement('h3');title.textContent=notification.title||'Aviso del club';
       const body=document.createElement('p');body.style.whiteSpace='pre-wrap';appendNoticeBody(body,notification.body);
-      list.append(title,body);
+      const content=document.createElement('div');content.className='notice-content';content.append(title,body);list.append(content);
       const destination=noticeDestination(notification.data?.destination);
-      if(destination){const link=document.createElement('a');link.href=destination;link.textContent='Abrir enlace';list.append(link);}
+      if(destination){const link=document.createElement('a');link.href=destination;link.className='notice-action';link.textContent='Ver información ↗';content.append(link);}
     }
     sessionStorage.removeItem('vmgc-pending-notice');
     bell.dataset.unread='false';
@@ -103,9 +103,8 @@ export async function setupPush() {
     report('No se pudo registrar el dispositivo. Revisá la conexión e intentá nuevamente.');
   });
   await PushNotifications.addListener('pushNotificationReceived',notification=>{
-    box.querySelector('.notice-empty').textContent=[notification.title,notification.body].filter(Boolean).join(' — ');
     bell.dataset.unread=String(!box.open);
-    if(notification.data?.notice_id)void refresh();
+    void refresh();
   });
   })();
   listenersReady.catch(error=>{report('No se pudo preparar las notificaciones: '+(error?.message||'intentá nuevamente.'));});

@@ -7,7 +7,11 @@ import { PushNotifications } from '@capacitor/push-notifications';
 
 import { setupAuthLinks } from './auth-links.mjs';
 import { setupCredentials } from './credentials.mjs';
+import { setupMobileDesign } from './mobile-design.mjs';
+import { setupUpdates } from './updates.mjs';
 if(Capacitor.isNativePlatform()) {
+  setupMobileDesign();
+  setupUpdates(Capacitor,App,Browser);
   window.nativeAuthReady=setupAuthLinks(App).catch(()=>console.warn('No se pudo preparar el regreso desde el correo.'));
   if(Capacitor.getPlatform()==='android') {
     const autofill=registerPlugin('ClubAutofill');
@@ -41,7 +45,7 @@ if(Capacitor.isNativePlatform()) {
     if(url.origin!==location.origin && ['https:','http:'].includes(url.protocol)){event.preventDefault();void external(url.href);}
   });
   if(Capacitor.getPlatform()==='android')App.addListener('backButton',({canGoBack})=>{
-    const dialog=document.querySelector('dialog[open]');if(dialog){dialog.close();return;}
+    const dialog=document.querySelector('dialog[open]');if(dialog){if(dialog.dataset.required==='true')void App.minimizeApp();else dialog.close();return;}
     const page=location.pathname.split('/').pop();
     if(page==='torneos.html' && new URLSearchParams(location.search).get('origen')==='estadisticas'){location.href='estadisticas.html';return;}
     if(['index.html','login.html','panel.html',''].includes(page)){void App.minimizeApp();return;}

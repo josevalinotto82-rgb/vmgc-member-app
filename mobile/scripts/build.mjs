@@ -23,11 +23,12 @@ for(const file of await readdir(dest)) {
   }
   html=html.replace(/if \("serviceWorker" in navigator\)/g,'if ("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform())');
   html=html.replace(/<head>/i,'<head>\n<script defer src="native-runtime.js"></script>');
-  html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="native.css">\n</head>');
+  html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="native.css">\n<link rel="stylesheet" href="mobile-design.css">\n</head>');
   html=html.replace(/<body(?=[\s>])/i,'<body data-native-page="'+path.basename(file,'.html')+'"');
   html=html.replace(/(<meta[^>]*name="viewport"[^>]*content=")([^"]*)(")/i,(_,start,value,end)=>start+(value.includes('viewport-fit')?value:value+', viewport-fit=cover')+end);
   await writeFile(filePath,html);
 }
 await cp(path.join(root,'scripts/native.css'),path.join(dest,'native.css'));
+await cp(path.join(root,'scripts/mobile-design.css'),path.join(dest,'mobile-design.css'));
 console.log('App empaquetada: pantallas y librerías locales en www/.');
 
