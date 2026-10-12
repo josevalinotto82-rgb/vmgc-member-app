@@ -490,8 +490,8 @@
             const cachedName = localStorage.getItem("vmgc_nombre_socio");
 
             if (cachedName) {
-                document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${cachedName}`;
-                document.getElementById("memberName").textContent = "Usuario";
+                document.getElementById("welcomeTitle").textContent = saludoDelClub();
+                document.getElementById("memberName").textContent = cachedName;
             }
 
             const { data, error } = await db.auth.getSession();
@@ -508,8 +508,8 @@
 
             localStorage.setItem("vmgc_nombre_socio", nombre);
 
-            document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${nombre}`;
-            document.getElementById("memberName").textContent = "Usuario";
+            document.getElementById("welcomeTitle").textContent = saludoDelClub();
+            document.getElementById("memberName").textContent = nombre;
         }
 
         document.getElementById("btnLogout").addEventListener("click", async () => {
@@ -520,6 +520,10 @@
             window.location.href = "login.html";
         });
 
+        function saludoDelClub() {
+            const hora = new Date().getHours();
+            return hora < 12 ? "Buen día." : hora < 20 ? "Buenas tardes." : "Buenas noches.";
+        }
         init();
     </script>
 
