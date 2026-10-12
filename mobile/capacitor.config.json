@@ -6,11 +6,11 @@
     "androidScheme": "https"
   },
   "android": {
-    "backgroundColor": "#f5f8f3",
+    "backgroundColor": "#f4f1e9",
     "zoomEnabled": true
   },
   "ios": {
-    "backgroundColor": "#f5f8f3",
+    "backgroundColor": "#f4f1e9",
     "contentInset": "never",
     "zoomEnabled": true
   },
@@ -25,3 +25,4 @@
     }
   }
 }
+
