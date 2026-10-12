@@ -80,25 +80,49 @@ export function connectInbox(box,bell,acknowledge=()=>{}){
     remove.onclick=erase;
     remove.addEventListener('focus',()=>{content.style.transform='translateX(-88px)';});
     let drag=null,moved=false;
-    content.addEventListener('pointerdown',event=>{
-     if(event.button!==0||event.target.closest('a,button'))return;
-     drag={id:event.pointerId,x:event.clientX,y:event.clientY,axis:null,dx:0};moved=false;
-    });
-    content.addEventListener('pointermove',event=>{
-     if(!drag||drag.id!==event.pointerId)return;
-     const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-     if(!drag.axis&&Math.hypot(dx,dy)>9){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';if(drag.axis==='x'){content.setPointerCapture(event.pointerId);content.classList.add('notice-dragging');}}
+    const begin=(id,x,y,target)=>{
+     if(deleting||target.closest('a,button'))return;
+     drag={id,x,y,axis:null,dx:0};moved=false;
+    };
+    const move=(id,x,y,event)=>{
+     if(!drag||drag.id!==id)return;
+     const dx=x-drag.x,dy=y-drag.y;
+     if(!drag.axis&&Math.hypot(dx,dy)>9){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';if(drag.axis==='x')content.classList.add('notice-dragging');}
      if(drag.axis!=='x')return;
-     event.preventDefault();moved=true;drag.dx=Math.min(0,Math.max(-content.clientWidth,dx));content.style.transform='translateX('+drag.dx+'px)';item.classList.toggle('notice-full-delete',-drag.dx>content.clientWidth*.68);
-    });
-    const release=event=>{
-     if(!drag||event.pointerId!==drag.id)return;
-     const complete=event.type==='pointerup'&&drag.axis==='x'&&-drag.dx>content.clientWidth*.68;
-     const opened=event.type==='pointerup'&&drag.axis==='x'&&drag.dx<-40;
+     if(event.cancelable)event.preventDefault();
+     moved=true;drag.dx=Math.min(0,Math.max(-content.clientWidth,dx));content.style.transform='translateX('+drag.dx+'px)';item.classList.toggle('notice-full-delete',-drag.dx>content.clientWidth*.68);
+    };
+    const finish=(id,cancelled=false)=>{
+     if(!drag||drag.id!==id)return;
+     const complete=!cancelled&&drag.axis==='x'&&-drag.dx>content.clientWidth*.68;
+     const opened=!cancelled&&drag.axis==='x'&&drag.dx<-40;
      drag=null;content.classList.remove('notice-dragging');item.classList.remove('notice-full-delete');
      if(complete)void erase();else content.style.transform=opened?'translateX(-88px)':'';
     };
-    content.addEventListener('pointerup',release);content.addEventListener('pointercancel',release);content.addEventListener('lostpointercapture',release);
+    // WKWebView: usar el contacto real y cancelar sólo el desplazamiento horizontal.
+    content.addEventListener('touchstart',event=>{
+     if(event.touches.length!==1){if(drag)finish(drag.id,true);return;}
+     const touch=event.touches[0];begin(touch.identifier,touch.clientX,touch.clientY,event.target);
+    },{passive:true});
+    content.addEventListener('touchmove',event=>{
+     if(!drag)return;
+     if(event.touches.length!==1){finish(drag.id,true);return;}
+     const touch=[...event.touches].find(t=>t.identifier===drag.id);
+     if(touch)move(touch.identifier,touch.clientX,touch.clientY,event);
+    },{passive:false});
+    for(const type of ['touchend','touchcancel'])content.addEventListener(type,event=>{
+     if(!drag)return;
+     const touch=[...event.changedTouches].find(t=>t.identifier===drag.id);
+     if(touch)finish(touch.identifier,type==='touchcancel');
+    });
+    content.addEventListener('pointerdown',event=>{
+     if(event.pointerType==='touch'||event.button!==0)return;
+     begin(event.pointerId,event.clientX,event.clientY,event.target);
+     if(drag){try{content.setPointerCapture(event.pointerId);}catch{}}
+    });
+    content.addEventListener('pointermove',event=>{if(event.pointerType!=='touch')move(event.pointerId,event.clientX,event.clientY,event);});
+    content.addEventListener('pointerup',event=>{if(event.pointerType!=='touch')finish(event.pointerId);});
+    content.addEventListener('pointercancel',event=>{if(event.pointerType!=='touch')finish(event.pointerId,true);});
     content.addEventListener('click',event=>{if(moved){event.preventDefault();event.stopPropagation();moved=false;}else if(content.style.transform){content.style.transform='';}},true);
    }
    const selected=selectedId?[...list.children].find(n=>n.dataset.noticeId===String(selectedId)):null;

@@ -12,7 +12,7 @@ function versionCompare(a:string,b:string){
 async function json(url:string,options:RequestInit={}){
  const response=await fetch(url,{...options,signal:AbortSignal.timeout(15000)});
  if(!response.ok)throw new Error('HTTP '+response.status);
- return await response.json();
+ const body=await response.text();return body.trim()?JSON.parse(body):{};
 }
 async function writeRelease(row:Record<string,unknown>){
  const {data:previous,error:readError}=await db.from('mobile_app_releases').select('latest_version,latest_build').eq('platform',row.platform).eq('channel',row.channel).maybeSingle();
@@ -89,3 +89,4 @@ Deno.serve(async request=>{
  await db.from('mobile_release_sync_state').update({last_status:status}).eq('id',1);
  return Response.json(status);
 });
+
