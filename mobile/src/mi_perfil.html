@@ -1646,7 +1646,7 @@
                     <div class="hcp-card ${clasePiedra(piedra)}">
                         <div>
                             <div class="hcp-title">Salidas ${piedra}</div>
-                            <div class="hcp-detail">Index ${fmt(index, 1)} · Slope ${r.slope ?? "-"} · Rating ${fmt(r.course_rating, 1)} · Par ${r.par ?? "-"}</div>
+                            <div class="hcp-detail"><div class="tee-index">Index <strong>${fmt(index, 1)}</strong></div><div class="tee-course"><span>Slope <strong>${r.slope ?? "-"}</strong></span><span>Rating <strong>${fmt(r.course_rating, 1)}</strong></span><span>Par <strong>${r.par ?? "-"}</strong></span></div></div>
                         </div>
                         <div class="hcp-number">${hcp ?? "-"}</div>
                     </div>

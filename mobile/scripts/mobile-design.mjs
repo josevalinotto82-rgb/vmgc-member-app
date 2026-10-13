@@ -3,6 +3,26 @@ export function setupMobileDesign(){
  document.documentElement.classList.add('club-mobile');
  const page=location.pathname.split('/').pop()?.replace('.html','')||'index';
  document.body.dataset.nativePage=page;
+ if(['torneos_para_anotarse','grilla_interactiva'].includes(page)){
+  const selector=page==='grilla_interactiva'?'#tituloPrincipal':'.torneo-nombre';
+  let pending=false;
+  const fit=()=>{
+   pending=false;
+   document.querySelectorAll(selector).forEach(title=>{
+    const width=title.clientWidth;if(!width)return;
+    title.style.setProperty('font-size','23px','important');
+    if(title.scrollWidth>width){
+     let low=1,high=23;
+     for(let i=0;i<12;i++){const size=(low+high)/2;title.style.setProperty('font-size',size+'px','important');if(title.scrollWidth>width)high=size;else low=size;}
+     title.style.setProperty('font-size',low+'px','important');
+    }
+   });
+  };
+  const schedule=()=>{if(!pending){pending=true;requestAnimationFrame(fit);}};
+  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true});
+  new ResizeObserver(schedule).observe(document.body);
+  document.fonts.ready.then(schedule);window.addEventListener('resize',schedule);schedule();
+ }
  if(page==='panel'){
   const welcome=document.querySelector('.welcome');
   if(welcome){

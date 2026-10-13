@@ -145,3 +145,46 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 
 
 @media(max-height:650px){.club-mobile body[data-native-page="panel"] .welcome .mobile-eyebrow{margin-bottom:4px}.club-mobile body[data-native-page="panel"] .welcome h2{font-size:21px;margin-bottom:3px}.club-mobile body[data-native-page="panel"] .member-name{font-size:12px}.club-mobile body[data-native-page="panel"] .mobile-hero-caption{bottom:7px;left:16px;font-size:7px}}
+
+/* Ajustes de lectura y coherencia de las pantallas móviles. */
+.club-mobile body[data-native-page="panel"] .member-name{font-size:18px;font-weight:600}
+.club-mobile body[data-native-page="panel"] .mobile-hero-caption{font-size:10px;letter-spacing:1.3px;bottom:11px}
+@media(max-height:650px){.club-mobile body[data-native-page="panel"] .welcome{height:106px}.club-mobile body[data-native-page="panel"] .member-name{font-size:15px}.club-mobile body[data-native-page="panel"] .mobile-hero-caption{font-size:9px;bottom:8px}.club-mobile body[data-native-page="panel"] .grid{min-height:222px}}
+.club-mobile body[data-native-page="grilla_interactiva"] .header-torneo{background:#fffdf8;border:1px solid #e1dfd4;border-radius:24px;padding:23px;text-align:left;box-shadow:0 6px 18px #143e3209}
+.club-mobile body[data-native-page="grilla_interactiva"] #tituloPrincipal{font-size:23px;letter-spacing:-.8px;line-height:1.2;font-weight:900;color:#153c2e;text-align:left;overflow-wrap:anywhere}
+.club-mobile body[data-native-page="grilla_interactiva"] #subTituloTorneo{font-size:12px;line-height:1.5;color:#74806e;margin:10px 0 0}
+.club-mobile body[data-native-page="mi_perfil"] .member-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
+.club-mobile body[data-native-page="mi_perfil"] .member-row>div{min-width:0;text-align:center}
+.club-mobile body[data-native-page="mi_perfil"] .mini-label{font-size:9px;letter-spacing:.5px;white-space:nowrap;line-height:14px;min-height:14px;margin-bottom:6px}
+.club-mobile body[data-native-page="mi_perfil"] .profile-card .mini-value{font-size:21px;line-height:26px;font-variant-numeric:tabular-nums}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-card{border:1px solid #dfdfcf;border-radius:20px;background:#fffdf8;padding:18px 16px;grid-template-columns:minmax(0,1fr) auto;gap:12px;--tee-color:#648664}
+.club-mobile body[data-native-page="mi_perfil"] .stone-negras{--tee-color:#222b26}
+.club-mobile body[data-native-page="mi_perfil"] .stone-amarillas{--tee-color:#e3bd32}
+.club-mobile body[data-native-page="mi_perfil"] .stone-blancas{--tee-color:#fffdf4}
+.club-mobile body[data-native-page="mi_perfil"] .stone-rojas{--tee-color:#bd4940}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-title{display:flex;align-items:center;gap:9px;color:#143e32;font-size:16px;line-height:1.3}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-title::before{content:'';display:block;width:15px;height:15px;flex:none;border-radius:50%;background:var(--tee-color);border:1px solid #143e3238;box-shadow:0 0 0 4px #eaece2}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-detail{font-size:11px;line-height:1.5;margin-top:10px;color:#74806e}
+.club-mobile body[data-native-page="mi_perfil"] .tee-index{margin-bottom:5px}
+.club-mobile body[data-native-page="mi_perfil"] .tee-course{display:flex;gap:12px;white-space:nowrap}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-detail strong{color:#344d3b;font-weight:650}
+.club-mobile body[data-native-page="mi_perfil"] .hcp-number{min-width:36px;text-align:center;font-size:25px;color:#143e32;background:#eaf0e3;border-radius:13px;padding:10px 8px;font-variant-numeric:tabular-nums}
+@media(max-width:350px){.club-mobile body[data-native-page="mi_perfil"] .tee-course{gap:8px;font-size:10px}.club-mobile body[data-native-page="mi_perfil"] .hcp-card{padding:16px 12px;gap:8px}}
+
+@media(max-height:620px){.club-mobile body[data-native-page="panel"] .app-card{padding:9px 12px}.club-mobile body[data-native-page="panel"] .mobile-card-icon{margin-bottom:4px}.club-mobile body[data-native-page="panel"] .app-card-title{margin-bottom:4px}}
+
+/* Misma tarjeta de torneo durante todo el recorrido de inscripción. */
+.club-mobile body[data-native-page="grilla_interactiva"] .header-torneo{display:flex;flex-direction:column;align-items:flex-start;padding:23px!important;text-align:left!important}
+.club-mobile body[data-native-page="grilla_interactiva"] #tituloPrincipal{order:2;width:100%;max-width:none!important;margin:10px 0 0!important;text-align:left!important;font-size:23px!important;line-height:1.2!important;letter-spacing:-.8px}
+.club-mobile body[data-native-page="grilla_interactiva"] #subTituloTorneo{order:1;display:inline-block;max-width:100%;background:#f0ead6;color:#93762e;border-radius:10px;font-size:12px;font-weight:900;letter-spacing:.3px;line-height:1.5;padding:7px 11px;margin:0!important}
+.club-mobile body[data-native-page="grilla_interactiva"]>.status-grid,.club-mobile body[data-native-page="grilla_interactiva"]>.leyenda-slots{display:none!important}
+.club-mobile .preview-results:empty{display:none}
+
+.club-mobile body[data-native-page="grilla_interactiva"] #tituloPrincipal,.club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-nombre{display:block;box-sizing:border-box;width:100%!important;max-width:none!important;padding-left:0!important;padding-right:0!important;white-space:nowrap!important;text-align:left!important;overflow-wrap:normal!important;word-break:normal!important}
+
+.club-mobile body[data-native-page="torneos_para_anotarse"] .torneos{grid-template-columns:minmax(0,1fr);min-width:0}
+.club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-card{min-width:0;max-width:100%;box-sizing:border-box}
+.club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-nombre{min-width:0;overflow:hidden}
+
+/* La grilla completa también se muestra en teléfonos pequeños acostados. */
+@media(orientation:landscape){.club-mobile body[data-native-page="grilla_interactiva"] .desktop-grid{display:block!important}.club-mobile body[data-native-page="grilla_interactiva"] .mobile-grid{display:none!important}.club-mobile body[data-native-page="grilla_interactiva"]{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}}

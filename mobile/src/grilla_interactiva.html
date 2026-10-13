@@ -4712,7 +4712,7 @@ Gracias.
                 document.head.append(style);
                 gridPreview.setAttribute('aria-label', 'Grilla completa del torneo');
                 gridPreview.style.cssText = 'width:calc(100vw - 24px);max-width:1400px;height:calc(100dvh - 40px);max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:16px;background:#fff;overflow:hidden;';
-                gridPreview.innerHTML = '<div class="preview-toolbar"><input type="search" data-preview-search placeholder="Buscar jugador" aria-label="Buscar jugador por nombre o apellido" autocomplete="off"><button type="button" data-preview-next aria-label="Siguiente coincidencia" disabled>↓</button><button type="button" data-preview-close>Cerrar</button></div><div class="preview-results" data-preview-results role="status" aria-live="polite">Pellizcá para ampliar · Deslizá para recorrer</div><div data-preview-scroll style="overflow:auto;flex:1;min-height:0;touch-action:none;overscroll-behavior:contain"><div data-preview-space style="position:relative"><div data-preview-sheet style="position:absolute;top:0;left:0;width:1200px;transform-origin:top left;pointer-events:none"></div></div></div>';
+                gridPreview.innerHTML = '<div class="preview-toolbar"><input type="search" data-preview-search placeholder="Buscar jugador" aria-label="Buscar jugador por nombre o apellido" autocomplete="off"><button type="button" data-preview-next aria-label="Siguiente coincidencia" disabled>↓</button><button type="button" data-preview-close>Cerrar</button></div><div class="preview-results" data-preview-results role="status" aria-live="polite"></div><div data-preview-scroll style="overflow:auto;flex:1;min-height:0;touch-action:none;overscroll-behavior:contain"><div data-preview-space style="position:relative"><div data-preview-sheet style="position:absolute;top:0;left:0;width:1200px;transform-origin:top left;pointer-events:none"></div></div></div>';
                 document.body.append(gridPreview);
                 const sheet = gridPreview.querySelector('[data-preview-sheet]');
                 const space = gridPreview.querySelector('[data-preview-space]');
@@ -4788,7 +4788,7 @@ Gracias.
                     next.disabled = matches.length < 2;
                     matchIndex = matches.length ? 0 : -1;
                     if (matches.length) focusMatch();
-                    else results.textContent = terms.length ? 'No se encontraron jugadores con ese nombre' : 'Pellizcá para ampliar · Deslizá para recorrer';
+                    else results.textContent = terms.length ? 'No se encontraron jugadores con ese nombre' : '';
                     if (!terms.length) gridPreview.fit();
                 };
                 input.addEventListener('input', search);
@@ -4796,7 +4796,7 @@ Gracias.
                     if (event.key === 'Enter') { event.preventDefault(); input.blur(); if (matches.length) { matchIndex = (matchIndex + 1) % matches.length; focusMatch(); } }
                 });
                 next.onclick = () => { if (matches.length) { matchIndex = (matchIndex + 1) % matches.length; focusMatch(); } };
-                gridPreview.resetSearch = () => { input.value = ''; matches = []; matchIndex = -1; next.disabled = true; results.textContent = 'Pellizcá para ampliar · Deslizá para recorrer'; };
+                gridPreview.resetSearch = () => { input.value = ''; matches = []; matchIndex = -1; next.disabled = true; results.textContent = ''; };
                 gridPreview.querySelector('[data-preview-close]').onclick = () => gridPreview.close();
                 gridPreview.addEventListener('close', () => { pointers.clear(); gesture = null; });
                 gridPreview.fit = () => {
@@ -4818,9 +4818,9 @@ Gracias.
 
         function installGlobalEvents() {
             document.getElementById('gridBackButton').addEventListener('click', () => {
-                if (window.matchMedia('(max-width: 760px)').matches && mobileGridSelection.group && mobileGridSelection.group !== '__all__') {
-                    mobileGridSelection.group = '__all__';
-                    mobileGridSelection.lineId = null;
+                if (dom.contenido.querySelector('.mobile-grid') && getComputedStyle(dom.contenido.querySelector('.mobile-grid')).display !== 'none' && mobileGridSelection.group && mobileGridSelection.group !== '__all__') {
+                    if (mobileGridSelection.lineId) mobileGridSelection.lineId = null;
+                    else mobileGridSelection.group = '__all__';
                     refreshMobileNavigator();
                     window.scrollTo({top: 0, behavior: 'smooth'});
                 } else window.location.href = 'torneos_para_anotarse.html';
