@@ -1,10 +1,11 @@
-import {cp,mkdir,readdir,readFile,writeFile} from 'node:fs/promises';
+import {cp,mkdir,readdir,readFile,writeFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild-wasm';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const src=path.join(root,'src'),dest=path.join(root,'www');
 await mkdir(dest,{recursive:true});await cp(src,dest,{recursive:true});
+await rm(path.join(dest,'store-capture-runtime.js'),{force:true});
 await build({entryPoints:[path.join(root,'scripts/vendor.mjs')],outfile:path.join(dest,'vendor-supabase.js'),tsconfigRaw:{},bundle:true,format:'iife',minify:true,target:'es2022'});
 await build({entryPoints:[path.join(root,'scripts/native.mjs')],outfile:path.join(dest,'native-runtime.js'),tsconfigRaw:{},bundle:true,format:'iife',minify:true,target:'es2022'});
 await cp(path.join(root,'node_modules/html2canvas/dist/html2canvas.min.js'),path.join(dest,'vendor-html2canvas.js'));

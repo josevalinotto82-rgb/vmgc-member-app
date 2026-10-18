@@ -3,7 +3,7 @@ import {strict as assert} from 'node:assert';
 const config=JSON.parse(await readFile('capacitor.config.json','utf8'));
 assert.equal(config.webDir,'www');assert.ok(!config.server?.url,'La app debe cargar pantallas locales.');
 for(const file of await readdir('www'))if(file.endsWith('.html')){
- const html=await readFile('www/'+file,'utf8');assert.ok(html.includes('native-runtime.js'),file+': falta integración móvil');
+ const html=await readFile('www/'+file,'utf8');assert.ok(!html.includes('store-capture-runtime.js'),file+': no publicar la compilación de capturas');assert.ok(html.includes('native-runtime.js'),file+': falta integración móvil');
  assert.ok(!/https:\/\/(cdn\.jsdelivr\.net|esm\.sh)/.test(html),file+': dependencia remota');
  for(const m of html.matchAll(/<script[^>]*src="([^"]+)"/g)){const script=m[1].split('?')[0];if(!script.startsWith('http'))await access('www/'+script);}
 }
