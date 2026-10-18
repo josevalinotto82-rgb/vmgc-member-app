@@ -695,6 +695,21 @@
             <div id="contactStatus" class="status"></div>
         </section>
 
+        <section class="card player-hcp-search">
+            <h2>Consultar HCP de un jugador</h2>
+            <p>Escribí nombre, apellido o matrícula y elegí una de las sugerencias.</p>
+            <form id="hcpPlayerSearchForm" class="hcp-search-form">
+                <input id="hcpPlayerQuery" type="search" placeholder="Nombre o matrícula" aria-label="Nombre o matrícula del jugador" autocomplete="off" minlength="2" maxlength="80" required>
+            </form>
+            <p id="hcpPlayerSearchStatus" role="status" aria-live="polite"></p>
+            <div id="hcpPlayerChoices" class="hcp-player-choices"></div>
+        </section>
+        <dialog id="hcpPlayerDialog" class="hcp-player-dialog" aria-labelledby="hcpPlayerTitle">
+            <div class="hcp-dialog-head"><span>HCP EN VILLA MARÍA GOLF</span><button type="button" id="hcpPlayerClose" aria-label="Cerrar consulta">×</button></div>
+            <h2 id="hcpPlayerTitle"></h2><div id="hcpPlayerIdentity"></div><div id="hcpPlayerTees" class="hcp-grid"></div>
+            <p class="hcp-recommendation-note">Tee recomendado según el índex y las reglas del club. Las condiciones de cada torneo pueden definir otra salida.</p>
+        </dialog>
+
         <section class="card">
             <h2>HCP de juego en Villa María Golf Club</h2>
             <div id="hcpVMGC" class="hcp-grid">
@@ -1870,6 +1885,87 @@
                 cargarTeesYHcp();
             }, 50);
         }
+
+
+        async function buscarPadronHcp(term) {
+            const words=term.split(' ').filter(Boolean),numeric=/^\d+$/.test(term);
+            const columns='full_name,first_name,last_name,current_index,gender,search_text,club_name';
+            function query(table,number){
+                let q=db.from(table).select(columns+','+number+(table==='players'?',id':''));
+                if(numeric)q=q.eq(number,term);
+                else for(const word of words)q=q.ilike('search_text','%'+word+'%');
+                return q.order('full_name',{ascending:true}).limit(12);
+            }
+            const results=await Promise.allSettled([query('aag_enrolleds','enrollment_number'),query('players','aag_member_number')]);
+            const good=results.filter(r=>r.status==='fulfilled'&&!r.value.error);
+            if(!good.length)throw Error('No se pudo consultar el padrón');
+            const unique=new Map();
+            // El padrón nacional es la fuente principal; players agrega jugadores locales.
+            for(let source=0;source<results.length;source++){
+                const response=results[source];if(response.status!=='fulfilled'||response.value.error)continue;
+                for(const item of response.value.data||[]){
+                    const number=String(item.enrollment_number||item.aag_member_number||'');
+                    const player={...item,aag_member_number:number,full_name:item.full_name||[item.last_name,item.first_name].filter(Boolean).join(', ')};
+                    const key=number||('local:'+item.id);if(!unique.has(key))unique.set(key,player);
+                }
+            }
+            return {players:[...unique.values()].sort((a,b)=>a.full_name.localeCompare(b.full_name,'es')).slice(0,6),partial:good.length!==2};
+        }
+
+        function instalarConsultaHcpJugador() {
+            const form=document.getElementById('hcpPlayerSearchForm'), input=document.getElementById('hcpPlayerQuery');
+            const message=document.getElementById('hcpPlayerSearchStatus'), choices=document.getElementById('hcpPlayerChoices');
+            const dialog=document.getElementById('hcpPlayerDialog');let revision=0,searchTimer=null;
+            input.setAttribute('aria-controls','hcpPlayerChoices');
+            document.getElementById('hcpPlayerClose').onclick=()=>dialog.close();
+            const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+            async function showPlayer(player){
+                document.getElementById('hcpPlayerTitle').textContent=player.full_name||'Jugador';
+                document.getElementById('hcpPlayerIdentity').textContent='Matrícula '+(matriculaDeJugador(player)||'—')+' · Index '+fmt(indexDeJugador(player),1)+' · Club: '+(limpiar(player.club_name)||'Sin club informado');
+                const list=document.getElementById('hcpPlayerTees');list.replaceChildren();dialog.showModal();list.textContent='Cargando salidas…';
+                try{
+                    if(!reglasHcpCache.length)await cargarReglasHcpCache();
+                    const index=indexDeJugador(player);
+                    if(index===null){list.textContent='Este jugador no tiene un índex cargado para calcular su HCP.';return;}
+                    const genderValue=String(player.gender||'').trim();
+                    if(!genderValue){list.textContent='Falta la categoría del jugador para elegir las valoraciones de la cancha.';return;}
+                    const gender=normalizarGeneroJugador(genderValue),recommended=claveColorTeeAag(teeRecomendado(index,gender));
+                    const teeOrder={negro:0,amarillo:1,blanco:2,rojo:3};
+                    const tees=reglasHcpCache.filter(r=>Number(r.aag_field_id)===AAG_FIELD_ADULTOS&&Number(r.category)===categoriaAagPorGenero(gender)).sort((a,b)=>(teeOrder[claveColorTeeAag(a.tee_name)]??99)-(teeOrder[claveColorTeeAag(b.tee_name)]??99)||(num(b.calification_total)??0)-(num(a.calification_total)??0));
+                    if(!tees.length){list.textContent='No hay valoraciones disponibles para este jugador en VMGC.';return;}
+                    list.innerHTML=tees.map(tee=>{
+                        const hcp=calcularHcpJuego(index,tee.slope_total,tee.calification_total,parTotalDesdeAag(tee.holes));
+                        const rec=claveColorTeeAag(tee.tee_name)===recommended;
+                        return '<div class="hcp-card '+clasePiedra(tee.tee_name)+(rec?' hcp-recommended':'')+'"><div><div class="hcp-title">'+escaparHtml(tee.tee_name)+'</div>'+(rec?'<span class="recommended-tee">✓ Tee recomendado</span>':'')+'<div class="hcp-detail">Slope '+fmt(tee.slope_total,0)+' · Rating '+fmt(tee.calification_total,1)+' · Par '+fmt(parTotalDesdeAag(tee.holes),0)+'</div></div><div class="hcp-number" aria-label="HCP de juego">'+(hcp??'—')+'</div></div>';
+                    }).join('');
+                }catch{list.textContent='No pudimos cargar los hándicaps. Cerrá la consulta y volvé a intentar.';}
+            }
+            async function search(openUnique=false){
+                const request=++revision,term=normalized(input.value);
+                choices.replaceChildren();
+                if(term.length<2){message.textContent=term?'Escribí al menos dos letras o números.':'';form.setAttribute('aria-busy','false');return;}
+                message.textContent='Buscando en el padrón…';form.setAttribute('aria-busy','true');
+                try{
+                    const {players,partial}=await buscarPadronHcp(term);
+                    if(request!==revision)return;
+                    message.textContent=players.length?(players.length>=6?'Mostrando hasta 6 coincidencias. Seguí escribiendo para acotar.':'Elegí el jugador para consultar su HCP.'):'No encontramos jugadores. Probá con la matrícula o parte del apellido.';
+                    if(partial)message.textContent+=' Una de las fuentes no respondió; volvé a intentar si no aparece el jugador.';
+                    if(openUnique&&players.length===1){await showPlayer(players[0]);return;}
+                    for(const player of players){const button=document.createElement('button');button.type='button';button.className='hcp-player-choice';const name=document.createElement('strong');name.textContent=player.full_name;const detail=document.createElement('span');detail.textContent='Matrícula '+(matriculaDeJugador(player)||'—')+' · Index '+fmt(indexDeJugador(player),1)+' · Club: '+(limpiar(player.club_name)||'Sin club informado');button.append(name,detail);button.onclick=()=>showPlayer(player);choices.append(button);}
+                }catch{if(request===revision)message.textContent='No pudimos consultar el padrón. Revisá la conexión y volvé a intentar.';}
+                finally{if(request===revision)form.setAttribute('aria-busy','false');}
+            }
+            input.addEventListener('input',()=>{
+                clearTimeout(searchTimer);revision++;choices.replaceChildren();
+                if(normalized(input.value).length<2){message.textContent='';form.setAttribute('aria-busy','false');return;}
+                message.textContent='Buscando en el padrón…';searchTimer=setTimeout(()=>void search(),280);
+            });
+            input.addEventListener('focus',()=>{
+                if(normalized(input.value).length>=2){clearTimeout(searchTimer);void search(false);}
+            });
+            form.addEventListener('submit',event=>{event.preventDefault();clearTimeout(searchTimer);void search(true);});
+        }
+        instalarConsultaHcpJugador();
 
         init();
     </script>

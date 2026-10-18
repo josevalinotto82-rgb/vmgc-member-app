@@ -1,3 +1,4 @@
+import { setupSponsorLinks } from './sponsor-links.mjs';
 import '../src/shared-back.js';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
@@ -31,8 +32,9 @@ if(Capacitor.isNativePlatform()) {
   const external = async value => {
     const url=new URL(value,location.href);
     if(!['https:','http:'].includes(url.protocol))return;
-    try{await Browser.open({url:url.href});}catch{console.warn('No se pudo abrir el enlace externo.');}
+    try{await Browser.open({url:url.href});}catch{location.href=url.href;}
   };
+  setupSponsorLinks(external);
   const originalOpen=window.open.bind(window);
   window.open=(url,target,features)=>{
     const parsed=new URL(url,location.href);

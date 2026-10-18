@@ -188,3 +188,30 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 
 /* La grilla completa también se muestra en teléfonos pequeños acostados. */
 @media(orientation:landscape){.club-mobile body[data-native-page="grilla_interactiva"] .desktop-grid{display:block!important}.club-mobile body[data-native-page="grilla_interactiva"] .mobile-grid{display:none!important}.club-mobile body[data-native-page="grilla_interactiva"]{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}}
+
+.club-mobile .player-hcp-search p{font-size:13px;color:#74806e;line-height:1.5}
+.club-mobile .hcp-search-form{display:flex;gap:8px;align-items:center}
+.club-mobile .hcp-search-form input{min-width:0;flex:1;margin:0;background:#fffdf8}
+.club-mobile .hcp-search-form button{border:0;border-radius:12px;padding:14px;background:#143e32;color:#fffdf8;font-weight:700}
+.club-mobile .hcp-search-form button:disabled{opacity:.5}
+.club-mobile .hcp-player-choices{display:grid;gap:8px}
+.club-mobile .hcp-player-choice{display:flex;flex-direction:column;gap:5px;text-align:left;padding:14px;background:#eaf0e3;color:#143e32;border:1px solid #d7dfcf;border-radius:13px;font:inherit}
+.club-mobile .hcp-player-choice span{font-size:12px;color:#6c7869}
+.club-mobile .hcp-player-dialog{box-sizing:border-box;width:calc(100% - 28px);max-width:540px;max-height:90dvh;overflow:auto;border:0;border-radius:25px;background:#f4f1e9;padding:24px;color:#143e32}
+.club-mobile .hcp-player-dialog::backdrop{background:#0d302bb3}
+.club-mobile .hcp-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;letter-spacing:1px;color:#967e3b}
+.club-mobile .hcp-dialog-head button{border:0;border-radius:50%;width:40px;height:40px;background:#e3e6d9;color:#143e32;font-size:25px}
+.club-mobile #hcpPlayerTitle{font-size:25px;line-height:1.2;margin:15px 0 10px}
+.club-mobile #hcpPlayerIdentity{font-size:13px;color:#667762;margin-bottom:22px}
+.club-mobile #hcpPlayerTees .hcp-card{border-left-width:1px}
+.club-mobile #hcpPlayerTees .hcp-recommended{border:2px solid #b9913b;background:#fffbed}
+.club-mobile .recommended-tee{display:inline-block;margin-top:8px;font-size:11px;font-weight:750;color:#927329}
+.club-mobile .hcp-recommendation-note{font-size:11px;color:#74806e;line-height:1.5;margin:18px 0 0}
+.club-mobile #myTournamentRegistration{order:3;margin-top:16px;padding:10px 12px;background:#eaf0e3;color:#385b3c;border-radius:11px;font-size:13px;line-height:1.5;align-self:stretch}
+.club-mobile #myTournamentRegistration[data-registered="true"]{background:#143e32;color:#fffdf8}
+.club-mobile #myTournamentRegistration[data-registered="error"]{background:#f5e8d4;color:#8b612e}
+
+.club-mobile .hcp-player-choices{gap:0;border-radius:14px;overflow:hidden}
+.club-mobile .hcp-player-choice{border-radius:0;background:#fffdf8;border:0;border-bottom:1px solid #e0e3d7;padding:12px 14px}
+.club-mobile .hcp-player-choice:last-child{border-bottom:0}
+.club-mobile .hcp-player-choice:active{background:#eaf0e3}

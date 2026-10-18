@@ -20,9 +20,9 @@
         "sound",
         "badge",
         "banner",
-        "list"
+        "list",
+        "alert"
       ]
     }
   }
 }
-

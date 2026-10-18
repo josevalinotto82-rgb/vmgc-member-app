@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { appendNoticeBody, noticeDestination, connectInbox } from './push-inbox.mjs';
 
@@ -112,6 +113,9 @@ export async function setupPush() {
   try {
     const {data:{session}}=await window.db.auth.getSession();
     if(!session)return;
+    if(Capacitor.getPlatform()==='android'){
+      await PushNotifications.createChannel({id:'vmgc_club_alerts',name:'Avisos del club',description:'Torneos, resultados y novedades de Villa María Golf',importance:4,visibility:1,vibration:true});
+    }
     const permission=await PushNotifications.checkPermissions();
     if(permission.receive==='granted'){
       await activate();

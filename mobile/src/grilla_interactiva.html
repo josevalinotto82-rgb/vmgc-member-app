@@ -2339,17 +2339,26 @@
         }
 
         async function fetchPlayerAlreadyRegistered(tournamentId) {
-            if (!APP.miPlayerId) return false;
-            const { count, error } = await db
-                .from("registrations")
-                .select("id", { count: "exact", head: true })
-                .eq("tournament_id", tournamentId)
-                .eq("linked_player_id", APP.miPlayerId);
-            if (error) {
-                console.error(error);
-                return false;
+            const header=document.querySelector('.header-torneo');
+            let badge=document.getElementById('myTournamentRegistration');
+            if(!badge&&header){badge=document.createElement('div');badge.id='myTournamentRegistration';badge.className='my-tournament-registration';badge.setAttribute('role','status');header.append(badge);}
+            if(!APP.miPlayerId||APP.esAdmin){if(badge)badge.hidden=true;return false;}
+            if(badge){badge.hidden=false;badge.textContent='Consultando tu inscripción…';badge.dataset.registered='loading';}
+            const { data, error } = await db.from('registrations').select('id,starting_line_id,line_slot_id').eq('tournament_id',tournamentId).eq('linked_player_id',APP.miPlayerId);
+            if(error){console.error(error);if(badge){badge.textContent='No pudimos verificar tu inscripción.';badge.dataset.registered='error';}return false;}
+            const registrations=data||[];
+            if(badge){
+                badge.dataset.registered=String(registrations.length>0);
+                badge.textContent=registrations.length?registrations.map(reg=>{
+                    const slot=state.slots.find(s=>s.id===reg.line_slot_id);
+                    const line=state.lines.find(l=>l.id===(reg.starting_line_id||slot?.starting_line_id));
+                    const block=state.blocks.find(b=>b.id===line?.starting_block_id);
+                    const time=line?.line_time||block?.start_time;
+                    const hole=line?.starting_hole;
+                    return '✓ Ya estás inscripto'+(time?' · '+timeText(time):'')+(hole?' · Hoyo '+(isSimultaneousTournament()?formatSimultaneousHoleLabel(line):hole):'');
+                }).join(' / '):'Todavía no estás inscripto';
             }
-            return (count || 0) > 0;
+            return registrations.length>0;
         }
 
         function rebuildIndexes() {
