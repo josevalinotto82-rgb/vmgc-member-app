@@ -123,3 +123,32 @@ workflows:
         auth: integration
         submit_to_testflight: false
         submit_to_app_store: false
+
+  ios-ipad-screenshots:
+    name: Villa Maria Golf - Capturas iPad
+    instance_type: mac_mini_m2
+    max_build_duration: 40
+    environment:
+      xcode: "26.4"
+      node: 22
+      vars:
+        VMGC_SCREENSHOT_BUILD: "1"
+    scripts:
+      - name: Preparar app para capturas con datos de ejemplo
+        script: |
+          set -e
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run build
+          npm run check
+          node scripts/prepare-store-screenshots.mjs
+          npx cap sync ios
+      - name: Generar capturas en simulador de iPad
+        script: |
+          set -e
+          bash mobile/scripts/capture-ipad.sh
+    artifacts:
+      - mobile/build/ipad-screenshots/Capturas-iPad-App-Store.zip
+      - mobile/build/ipad-screenshots/*.jpg
+      - mobile/build/ipad-screenshots/*.log
+      - mobile/build/ipad-screenshots/*.json
