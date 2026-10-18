@@ -5,6 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./snapshot-client.js"></script>
 <script src="supabase.js?v=4"></script>
+<script src="player-search.js?v=1"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8" />
@@ -2583,116 +2584,7 @@
         }
 
         async function searchPlayers(term) {
-            const texto = String(term || "").trim();
-            if (!texto || texto.length < 2) return [];
-
-            const buscadoNormalizado = normalizarBusqueda(texto);
-            const palabras = buscadoNormalizado.split(" ").filter(Boolean);
-            const patronCompleto = `%${texto.replace(/[%_,]/g, " ").replace(/\s+/g, "%")}%`;
-            const primeraPalabra = palabras[0] || buscadoNormalizado;
-            const patronPalabra = `%${primeraPalabra}%`;
-            const matricula = texto.replace(/\s+/g, "");
-            const esMatricula = /^\d+$/.test(matricula);
-
-            const conTimeout = (promesa, milisegundos, valorFallback) =>
-                Promise.race([
-                    Promise.resolve(promesa),
-                    new Promise(resolve => setTimeout(() => resolve(valorFallback), milisegundos))
-                ]);
-
-            const consultaPlayers = db
-                .from("players")
-                .select("id, first_name, last_name, full_name, aag_member_number, current_index, gender, club_name, country, is_club_member, search_text")
-                .or([
-                    `search_text.ilike.${patronCompleto}`,
-                    `full_name.ilike.${patronCompleto}`,
-                    `first_name.ilike.${patronPalabra}`,
-                    `last_name.ilike.${patronPalabra}`,
-                    ...(esMatricula ? [`aag_member_number.eq.${matricula}`] : [])
-                ].join(","))
-                .limit(40);
-
-            let consultaAag = db
-                .from("aag_enrolleds")
-                .select("enrollment_number, first_name, last_name, full_name, gender, current_index, option_club_id, club_name, search_text");
-
-            consultaAag = esMatricula
-                ? consultaAag.eq("enrollment_number", matricula)
-                : consultaAag.ilike("search_text", patronCompleto);
-
-            consultaAag = consultaAag.limit(40);
-
-            const fallbackRespuesta = { data: [], error: null, timedOut: true };
-            const [playersRespuesta, aagRespuesta] = await Promise.all([
-                conTimeout(consultaPlayers, 3500, fallbackRespuesta),
-                conTimeout(consultaAag, 3500, fallbackRespuesta)
-            ]);
-
-            let playersData = [];
-            let aagData = [];
-
-            if (playersRespuesta?.error) {
-                console.error("Error buscando en players:", playersRespuesta.error);
-            } else {
-                playersData = playersRespuesta?.data || [];
-            }
-
-            if (aagRespuesta?.error) {
-                console.error("Error buscando en aag_enrolleds:", aagRespuesta.error);
-            } else {
-                aagData = aagRespuesta?.data || [];
-            }
-
-            const players = playersData.map(p => ({
-                ...p,
-                origen_busqueda: "players"
-            }));
-
-            const yaEstanEnPlayers = new Set(
-                players
-                    .map(p => String(p.aag_member_number || ""))
-                    .filter(Boolean)
-            );
-
-            const externos = aagData
-                .filter(p => !yaEstanEnPlayers.has(String(p.enrollment_number || "")))
-                .map(p => ({
-                    id: `aag:${p.enrollment_number}`,
-                    origen_busqueda: "aag_enrolleds",
-                    enrollment_number: p.enrollment_number,
-                    aag_member_number: p.enrollment_number,
-                    first_name: p.first_name,
-                    last_name: p.last_name,
-                    full_name: p.full_name,
-                    gender: p.gender,
-                    current_index: p.current_index,
-                    option_club_id: p.option_club_id,
-                    club_name: p.club_name,
-                    country: "Argentina",
-                    is_club_member: Number(p.option_club_id) === 408
-                }));
-
-            function scoreJugador(p) {
-                const nombre = normalizarBusqueda(
-                    `${p.full_name || ""} ${p.last_name || ""} ${p.first_name || ""} ${p.aag_member_number || p.enrollment_number || ""}`
-                );
-
-                // Excluir resultados que no contienen todas las palabras escritas.
-                if (!palabras.every(parte => nombre.includes(parte))) return -1;
-
-                let score = 0;
-                if (Number(p.option_club_id) === 408 || p.is_club_member === true) score += 10000;
-                if (String(p.aag_member_number || p.enrollment_number || "") === texto.replace(/\s+/g, "")) score += 8000;
-                if (nombre.includes(buscadoNormalizado)) score += 4000;
-                score += palabras.filter(parte => nombre.includes(parte)).length * 500;
-                return score;
-            }
-
-            return [...players, ...externos]
-                .map(p => ({ ...p, _score: scoreJugador(p) }))
-                .filter(p => p._score >= 0)
-                .sort((a, b) => b._score - a._score)
-                .slice(0, 15);
+            return VMGCPlayerSearch.search(db,term,15);
         }
 
         async function asegurarJugadorEnPlayers(jugador) {

@@ -215,3 +215,12 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 .club-mobile .hcp-player-choice{border-radius:0;background:#fffdf8;border:0;border-bottom:1px solid #e0e3d7;padding:12px 14px}
 .club-mobile .hcp-player-choice:last-child{border-bottom:0}
 .club-mobile .hcp-player-choice:active{background:#eaf0e3}
+
+/* Suggestion popup anchored to the HCP search field. */
+.club-mobile .hcp-search-form{position:relative;z-index:26}
+.club-mobile .hcp-player-choices{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:30;max-height:245px;overflow-y:auto;overscroll-behavior:contain;background:#fffdf8;border:1px solid #d1d8ca;box-shadow:0 14px 30px rgba(17,24,39,.16)}
+.club-mobile .hcp-player-choices[hidden]{display:none!important}
+.club-mobile .hcp-player-choice{width:100%;flex-shrink:0}
+.club-mobile .hcp-search-form .hcp-player-choice{border:0;border-bottom:1px solid #e0e3d7;border-radius:0;padding:12px 14px;background:#fffdf8;color:#143e32;font-weight:400}
+.club-mobile .hcp-search-form .hcp-player-choice:last-child{border-bottom:0}
+.club-mobile .hcp-search-form .hcp-player-choice:active{background:#eaf0e3}
