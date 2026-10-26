@@ -6,6 +6,8 @@
     <script src="./snapshot-client.js"></script>
 <script src="supabase.js?v=4"></script>
 <script src="player-search.js?v=1"></script>
+<script src="grid-design.js?v=1"></script>
+<link rel="stylesheet" href="grid-design.css?v=1">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8" />
@@ -1138,7 +1140,7 @@
 
     <div id="adminActions" class="admin-actions" style="display:none;">
         <button id="btnExportarWhatsapp" class="slot-self-btn" type="button">
-            Exportar imagen WhatsApp
+            Compartir grilla
         </button>
     </div>
 
@@ -1810,8 +1812,8 @@
     
           // A igual horario, conservar el orden original de los bloques.
           return blocks.sort((a, b) => {
-            const timeA = timeTextToMinutes(a.start_time) ?? Infinity;
-            const timeB = timeTextToMinutes(b.start_time) ?? Infinity;
+            const timeA = timeTextToMinutes(a.start_time) ?? Math.min(...state.lines.filter(l=>String(l.starting_block_id)===String(a.id)).map(l=>timeTextToMinutes(l.line_time)??Infinity));
+            const timeB = timeTextToMinutes(b.start_time) ?? Math.min(...state.lines.filter(l=>String(l.starting_block_id)===String(b.id)).map(l=>timeTextToMinutes(l.line_time)??Infinity));
             if (timeA === timeB) return 0;
             return timeA < timeB ? -1 : 1;
           });
@@ -1946,28 +1948,8 @@
         }
 
         function getSlotCssType(slot) {
-            const type = String(slot?.participant_type || "").toLowerCase();
-
-            if (type === "blocked") return "slot-blocked";
-
-            // Jugador cargado manualmente: no tiene matrícula AAG
-            if (!slot?.aag_member_number) {
-                return "slot-manual";
-            }
-
-            const club = normalizarBusqueda(slot?.club_name || "");
-
-            // Socio Villa María Golf Club
-            if (
-                club.includes("VILLA MARIA GOLF") ||
-                club.includes("VILLA MARIA GOLF CLUB") ||
-                club === "408"
-            ) {
-                return "slot-vmg";
-            }
-
-            // Tiene matrícula pero es de otro club
-            return "slot-otro-club";
+            if (String(slot?.participant_type||'').toLowerCase()==='blocked') return 'slot-blocked';
+            return {member:'slot-vmg',visitor:'slot-otro-club',manual:'slot-manual'}[VMGCGridDesign.kind(slot)];
         }
 
         function lockActive(slot) {
@@ -2485,9 +2467,7 @@
                 state.slots = await fetchSlots(state.lines.map((l) => l.id));
                 state.playerAlreadyRegistered = await fetchPlayerAlreadyRegistered(state.torneo.id);
 
-                state.showAdminSequentialTimes =
-                    APP.esAdmin &&
-                    String(state.torneo?.start_type || "").toLowerCase() === "secuencial";
+                state.showAdminSequentialTimes = false;
 
                 const status = getTournamentStatus();
 
@@ -3123,7 +3103,7 @@
 
             const texto = participantType === "blocked"
                 ? ""
-                : formatNombreCorto(textoCompleto);
+                : VMGCGridDesign.short(textoCompleto);
 
             const typeClass = getSlotCssType(slot);
             const dragClass = APP.esAdmin ? "slot-draggable" : "";
@@ -3135,7 +3115,7 @@
           data-hora="${safeText(timeText(line.line_time))}"
           data-hoyo="${safeText(line.label || line.starting_hole)}"
           data-slot-number="${slot.slot_number}"
-          data-texto="${safeText(texto)}"
+          data-texto="${safeText(textoCompleto)}"
           data-libre="0"
           draggable="${APP.esAdmin ? "true" : "false"}"
         >
@@ -3156,7 +3136,7 @@
             const torneoAbierto = isTournamentOpen();
 
             const firstColumnText = isSimultaneousTournament()
-                ? formatSimultaneousHoleLabel(line)
+                ? `H${formatSimultaneousHoleLabel(line)}`
                 : timeText(line.line_time);
 
             let row = `<tr><td class="col-hora ${hourClass}">${safeText(firstColumnText)}</td>`;
@@ -3256,7 +3236,7 @@
                             if (currentMinutes !== null && nextMinutes !== null) {
                                 const diff = nextMinutes - currentMinutes;
 
-                                if (diff > 30) {
+                                if (diff > 10) {
                                     html += `
             <tr>
               <td colspan="${state.showAdminSequentialTimes ? 7 : 5}" class="gap-row"></td>
@@ -3273,176 +3253,13 @@
             return html;
         }
 
-        function renderShareGrid() {
-            const isSim = String(state.torneo?.start_type || "").toLowerCase() === "simultanea";
-
-            let html = `
-      <div class="share-sheet">
-        <div class="share-header">
-          <div class="share-title">${safeText(state.torneo?.name || "Torneo")}</div>
-          <div class="share-sub">
-            ${formatFechaLargaCapitalizada(state.torneo?.tournament_date)}
-          </div>
-        </div>
-
-        <table>
-          <colgroup>
-            <col class="share-col-ref" />
-            <col class="share-slot" />
-            <col class="share-slot" />
-            <col class="share-slot" />
-            <col class="share-slot" />
-            ${state.showAdminSequentialTimes ? `
-              <col class="share-col-time-extra" />
-              <col class="share-col-time-extra" />
-            ` : ""}
-          </colgroup>
-          <tbody>
-    `;
-
-            const lines = getLinesForExport();
-
-            let lastHole = null;
-            let lastBlockId = null;
-
-            for (let index = 0; index < lines.length; index += 1) {
-                const line = lines[index];
-                const block = state.blocks.find(b => String(b.id) === String(line.starting_block_id));
-
-                if (isSim && String(line.starting_block_id) !== String(lastBlockId)) {
-                    html += `
-      <tr>
-        <td colspan="${state.showAdminSequentialTimes ? 7 : 5}" class="share-title-row">
-          Salida ${safeText(timeText(block?.start_time || line.line_time))}
-        </td>
-      </tr>
-    `;
-                    lastBlockId = line.starting_block_id;
-                }
-
-                const nextLine = lines[index + 1] || null;
-                const hole = Number(line.starting_hole || 0);
-
-                if (!isSim && hole !== lastHole) {
-                    html += `
-      <tr>
-        <td colspan="${state.showAdminSequentialTimes ? 7 : 5}" class="share-title-row">
-          Salida por Hoyo ${hole}
-        </td>
-      </tr>
-    `;
-                    lastHole = hole;
-                }
-
-                const ref = isSim
-                    ? formatSimultaneousHoleLabel(line)
-                    : timeText(line.line_time);
-
-                html += `<tr>`;
-                html += `<td class="share-col-ref">${safeText(ref)}</td>`;
-
-                const lineSlots = getLineSlots(line.id);
-                const byNumber = new Map(lineSlots.map((s) => [s.slot_number, s]));
-
-                for (let i = 1; i <= CONFIG.SLOT_COUNT; i += 1) {
-                    const slot = byNumber.get(i);
-
-                    const participantType = String(slot?.participant_type || "").toLowerCase();
-                    const isBlocked = participantType === "blocked";
-
-                    const isReserved =
-                        slot &&
-                        esReservaActiva(slot);
-
-                    const nameCompleto = slot && !isSlotEmpty(slot) && !isBlocked && !isReserved
-                        ? normalizeSlotName(slot)
-                        : "";
-
-                    const name = nameCompleto
-                        ? formatNombreCorto(nameCompleto)
-                        : "";
-
-                    const cellClass = isBlocked
-                        ? "share-blocked"
-                        : isReserved
-                            ? "share-reserved"
-                            : name
-                                ? ""
-                                : "share-empty";
-
-                    const cellText = isBlocked
-                        ? ""
-                        : isReserved
-                            ? "Reservado"
-                            : safeText(name);
-
-                    html += `
-  <td
-    class="share-name ${cellClass}"
-    data-player-type="${safeText(participantType)}" data-player-color="${slot ? getSlotCssType(slot) : ''}"
-    title="${isReserved ? "Reservado" : safeText(nameCompleto)}"
-  >
-    ${cellText}
-  </td>
-`;
-                }
-
-                if (state.showAdminSequentialTimes) {
-                    html += `
-      <td class="share-time-extra">${safeText(getPaso9Hoyos(line.line_time))}</td>
-      <td class="share-time-extra">${safeText(getFinJuego(line.line_time))}</td>
-    `;
-                }
-
-                html += `</tr>`;
-
-                if (!isSim && nextLine) {
-                    const sameHole =
-                        Number(nextLine.starting_hole || 0) === Number(line.starting_hole || 0);
-
-                    if (sameHole) {
-                        const currentMinutes = timeTextToMinutes(line.line_time);
-                        const nextMinutes = timeTextToMinutes(nextLine.line_time);
-
-                        if (currentMinutes !== null && nextMinutes !== null) {
-                            const diff = nextMinutes - currentMinutes;
-
-                            if (diff > 30) {
-                                html += `
-            <tr>
-              <td colspan="${state.showAdminSequentialTimes ? 7 : 5}" class="share-block-separator"></td>
-            </tr>
-          `;
-                            }
-                        }
-                    }
-                }
-            }
-
-            html += `
-        </tbody>
-      </table>
-    </div>
-  `;
-
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = html;
-            const header = wrapper.querySelector('.share-header');
-            const heading = document.createElement('div');
-            heading.innerHTML = '<p class="preview-club">VILLA MARÍA GOLF CLUB</p>';
-            while (header.firstChild) heading.append(header.firstChild);
-            const crest = document.createElement('img');
-            crest.className = 'preview-crest'; crest.src = 'escudo.png'; crest.alt = 'Villa María Golf Club';
-            header.append(crest, heading);
-            const sub = header.querySelector('.share-sub');
-            sub.textContent = sub.textContent.trim() + (state.torneo?.game_modes?.name ? ' · ' + state.torneo.game_modes.name : '') + ' · ' + (isSimultaneousTournament() ? 'SALIDA SIMULTÁNEA' : 'SALIDA SECUENCIAL');
-            wrapper.querySelectorAll('.share-blocked').forEach(cell => { cell.textContent = 'BLOQUEADO'; });
-            const legend = document.createElement('div'); legend.className = 'preview-legend';
-            legend.innerHTML = '<span>Socio VMGC</span><span>Otro club</span><span>Jugador manual</span><span>Reservado</span><strong>Planilla actualizada</strong>';
-            wrapper.querySelector('.share-sheet').append(legend);
-
-            return wrapper.innerHTML;
+        function gridDesignData(){
+            return {tournament:state.torneo,blocks:state.blocks,lines:state.lines,slots:state.slots,
+              date:String(state.torneo?.tournament_date||'').split('-').reverse().join('/'),
+              name:slot=>slot && !isSlotEmpty(slot)?normalizeSlotName(slot):'',
+              reserved:slot=>!!slot && (esReservaActiva(slot) || (isSlotEmpty(slot) && lockIsOther(slot)))};
         }
+        function renderShareGrid(){return VMGCGridDesign.render(gridDesignData(),{abbreviate:true});}
 
         function renderMobileBlock(block) {
             const lines = sortLinesForDisplay(
@@ -3772,6 +3589,7 @@
             if (container) container.innerHTML = renderMobileNavigator();
         }
 
+        window.addEventListener('resize',()=>requestAnimationFrame(()=>VMGCGridDesign.fit(dom.contenido)));
         function renderView() {
             dom.torneoNombre.textContent = state.torneo?.name || "Sin nombre";
             setStatus(
@@ -3787,6 +3605,7 @@
 
             dom.contenido.innerHTML = `
     <div class="desktop-grid">
+      <div class="landscape-grid-tools"><button type="button" class="grid-preview-launch" data-grid-preview><span><strong>Ver grilla completa</strong><small>Consultá horarios y buscá jugadores</small></span><span aria-hidden="true">↗</span></button></div>
       ${getBlocksForDisplay().map(renderBlock).join("")}
     </div>
 
@@ -3794,6 +3613,7 @@
       ${renderMobileNavigator()}
     </div>
   `;
+            requestAnimationFrame(()=>VMGCGridDesign.fit(dom.contenido));
         }
 
         // ==============================
@@ -4603,7 +4423,6 @@ Gracias.
         // ==============================
         let gridPreview = null;
         function openGridPreview() {
-            if (APP.esAdmin) return;
             if (gridPreview?.open) return;
             if (!gridPreview) {
                 gridPreview = document.createElement('dialog');
@@ -4712,9 +4531,10 @@ Gracias.
             }
             const previewSheet = gridPreview.querySelector('[data-preview-sheet]');
             previewSheet.innerHTML = renderShareGrid();
+            VMGCGridDesign.fit(previewSheet);
             gridPreview.resetSearch();
             gridPreview.showModal();
-            requestAnimationFrame(() => gridPreview.fit());
+            requestAnimationFrame(() => {VMGCGridDesign.fit(previewSheet);gridPreview.fit();});
         }
 
         function installGlobalEvents() {
@@ -5418,113 +5238,7 @@ Gracias.
                         boton.disabled = true;
                         boton.textContent = "Generando imagen...";
 
-                        dom.shareExportWrap.innerHTML = renderShareGrid();
-
-                        const node = dom.shareExportWrap.firstElementChild;
-
-                        if (!node) {
-                            throw new Error("No se pudo generar la grilla.");
-                        }
-
-                        await new Promise(resolve =>
-                            requestAnimationFrame(() =>
-                                requestAnimationFrame(resolve)
-                            )
-                        );
-
-                        await Promise.all([...node.querySelectorAll('img')].map(image => image.decode()));
-                        const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-                        const canvas = await html2canvas(node, {
-                            backgroundColor: "#ffffff",
-                            scale: esIOS ? 1.5 : 2,
-                            useCORS: true,
-                            logging: false,
-                            windowWidth: node.scrollWidth,
-                            windowHeight: node.scrollHeight
-                        });
-
-                        const blob = await new Promise((resolve, reject) => {
-                            canvas.toBlob((resultado) => {
-                                if (resultado) {
-                                    resolve(resultado);
-                                } else {
-                                    reject(new Error("No se pudo generar la imagen PNG."));
-                                }
-                            }, "image/png");
-                        });
-
-                        const nombreTorneo = String(state.torneo?.name || "grilla")
-                            .normalize("NFD")
-                            .replace(/[\u0300-\u036f]/g, "")
-                            .replace(/[^a-zA-Z0-9]+/g, "-")
-                            .replace(/^-+|-+$/g, "")
-                            .toLowerCase();
-
-                        const nombreArchivo = `${nombreTorneo.trim() || "grilla"}.png`;
-                        const archivo = new File(
-                            [blob],
-                            nombreArchivo,
-                            { type: "image/png" }
-                        );
-
-                        const esDispositivoMovil =
-                            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                            window.matchMedia("(pointer: coarse)").matches;
-
-                        let compartido = false;
-
-                        // En celulares y tablets intentamos abrir el menú Compartir.
-                        // En PC saltamos este bloque y descargamos directamente el PNG.
-                        if (
-                            esDispositivoMovil &&
-                            navigator.share &&
-                            navigator.canShare &&
-                            navigator.canShare({ files: [archivo] })
-                        ) {
-                            try {
-                                await navigator.share({
-                                    files: [archivo],
-                                    title: "Planilla Actualizada ⛳",
-                                    text: "Planilla Actualizada ⛳"
-                                });
-
-                                compartido = true;
-
-                            } catch (shareError) {
-                                // Si el usuario cerró voluntariamente el menú Compartir,
-                                // no hacemos nada más.
-                                if (shareError?.name === "AbortError") {
-                                    return;
-                                }
-
-                                // Si Compartir falló por otro motivo,
-                                // continuamos y descargamos la imagen.
-                                console.warn(
-                                    "No se pudo abrir Compartir. Se descargará la imagen:",
-                                    shareError
-                                );
-                            }
-                        }
-
-                        if (compartido) return;
-
-                        // En PC siempre llega acá.
-                        // También llega un móvil cuando no soporta Compartir o cuando Compartir falla.
-                        const blobUrl = URL.createObjectURL(blob);
-
-                        const link = document.createElement("a");
-                        link.href = blobUrl;
-                        link.download = nombreArchivo;
-                        link.style.display = "none";
-
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-
-                        setTimeout(() => {
-                            URL.revokeObjectURL(blobUrl);
-                        }, 30000);
+                        await VMGCGridDesign.share(gridDesignData(),dom.shareExportWrap);
                     } catch (error) {
                         console.error("Error exportando grilla:", error);
 
@@ -5586,7 +5300,7 @@ Gracias.
         installAdminDragAndDrop();
         loadGrid();
 
-        document.getElementById("btnHome").addEventListener("click", () => {
+        document.getElementById("btnHome")?.addEventListener("click", () => {
             window.location.href = "panel.html";
         });
 

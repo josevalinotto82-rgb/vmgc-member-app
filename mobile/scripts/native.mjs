@@ -1,3 +1,4 @@
+import { setupGridSharing } from './grid-sharing.mjs';
 import { setupSponsorLinks } from './sponsor-links.mjs';
 import '../src/shared-back.js';
 import { Capacitor, registerPlugin } from '@capacitor/core';
@@ -12,6 +13,7 @@ import { setupMobileDesign } from './mobile-design.mjs';
 import { setupUpdates } from './updates.mjs';
 if(Capacitor.isNativePlatform()) {
   setupMobileDesign();
+  setupGridSharing();
   setupUpdates(Capacitor,App,Browser);
   window.nativeAuthReady=setupAuthLinks(App).catch(()=>console.warn('No se pudo preparar el regreso desde el correo.'));
   if(Capacitor.getPlatform()==='android') {

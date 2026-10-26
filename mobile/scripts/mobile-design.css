@@ -224,3 +224,19 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 .club-mobile .hcp-search-form .hcp-player-choice{border:0;border-bottom:1px solid #e0e3d7;border-radius:0;padding:12px 14px;background:#fffdf8;color:#143e32;font-weight:400}
 .club-mobile .hcp-search-form .hcp-player-choice:last-child{border-bottom:0}
 .club-mobile .hcp-search-form .hcp-player-choice:active{background:#eaf0e3}
+/* Landscape home: keep every destination and logout above the sponsor strip. */
+@media(orientation:landscape) and (max-height:500px){
+.club-mobile body[data-native-page="panel"]>.app{display:grid;grid-template-columns:minmax(0,32%) minmax(0,1fr);grid-template-rows:40px minmax(0,1fr) 34px;gap:8px 12px;padding:0 16px 8px;max-width:1100px}
+.club-mobile body[data-native-page="panel"] .header{grid-column:1/-1;grid-row:1;min-height:0;padding:0}
+.club-mobile body[data-native-page="panel"] .welcome{grid-column:1;grid-row:2;height:100%;min-height:0;margin:0;padding:13px;border-radius:17px}
+.club-mobile body[data-native-page="panel"] .welcome h2{font-size:24px;letter-spacing:-.6px;margin-bottom:6px}
+.club-mobile body[data-native-page="panel"] .member-name{font-size:15px}
+.club-mobile body[data-native-page="panel"] .mobile-hero-caption{font-size:8px;left:13px;bottom:10px;letter-spacing:.8px}
+.club-mobile body[data-native-page="panel"] .grid{grid-column:2;grid-row:2;min-height:0;grid-template-rows:1fr 1fr;gap:7px}
+.club-mobile body[data-native-page="panel"] .app-card{min-height:0;padding:8px 10px;border-radius:15px;justify-content:center}
+.club-mobile body[data-native-page="panel"] .app-card-title{font-size:14px;line-height:1.1;margin-bottom:4px;padding-right:10px}
+.club-mobile body[data-native-page="panel"] .app-card-desc{font-size:10px;line-height:1.2}
+.club-mobile body[data-native-page="panel"] .mobile-card-icon{display:none}
+.club-mobile body[data-native-page="panel"] .mobile-card-arrow{top:8px;right:8px;font-size:15px}
+.club-mobile body[data-native-page="panel"] .logout{grid-column:1/-1;grid-row:3;min-height:0;height:34px;margin:0;padding:7px;font-size:12px}
+}
