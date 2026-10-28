@@ -1,0 +1,1 @@
+Subir el contenido de esta carpeta a la raiz del sitio web, conservando el resto de archivos. El anuncio aparece en navegadores Android y enlaza a Google Play. La app instalada queda excluida. Conserva el anuncio existente de iPhone. No requiere recompilar las apps. El enlace depende de que Google publique la app para el pais del usuario.
