@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="club-mobile club-web">
 
 <head>
-    <link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="startup.css?v=20261028">
+<script src="store-install-policy.js?v=20261028"></script>
+    
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
     <title>Mi Perfil - Villa Maria Golf</title>
@@ -11,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./snapshot-client.js"></script>
 <script src="supabase.js?v=4"></script>
+<script src="player-search.js?v=1"></script>
 
     <style>
         * {
@@ -631,10 +634,14 @@
     </style>
 <link rel="stylesheet" href="shared-back.css?v=1">
 <script defer src="shared-back.js?v=1"></script>
-<script defer src="iphone-app-store.js?v=1"></script>
-<script defer src="android-google-play.js?v=1"></script></head>
+<link rel="stylesheet" href="mobile-design.css?v=20261028">
+<link rel="stylesheet" href="web-design.css?v=20261028">
+<script defer src="web-design-runtime.js?v=20261028"></script>
+<script defer src="iphone-app-store.js"></script>
+<script defer src="android-google-play.js"></script>
+</head>
 
-<body>
+<body data-native-page="mi_perfil">
 
     <div style="padding: 10px 10px 0;">
         <button class="floating-back-btn" onclick="window.location.href='panel.html'">
@@ -695,6 +702,21 @@
 
             <div id="contactStatus" class="status"></div>
         </section>
+
+        <section class="card player-hcp-search">
+            <h2>Consultar HCP de un jugador</h2>
+            <p>Escribí nombre, apellido o matrícula y elegí una de las sugerencias.</p>
+            <form id="hcpPlayerSearchForm" class="hcp-search-form">
+                <input id="hcpPlayerQuery" type="search" placeholder="Nombre o matrícula" aria-label="Nombre o matrícula del jugador" autocomplete="off" minlength="2" maxlength="80" required>
+                <div id="hcpPlayerChoices" class="hcp-player-choices" hidden></div>
+            </form>
+            <p id="hcpPlayerSearchStatus" role="status" aria-live="polite"></p>
+        </section>
+        <dialog id="hcpPlayerDialog" class="hcp-player-dialog" aria-labelledby="hcpPlayerTitle">
+            <div class="hcp-dialog-head"><span>HCP EN VILLA MARÍA GOLF</span><button type="button" id="hcpPlayerClose" aria-label="Cerrar consulta">×</button></div>
+            <h2 id="hcpPlayerTitle"></h2><div id="hcpPlayerIdentity"></div><div id="hcpPlayerTees" class="hcp-grid"></div>
+            <p class="hcp-recommendation-note">Tee recomendado según el índex y las reglas del club. Las condiciones de cada torneo pueden definir otra salida.</p>
+        </dialog>
 
         <section class="card">
             <h2>HCP de juego en Villa María Golf Club</h2>
@@ -996,7 +1018,7 @@
                 const input = document.getElementById(`playerSearch${slot}`);
                 input.addEventListener("input", () => {
                     clearTimeout(searchTimers[slot]);
-                    searchTimers[slot] = setTimeout(() => buscarJugadoresPareja(slot, input.value), 280);
+                    searchTimers[slot] = setTimeout(() => buscarJugadoresPareja(slot, input.value), 180);
                 });
                 input.addEventListener("focus", () => {
                     if (input.value.trim().length >= 2) buscarJugadoresPareja(slot, input.value);
@@ -1029,83 +1051,10 @@
             results.classList.add("show");
 
             try {
-                const normalizarBusqueda = value => {
-                    return limpiar(value)
-                        .toLowerCase()
-                        .normalize("NFD")
-                        .replace(/[\u0300-\u036f]/g, "")
-                        .replace(/[,.()-]/g, " ")
-                        .replace(/\s+/g, " ")
-                        .trim();
-                };
-
-                const terminoNormalizado = normalizarBusqueda(term);
-
-                const palabrasBuscadas = terminoNormalizado
-                    .split(" ")
-                    .filter(Boolean);
-
-                const esMatricula = /^\d+$/.test(terminoNormalizado);
-
-                /*
-                 * Consultamos candidatos por cada palabra.
-                 * Esto permite encontrar:
-                 * "Juan Pérez"
-                 * "Pérez Juan"
-                 * "Juan"
-                 * "Pérez"
-                 * o la matrícula.
-                 */
-                const filtros = palabrasBuscadas
-                    .map(palabra => `full_name.ilike.%${palabra}%`);
-
-                if (esMatricula) {
-                    filtros.push(`aag_member_number.eq.${terminoNormalizado}`);
-                }
-
-                const { data, error } = await db
-                    .from("players")
-                    .select(`
-                id,
-                full_name,
-                aag_member_number,
-                current_index,
-                gender
-            `)
-                    .or(filtros.join(","))
-                    .order("full_name", { ascending: true })
-                    .limit(50);
-
-                if (error) throw error;
-
-                const jugadorOtroSlot =
-                    jugadoresPareja[slot === 1 ? 2 : 1]?.id;
-
-                const lista = (data || [])
-                    .filter(j => j.id !== jugadorOtroSlot)
-                    .filter(j => {
-                        const nombreNormalizado =
-                            normalizarBusqueda(nombreCompletoDesdeJugador(j));
-
-                        const matriculaNormalizada =
-                            normalizarBusqueda(matriculaDeJugador(j));
-
-                        if (
-                            esMatricula &&
-                            matriculaNormalizada.includes(terminoNormalizado)
-                        ) {
-                            return true;
-                        }
-
-                        /*
-                         * Todas las palabras escritas deben aparecer en el nombre,
-                         * sin importar el orden.
-                         */
-                        return palabrasBuscadas.every(palabra =>
-                            nombreNormalizado.includes(palabra)
-                        );
-                    })
-                    .slice(0, 10);
+                const jugadores = await VMGCPlayerSearch.search(db,term,7);
+                if (VMGCPlayerSearch.normalize(document.getElementById('playerSearch'+slot).value)!==VMGCPlayerSearch.normalize(term)) return;
+                const otro = jugadoresPareja[slot === 1 ? 2 : 1];
+                const lista = jugadores.filter(j => !otro || j.id !== otro.id).slice(0,6);
 
                 if (!lista.length) {
                     results.innerHTML = `
@@ -1133,7 +1082,7 @@
                     Matrícula ${escaparHtml(
                     matriculaDeJugador(j) || "-"
                 )}
-                    · Index ${fmt(indexDeJugador(j), 1)}
+                    · Index ${fmt(indexDeJugador(j), 1)} · ${escaparHtml(j.club_name || "Sin club informado")}
                 </span>
             </button>
         `).join("");
@@ -1150,6 +1099,9 @@
                     });
 
             } catch (e) {
+                if (VMGCPlayerSearch.normalize(document.getElementById("playerSearch"+slot).value)!==VMGCPlayerSearch.normalize(term)) return;
+                if (VMGCPlayerSearch.normalize(document.getElementById("playerSearch"+slot).value)!==VMGCPlayerSearch.normalize(term)) return;
+                if (VMGCPlayerSearch.normalize(document.getElementById("playerSearch"+slot).value)!==VMGCPlayerSearch.normalize(term)) return;
                 results.innerHTML = `
             <div class="search-result">
                 <span>
@@ -1647,7 +1599,7 @@
                     <div class="hcp-card ${clasePiedra(piedra)}">
                         <div>
                             <div class="hcp-title">Salidas ${piedra}</div>
-                            <div class="hcp-detail">Index ${fmt(index, 1)} · Slope ${r.slope ?? "-"} · Rating ${fmt(r.course_rating, 1)} · Par ${r.par ?? "-"}</div>
+                            <div class="hcp-detail"><div class="tee-index">Index <strong>${fmt(index, 1)}</strong></div><div class="tee-course"><span>Slope <strong>${r.slope ?? "-"}</strong></span><span>Rating <strong>${fmt(r.course_rating, 1)}</strong></span><span>Par <strong>${r.par ?? "-"}</strong></span></div></div>
                         </div>
                         <div class="hcp-number">${hcp ?? "-"}</div>
                     </div>
@@ -1871,6 +1823,75 @@
                 cargarTeesYHcp();
             }, 50);
         }
+
+
+        async function buscarPadronHcp(term) {
+            return {players:await VMGCPlayerSearch.search(db,term,6),partial:false};
+        }
+
+        function instalarConsultaHcpJugador() {
+            const form=document.getElementById('hcpPlayerSearchForm'), input=document.getElementById('hcpPlayerQuery');
+            const message=document.getElementById('hcpPlayerSearchStatus'), choices=document.getElementById('hcpPlayerChoices');
+            const dialog=document.getElementById('hcpPlayerDialog');let revision=0,searchTimer=null;
+            input.setAttribute('aria-controls','hcpPlayerChoices');
+            input.setAttribute('aria-expanded','false');
+            input.setAttribute('aria-haspopup','listbox');
+            choices.setAttribute('role','listbox');
+            choices.setAttribute('aria-label','Jugadores sugeridos');
+            function closeChoices(){choices.hidden=true;input.setAttribute('aria-expanded','false');}
+            document.addEventListener('click',event=>{if(!form.contains(event.target)){clearTimeout(searchTimer);revision++;closeChoices();}});
+            input.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();clearTimeout(searchTimer);revision++;closeChoices();}});
+            document.getElementById('hcpPlayerClose').onclick=()=>dialog.close();
+            const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+            async function showPlayer(player){
+                closeChoices();
+                document.getElementById('hcpPlayerTitle').textContent=player.full_name||'Jugador';
+                document.getElementById('hcpPlayerIdentity').textContent='Matrícula '+(matriculaDeJugador(player)||'—')+' · Index '+fmt(indexDeJugador(player),1)+' · Club: '+(limpiar(player.club_name)||'Sin club informado');
+                const list=document.getElementById('hcpPlayerTees');list.replaceChildren();dialog.showModal();list.textContent='Cargando salidas…';
+                try{
+                    if(!reglasHcpCache.length)await cargarReglasHcpCache();
+                    const index=indexDeJugador(player);
+                    if(index===null){list.textContent='Este jugador no tiene un índex cargado para calcular su HCP.';return;}
+                    const genderValue=String(player.gender||'').trim();
+                    if(!genderValue){list.textContent='Falta la categoría del jugador para elegir las valoraciones de la cancha.';return;}
+                    const gender=normalizarGeneroJugador(genderValue),recommended=claveColorTeeAag(teeRecomendado(index,gender));
+                    const teeOrder={negro:0,amarillo:1,blanco:2,rojo:3};
+                    const tees=reglasHcpCache.filter(r=>Number(r.aag_field_id)===AAG_FIELD_ADULTOS&&Number(r.category)===categoriaAagPorGenero(gender)).sort((a,b)=>(teeOrder[claveColorTeeAag(a.tee_name)]??99)-(teeOrder[claveColorTeeAag(b.tee_name)]??99)||(num(b.calification_total)??0)-(num(a.calification_total)??0));
+                    if(!tees.length){list.textContent='No hay valoraciones disponibles para este jugador en VMGC.';return;}
+                    list.innerHTML=tees.map(tee=>{
+                        const hcp=calcularHcpJuego(index,tee.slope_total,tee.calification_total,parTotalDesdeAag(tee.holes));
+                        const rec=claveColorTeeAag(tee.tee_name)===recommended;
+                        return '<div class="hcp-card '+clasePiedra(tee.tee_name)+(rec?' hcp-recommended':'')+'"><div><div class="hcp-title">'+escaparHtml(tee.tee_name)+'</div>'+(rec?'<span class="recommended-tee">✓ Tee recomendado</span>':'')+'<div class="hcp-detail">Slope '+fmt(tee.slope_total,0)+' · Rating '+fmt(tee.calification_total,1)+' · Par '+fmt(parTotalDesdeAag(tee.holes),0)+'</div></div><div class="hcp-number" aria-label="HCP de juego">'+(hcp??'—')+'</div></div>';
+                    }).join('');
+                }catch{list.textContent='No pudimos cargar los hándicaps. Cerrá la consulta y volvé a intentar.';}
+            }
+            async function search(openUnique=false){
+                const request=++revision,term=normalized(input.value);
+                choices.replaceChildren();closeChoices();
+                if(term.length<2){message.textContent=term?'Escribí al menos dos letras o números.':'';form.setAttribute('aria-busy','false');return;}
+                message.textContent='Buscando en el padrón…';form.setAttribute('aria-busy','true');
+                try{
+                    const {players,partial}=await buscarPadronHcp(term);
+                    if(request!==revision)return;
+                    message.textContent=players.length?(players.length>=6?'Mostrando hasta 6 coincidencias. Seguí escribiendo para acotar.':'Elegí el jugador para consultar su HCP.'):'No encontramos jugadores. Probá con la matrícula o parte del apellido.';
+                    if(partial)message.textContent+=' Una de las fuentes no respondió; volvé a intentar si no aparece el jugador.';
+                    if(openUnique&&players.length===1){await showPlayer(players[0]);return;}
+                    for(const player of players){const button=document.createElement('button');button.type='button';button.className='hcp-player-choice';button.setAttribute('role','option');const name=document.createElement('strong');name.textContent=player.full_name;const detail=document.createElement('span');detail.textContent='Matrícula '+(matriculaDeJugador(player)||'—')+' · Index '+fmt(indexDeJugador(player),1)+' · Club: '+(limpiar(player.club_name)||'Sin club informado');button.append(name,detail);button.onclick=()=>showPlayer(player);choices.append(button);}
+                    choices.hidden=players.length===0;input.setAttribute('aria-expanded',String(players.length>0));
+                }catch{if(request===revision)message.textContent='No pudimos consultar el padrón. Revisá la conexión y volvé a intentar.';}
+                finally{if(request===revision)form.setAttribute('aria-busy','false');}
+            }
+            input.addEventListener('input',()=>{
+                clearTimeout(searchTimer);revision++;choices.replaceChildren();closeChoices();
+                if(normalized(input.value).length<2){message.textContent='';form.setAttribute('aria-busy','false');return;}
+                message.textContent='Buscando en el padrón…';searchTimer=setTimeout(()=>void search(),180);
+            });
+            input.addEventListener('focus',()=>{
+                if(normalized(input.value).length>=2){clearTimeout(searchTimer);void search(false);}
+            });
+            form.addEventListener('submit',event=>{event.preventDefault();clearTimeout(searchTimer);void search(true);});
+        }
+        instalarConsultaHcpJugador();
 
         init();
     </script>

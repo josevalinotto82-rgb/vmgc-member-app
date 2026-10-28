@@ -82,5 +82,5 @@
     return client;
   }
   global.VMGCSnapshot={wrapClient,selectSnapshotFields,normalizeData,snapshotPayload,
-    createClient:(...args)=>wrapClient(global.supabase.createClient(...args))};
+    createClient:(url,key,options={})=>wrapClient(global.supabase.createClient(url,key,{...options,auth:{...options.auth,...global.clubAuthOptions}}))};
 })(globalThis);

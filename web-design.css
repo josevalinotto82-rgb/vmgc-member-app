@@ -1,0 +1,26 @@
+/* Shared club identity, with a layout for desktop screens. */
+@media(min-width:1000px){
+html.club-web body{padding:0 32px 88px;box-sizing:border-box;min-height:100dvh}
+html.club-web body[data-native-page="panel"]>.app{max-width:1180px;height:auto;min-height:calc(100dvh - 78px);padding:0 0 26px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-rows:92px minmax(360px,1fr) 48px;gap:22px 28px;margin:0 auto}
+html.club-web body[data-native-page="panel"] .header{grid-column:1/-1;grid-row:1;padding:20px 0;min-height:0}
+html.club-web body[data-native-page="panel"] .logo{width:50px;height:60px}
+html.club-web body[data-native-page="panel"] .club{max-width:none;font-size:25px!important}
+html.club-web body[data-native-page="panel"] .welcome{grid-column:1;grid-row:2;margin:0;padding:38px 30px;height:100%;min-height:360px;border-radius:28px;box-sizing:border-box}
+html.club-web body[data-native-page="panel"] .welcome h2{font-size:44px;letter-spacing:-1.5px;margin:20px 0}
+html.club-web body[data-native-page="panel"] .welcome .mobile-eyebrow{font-size:11px;letter-spacing:2px}
+html.club-web body[data-native-page="panel"] .member-name{font-size:25px}
+html.club-web body[data-native-page="panel"] .mobile-hero-caption{font-size:12px;bottom:30px;left:30px}
+html.club-web body[data-native-page="panel"] .grid{grid-column:2;grid-row:2;min-height:0;gap:16px;grid-template-rows:1fr 1fr}
+html.club-web body[data-native-page="panel"] .app-card{padding:22px;min-height:170px;border-radius:24px;box-sizing:border-box}
+html.club-web body[data-native-page="panel"] .mobile-card-icon{display:grid;width:36px;height:36px;margin-bottom:15px}
+html.club-web body[data-native-page="panel"] .app-card-title{font-size:21px}
+html.club-web body[data-native-page="panel"] .app-card-desc{font-size:14px;line-height:1.5}
+html.club-web body[data-native-page="panel"] .logout{grid-column:1/-1;grid-row:3;justify-self:end;margin:0;min-width:170px;padding:12px 24px;height:46px;font-size:14px;cursor:pointer}
+html.club-web body[data-native-page="mi_perfil"] .page{max-width:1000px;margin:auto}
+html.club-web body[data-native-page="estadisticas"] .app{max-width:1180px}
+html.club-web body[data-native-page="resultados"] .container{max-width:1100px}
+html.club-web body[data-native-page="torneos_para_anotarse"] .wrap{max-width:1100px}
+html.club-web body[data-native-page="grilla_interactiva"]{max-width:1440px;margin:0 auto;padding-left:40px;padding-right:40px}
+html.club-web .native-back{position:fixed;left:0;top:50%;z-index:30;display:grid;place-items:center;width:34px;height:65px;border:0;border-radius:0 16px 16px 0;background:#143e32;color:#dfc17a}
+html.club-web .native-back svg{width:22px}
+}

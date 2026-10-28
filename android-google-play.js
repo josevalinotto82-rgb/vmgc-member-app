@@ -5,6 +5,7 @@
   if (native || !/Android/i.test(navigator.userAgent)) return;
   const base = new URL('.', document.currentScript.src);
   const start = () => {
+    document.documentElement.classList.remove("club-starting");
     if (document.getElementById('vmgc-google-play')) return;
     const style = document.createElement('style');
     style.textContent = `

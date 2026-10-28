@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="club-mobile club-web club-starting">
 
 <head>
-    <link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="startup.css?v=20261028">
+<script src="store-install-policy.js?v=20261028"></script>
+    
     <meta name="theme-color" content="#166534">
     <meta charset="UTF-8">
     <title>Villa Maria Golf</title>
@@ -211,10 +213,14 @@
     </style>
 <link rel="stylesheet" href="shared-back.css?v=1">
 <script defer src="shared-back.js?v=1"></script>
-<script defer src="iphone-app-store.js?v=1"></script>
-<script defer src="android-google-play.js?v=1"></script></head>
+<link rel="stylesheet" href="mobile-design.css?v=20261028">
+<link rel="stylesheet" href="web-design.css?v=20261028">
+<script defer src="web-design-runtime.js?v=20261028"></script>
+<script defer src="iphone-app-store.js"></script>
+<script defer src="android-google-play.js"></script>
+</head>
 
-<body>
+<body data-native-page="panel">
     <main class="app">
 
         <div class="header">
@@ -235,28 +241,28 @@
             <button class="app-card primary" onclick="window.location.href='resultados.html'">
                 <div class="app-card-title">Resultados y torneos</div>
                 <div class="app-card-desc">
-                    Consultá torneos, resultados, categorías y tarjetas.
+                    Torneos, resultados, categorías y tarjetas.
                 </div>
             </button>
 
             <button class="app-card amber" onclick="window.location.href='torneos_para_anotarse.html'">
                 <div class="app-card-title">Anotarme a un torneo</div>
                 <div class="app-card-desc">
-                    Elegí el torneo disponible, mirá los lugares libres y anotate en la grilla.
+                    Elegí tu horario y anotate en la grilla.
                 </div>
             </button>
 
             <button class="app-card internal" onclick="window.location.href='estadisticas.html'">
                 <div class="app-card-title">Mis estadísticas</div>
                 <div class="app-card-desc">
-                    Tus tarjetas, evolución y comparativo con el club.
+                    Tus tarjetas, evolución y comparativo.
                 </div>
             </button>
 
             <button class="app-card blue" onclick="window.location.href='mi_perfil.html'">
                 <div class="app-card-title">Mi perfil</div>
                 <div class="app-card-desc">
-                    Datos del socio, matrícula, teléfono, índice y hándicap de juego.
+                    Tus datos, matrícula, índice y hándicap.
                 </div>
             </button>
 
@@ -491,8 +497,8 @@
             const cachedName = localStorage.getItem("vmgc_nombre_socio");
 
             if (cachedName) {
-                document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${cachedName}`;
-                document.getElementById("memberName").textContent = "Usuario";
+                document.getElementById("welcomeTitle").textContent = saludoDelClub();
+                document.getElementById("memberName").textContent = cachedName;
             }
 
             const { data, error } = await db.auth.getSession();
@@ -509,8 +515,8 @@
 
             localStorage.setItem("vmgc_nombre_socio", nombre);
 
-            document.getElementById("welcomeTitle").textContent = `Bienvenido/a ${nombre}`;
-            document.getElementById("memberName").textContent = "Usuario";
+            document.getElementById("welcomeTitle").textContent = saludoDelClub();
+            document.getElementById("memberName").textContent = nombre;
         }
 
         document.getElementById("btnLogout").addEventListener("click", async () => {
@@ -518,9 +524,14 @@
             catch(error) { alert(error.message); return; }
             const { error } = await db.auth.signOut({ scope: "local" });
             if (error) { alert("No se pudo cerrar la sesión. Volvé a intentarlo."); return; }
+            await window.clearClubSession?.();
             window.location.href = "login.html";
         });
 
+        function saludoDelClub() {
+            const hora = new Date().getHours();
+            return hora < 12 ? "Buen día." : hora < 20 ? "Buenas tardes." : "Buenas noches.";
+        }
         init();
     </script>
 
@@ -567,4 +578,5 @@
 </body>
 
 </html>
+
 

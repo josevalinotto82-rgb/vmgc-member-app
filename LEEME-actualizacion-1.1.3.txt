@@ -1,0 +1,29 @@
+VILLA MARIA GOLF - ACTUALIZACION 1.1.3 (ANDROID CODIGO 12)
+Preparada el 28 de octubre de 2026.
+
+MOBILE
+Subir la carpeta mobile y codemagic.yaml al repositorio de la app.
+Codemagic genera la version iOS 1.1.3 y asigna automaticamente la compilacion.
+En esta computadora, outputs/Compilar-Google-Play.cmd genera Android 1.1.3-12 (APK y AAB).
+No renombrar archivos viejos: hay que compilar con este codigo.
+
+Face ID / Touch ID / huella: opcion en Mi perfil > Acceso al club.
+Primero ingresar con email y contrasena. La opcion es por telefono.
+La app vuelve a bloquear el acceso despues de un minuto fuera de ella.
+Al cancelar, permite reintentar o ingresar con contrasena.
+Android requiere Android 9 o posterior y biometria compatible con claves seguras. En dispositivos sin soporte continua el ingreso normal.
+La sesion se guarda cifrada con claves del telefono. No se guarda la contrasena en este nuevo mecanismo.
+
+VERIFICACION ANTES DE PUBLICAR
+Java del plugin Android compilado contra SDK 36 y Capacitor instalado.
+Pruebas locales: migracion de sesiones, espera de desbloqueo, cancelacion, alternativa con contrasena, activacion en perfil, grillas, panel y web PC.
+Pendiente obligatorio en los dispositivos reales: instalar APK y TestFlight; activar biometria, cerrar y abrir, cancelar, recuperar por contrasena, cerrar sesion, probar notificaciones, cambio de cuenta y recuperacion por correo.
+iOS no fue compilado en esta computadora Windows. La compilacion iOS y su comprobacion final se hacen en Codemagic y TestFlight.
+No publicado automaticamente.
+
+WEB
+El paquete Web-diseno-unificado-2026-10-28.zip se sube al repositorio/hosting de app.villamariagolf.com.ar, en la raiz, sin carpeta mobile.
+Incluye paginas web, estilos, buscador, sponsors y avisos de descarga de tiendas.
+Retira el manifiesto instalable de las paginas y suprime el aviso automatico de instalar la web. Los accesos directos existentes no se eliminan del telefono.
+El navegador puede seguir ofreciendo crear un acceso directo desde su propio menu.
+No modifica datos de Supabase.

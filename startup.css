@@ -1,0 +1,8 @@
+html.club-starting{background:#f4f1e9!important}
+html.club-starting body{visibility:hidden!important}
+html.club-starting::before{content:'VILLA MARÍA GOLF CLUB';position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding-top:130px;box-sizing:border-box;background:#f4f1e9 url('escudo.png') center calc(50% - 30px)/80px auto no-repeat;color:#143e32;font:700 14px system-ui;letter-spacing:1px;visibility:visible}
+.club-access-lock{position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#f4f1e9;color:#143e32;text-align:center;font-family:system-ui}
+.club-access-lock img{width:78px}.club-access-lock h1{font-size:27px;margin:0}.club-access-lock p{max-width:350px;margin:0;line-height:1.5}
+.club-access-lock button,.club-biometric-settings button{background:#143e32;color:#fffdf4;border:1px solid #143e32;border-radius:13px;padding:13px 20px;font:600 15px system-ui;cursor:pointer}
+.club-access-lock [data-password]{background:transparent;color:#143e32}
+.club-biometric-settings p{color:#64776b;line-height:1.5}.club-biometric-settings{margin:20px auto}

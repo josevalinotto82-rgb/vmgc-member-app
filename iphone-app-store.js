@@ -5,6 +5,7 @@
   if (native || !/iPhone|iPod/i.test(navigator.userAgent)) return;
   const base = new URL('.', document.currentScript.src);
   const start = () => {
+    document.documentElement.classList.remove("club-starting");
     if (document.getElementById('vmgc-app-store')) return;
     const style = document.createElement('style');
     style.textContent = `
