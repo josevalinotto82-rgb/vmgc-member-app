@@ -1,0 +1,122 @@
+VILLA MARÍA GOLF · RENOVACIÓN MOBILE 1.1.0
+
+Esta entrega modifica las aplicaciones de Apple y Android. La web conserva sus pantallas y su funcionamiento.
+
+QUÉ CAMBIÓ
+- Inicio con la foto del club, saludo personal y tarjetas en dos columnas.
+- Nueva identidad en acceso, perfil, resultados, inscripción y estadísticas: verde profundo, arena y dorado.
+- Casilla de notificaciones de pantalla completa en teléfono y más amplia en tablet.
+- Botón “Ver información”, con diseño propio.
+- Deslizar hacia la izquierda muestra Eliminar; deslizar hasta el final elimina directamente.
+- Limpiar casilla arriba, con confirmación.
+- Instalaciones nuevas comienzan sin avisos anteriores. Usuarios que actualizan conservan los avisos recientes. Visibilidad máxima: 14 días.
+- La eliminación de avisos y la limpieza móvil no borran la casilla web.
+- Aviso de actualización que consulta Supabase al abrir o retomar la app. Apple y Android reciben únicamente la información de su plataforma.
+
+PARA GENERAR ANDROID EN ESTA PC
+Abrir Compilar-Google-Play.cmd, en esta misma carpeta. El proyecto local ya está actualizado.
+Pide la contraseña de la clave de carga de forma oculta.
+Genera Villa-Maria-Golf-1.1.0-9.apk para probar, Villa-Maria-Golf-1.1.0-9.aab para Google Play y el archivo mapping de R8.
+La APK usa la firma de carga. La app instalada desde Play puede usar otra firma administrada por Google; en ese caso la prueba de actualización debe hacerse desde el segmento de pruebas de Play.
+
+PARA APPLE / GITHUB / CODEMAGIC
+Mobile-renovada-1.1.0.zip contiene la carpeta mobile completa y codemagic.yaml.
+Reemplazar la carpeta mobile del repositorio con la del ZIP y conservar los archivos de la web.
+La versión de Apple ya queda como 1.1.0. Codemagic asigna el número de compilación según su contador, como antes.
+Ejecutar el flujo ios-testflight; después seleccionar la nueva compilación en App Store Connect.
+
+ACTUALIZACIONES AUTOMÁTICAS
+La base de Supabase y la consulta automática de Apple ya están configuradas. Se consulta cada hora la versión disponible públicamente en App Store de Argentina; una compilación pendiente de revisión no dispara el aviso.
+En la comprobación inicial Apple informó 1.0.2. La app 1.1.0 no avisará por esa versión anterior.
+Google ya está vinculado y confirmó Alpha 1.0.4 (8). Supabase consulta cada hora los lanzamientos publicados y completados. No se anuncian versiones pendientes de revisión.
+La app Android de esta entrega consulta el canal alpha, que es el que usás actualmente. Al pasar a producción, cambiar el canal en mobile/scripts/updates.mjs antes de compilar el paquete para producción.
+El aviso normal permite “Recordarme mañana”. Las actualizaciones obligatorias requieren definir una versión mínima en Supabase; no se activan automáticamente.
+Los usuarios recibirán este mecanismo al instalar esta renovación. Las aplicaciones viejas no pueden adquirirlo sin actualizarse.
+
+VALIDACIÓN
+Empaquetado de pantallas y librerías locales: correcto.
+Pruebas en navegador: teléfono y tablet, eliminación parcial y completa (también táctil), limpiar/cancelar, recuperación ante error de red y separación de avisos de actualización por plataforma/canal/versiones: correctas.
+Pruebas de Supabase: instalación limpia, vencimiento a 14 días, ocultar/limpiar y aislamiento de la casilla web: correctas. Los datos de prueba se revirtieron.
+La compilación Android completa no pudo ejecutarse dentro del entorno del chat porque Gradle no pudo conectarse a su proceso local. El lanzador permite compilar desde tu PC.
+La compilación iOS debe validarse en Codemagic, porque requiere macOS.
+
+NOTAS PARA LAS TIENDAS
+Renovamos la imagen de Villa María Golf con un nuevo inicio y una presentación más clara de tus torneos, resultados y perfil.
+Rediseñamos la casilla de notificaciones: ahora podés deslizar los avisos para eliminarlos y abrir la información con un nuevo botón.
+Los avisos recientes se conservan durante 14 días y las instalaciones nuevas comienzan con una casilla limpia.
+Incorporamos avisos dentro de la app para informar cuando hay una actualización disponible.
+
+
+ÚLTIMOS AJUSTES INCLUIDOS
+- Inicio compacto con nombre del usuario y Villa María Golf Club al pie de la foto.
+- Nombre del torneo en un renglón adaptable y fecha dorada en ambas pantallas.
+- Perfil con datos alineados y salidas con indicador circular del color de la piedra.
+- Flecha de inscripción vuelve primero a horarios, después a mañana/tarde.
+- Grilla horizontal al girar el teléfono, incluso con pantalla menor a 760 píxeles.
+- Manejo táctil de avisos ajustado para WKWebView; confirmar en esta nueva prueba de TestFlight.
+
+SUBIR A GITHUB Y PROBAR EN IPHONE
+1. Descomprimir Mobile-renovada-1.1.0.zip fuera del repositorio.
+2. Copiar la carpeta mobile a la raíz del repositorio, reemplazando sus archivos.
+3. Copiar codemagic.yaml a la raíz del repositorio, reemplazando el existente.
+4. No subir Vista-previa-mobile ni modificar los HTML de la web.
+5. Guardar los cambios en GitHub con el mensaje: Ajustes móviles de diseño, navegación y grilla horizontal.
+6. En Codemagic seleccionar la rama actualizada y ejecutar ios-testflight.
+7. Cuando aparezca la compilación nueva de 1.1.0 en TestFlight, actualizar desde TestFlight en el teléfono.
+Esto carga una compilación para pruebas; no envía la versión a revisión del App Store.
+
+CONSULTA DE JUGADORES E INSCRIPCIÓN (18/10/2026)
+- Mi perfil incorpora búsqueda por nombre, apellido o matrícula y consulta con Enter.
+- Si hay varios resultados, permite elegir al jugador antes de abrir la consulta.
+- Ventana con nombre, matrícula, índex y HCP por tee con valoración disponible de VMGC para su categoría; destaca el tee recomendado según las reglas existentes del club.
+- La búsqueda utiliza el padrón de jugadores disponible en el sistema; no modifica datos del jugador consultado.
+- El encabezado del torneo informa si estás inscripto e incluye hora y hoyo; se actualiza con la recarga de la grilla.
+- Se conservan los archivos de la web. Estos cambios se entregan en mobile y en la vista previa.
+
+BUSCADOR NACIONAL CON SUGERENCIAS
+Consulta aag_enrolleds y players con los mismos permisos de lectura de inscripción. Sugerencias desde dos caracteres, espera de 280 ms, hasta seis resultados y eliminación de duplicados por matrícula. La consulta es de solo lectura: no crea jugadores en players. Enter conserva la apertura directa si hay una única coincidencia.
+
+AVISO PRIVADO AL JUGADOR INSCRIPTO (18/10/2026)
+La función ya está aplicada en Supabase. No es necesario ejecutar manualmente el archivo backend/personal-registration-notices.sql.
+Al inscribir a otro jugador con una cuenta activa vinculada, recibe un aviso privado con el nombre de quien lo anotó, el torneo, la fecha, la hora y el hoyo. El enlace abre el torneo.
+Se genera en el servidor al confirmar la escritura de la inscripción; el envío usa la cola existente, con una espera mínima de 20 segundos y el siguiente ciclo de envío.
+No se avisa por autoinscripción, jugadores sin cuenta vinculada o vínculos ambiguos. El mensaje queda en la casilla móvil aunque no haya dispositivos habilitados. No se incorpora a la casilla web.
+Se comprueba que el jugador siga en el casillero antes de enviar. Si se borra o cancela la inscripción, se retira el aviso y su cola pendiente.
+Verificado mediante pruebas transaccionales con reversión: destinatario, aislamiento entre cuentas, hora/hoyo, casilla móvil, cancelación y autoinscripción. No se enviaron avisos reales durante esas pruebas.
+
+ESTA ENTREGA TAMBIÉN INCLUYE
+- Sugerencias automáticas del padrón nacional mientras escribís, sin botón Buscar; máximo 6 resultados y sin matrículas duplicadas.
+- Club de pertenencia en sugerencias y consulta del jugador.
+- Tees ordenados Negro, Amarillo, Blanco y Rojo; recomendado resaltado sin alterar el orden.
+- Indicador de inscripción propia en el encabezado del torneo, con hora y hoyo.
+- Logos de sponsors de la carpeta local incorporados al paquete para GitHub.
+
+PARA SUBIR ESTA ENTREGA
+Descomprimir el ZIP y copiar mobile/ y codemagic.yaml a la raíz del repositorio. Reemplazar sus archivos y conservar los archivos de la web.
+No copiar Vista-previa-mobile al repositorio.
+Después de guardar los cambios en GitHub, ejecutar ios-testflight en Codemagic. Para Android usar el lanzador Compilar-Google-Play.cmd, que ya apunta al código actualizado.
+Los APK/AAB y las compilaciones de TestFlight generados antes de estos cambios no contienen la nueva interfaz. Volver a generarlos.
+
+CAPTURAS DE IPAD SIN MAC NI IPAD (18/10/2026)
+Se agregó el flujo ios-ipad-screenshots: Villa Maria Golf - Capturas iPad.
+1. Subir mobile/ completa y codemagic.yaml de esta entrega a la raíz del repositorio.
+2. En Codemagic, Start new build, elegir la rama actualizada y el flujo Villa Maria Golf - Capturas iPad (ios-ipad-screenshots).
+3. Ejecutarlo. No requiere certificados ni claves adicionales y no publica en TestFlight o App Store.
+4. Al finalizar, descargar de Artifacts el archivo Capturas-iPad-App-Store.zip.
+5. Las tres capturas corresponden a inicio, perfil con datos ficticios y HCP en el simulador de iPad Pro de 13 pulgadas.
+6. Compartir el ZIP en este chat para revisar las imágenes antes de subirlas a la sección iPad de App Store Connect.
+El flujo usa la interfaz real y datos de demostración en una compilación Debug aislada. No inicia sesión ni consulta/escribe en la base real. El mecanismo de captura no se activa en los flujos habituales.
+Verificado localmente: escenas, recursos locales, selección de dispositivo, preparación y separación de compilación. La compilación y captura nativa se confirmarán al ejecutar Codemagic en macOS.
+CAMBIOS MOBILE PENDIENTES DE PRÓXIMA COMPILACIÓN — 18/10/2026
+Buscador unificado para HCP individual, parejas e inscripción. Consulta players y aag_enrolleds, sin duplicados. Prioriza apellido exacto, luego apellido que comienza con lo escrito y por último nombre; VMGC primero dentro de cada grupo. HCP muestra sugerencias en un desplegable. Espera al escribir de 180 ms y caché temporal de 15 segundos.
+La función mobile_player_search y sus campos de búsqueda ya están aplicados en Supabase. backend/player-search.sql queda como referencia, no requiere ejecución manual.
+Estos cambios están guardados en mobile/ y en la vista previa, pero NO forman parte de la compilación 22 enviada a Apple. Antes de publicar una actualización posterior habrá que asignar la versión y números de compilación que correspondan. Esta preparación no genera APK/AAB ni envía a TestFlight.
+CORRECCIÓN DE ENVÍO APPLE — 20/10/2026
+La versión de iOS ahora es 1.1.1 en Debug y Release. Apple ya tiene aprobada 1.1.0 y rechazó otra carga con ese mismo número de versión. Codemagic seguirá asignando automáticamente un número de compilación nuevo.
+Incluye las mejoras pendientes de los buscadores. Android conserva su configuración anterior. No se ejecutó Codemagic ni se envió esta versión a Apple desde esta preparación.
+Android actualizado el 20/10/2026 a versionName 1.1.1 y versionCode 10. Compilar-Google-Play.cmd genera Villa-Maria-Golf-1.1.1-10.aab, APK y mapping. iOS permanece 1.1.1. No se generaron binarios durante esta preparación.
+GRILLA MOBILE PENDIENTE — 26/10/2026
+Horizontal: conserva los casilleros y acciones actuales, nombres completos ajustados al ancho, casilleros blancos y barra a la derecha verde/celeste/violeta. Sin columnas paso/final en la carga, tampoco para administrador. Vertical conserva el recorrido actual.
+Ver grilla completa: formato nuevo, nombres completos y buscador existente. Separacion dorada solo para diferencias mayores a 10 minutos dentro del mismo bloque y hoyo. Simultaneas por horario del bloque y H1, H1 BIS, H2, etc.
+Compartir grilla (administrador): PNG A4 numerados, nombres abreviados, 4 lugares por salida, paso/final solo en la imagen, grilla completa. iOS/Android usan complementos oficiales Share y Filesystem; sincronizar Capacitor durante la compilacion. Manifiesto de privacidad iOS incluido.
+Probado localmente: navegador, busqueda, orientacion, ajuste de nombres, paginas 37/64, imagen PNG, tiempos 9/18 hoyos y contrato de compartir con simulaciones. Falta probar el menu nativo en dispositivos. No se compilaron ni publicaron APK/AAB/IPA. Antes de subir otra version hay que aumentar version y numero de compilacion segun corresponda.
