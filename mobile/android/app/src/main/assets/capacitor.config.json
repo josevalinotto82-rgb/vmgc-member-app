@@ -1,0 +1,28 @@
+{
+	"appId": "ar.com.villamariagolf.members",
+	"appName": "Villa Maria Golf",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	},
+	"android": {
+		"backgroundColor": "#f4f1e9",
+		"zoomEnabled": true
+	},
+	"ios": {
+		"backgroundColor": "#f4f1e9",
+		"contentInset": "never",
+		"zoomEnabled": true
+	},
+	"plugins": {
+		"PushNotifications": {
+			"presentationOptions": [
+				"sound",
+				"badge",
+				"banner",
+				"list",
+				"alert"
+			]
+		}
+	}
+}

@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ClubAutofillPlugin.class);
         registerPlugin(ClubCredentialsPlugin.class);
+        registerPlugin(ClubSessionPlugin.class);
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getBridge() != null) {
