@@ -517,6 +517,7 @@
             catch(error) { alert(error.message); return; }
             const { error } = await db.auth.signOut({ scope: "local" });
             if (error) { alert("No se pudo cerrar la sesión. Volvé a intentarlo."); return; }
+            await window.clearClubSession?.();
             window.location.href = "login.html";
         });
 

@@ -7,6 +7,7 @@ const src=path.join(root,'src'),dest=path.join(root,'www');
 await mkdir(dest,{recursive:true});await cp(src,dest,{recursive:true});
 await rm(path.join(dest,'store-capture-runtime.js'),{force:true});
 await build({entryPoints:[path.join(root,'scripts/vendor.mjs')],outfile:path.join(dest,'vendor-supabase.js'),tsconfigRaw:{},bundle:true,format:'iife',minify:true,target:'es2022'});
+await build({entryPoints:[path.join(root,'scripts/session-runtime.mjs')],outfile:path.join(dest,'session-runtime.js'),tsconfigRaw:{},bundle:true,format:'iife',minify:true,target:'es2022'});
 await build({entryPoints:[path.join(root,'scripts/native.mjs')],outfile:path.join(dest,'native-runtime.js'),tsconfigRaw:{},bundle:true,format:'iife',minify:true,target:'es2022'});
 await cp(path.join(root,'node_modules/html2canvas/dist/html2canvas.min.js'),path.join(dest,'vendor-html2canvas.js'));
 for(const file of await readdir(dest)) {
@@ -23,12 +24,14 @@ for(const file of await readdir(dest)) {
     html=html.replace(/<head>/i,'<head>\n<script src="vendor-supabase.js"></script>');
   }
   html=html.replace(/if \("serviceWorker" in navigator\)/g,'if ("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform())');
-  html=html.replace(/<head>/i,'<head>\n<script defer src="native-runtime.js"></script>');
+  html=html.replace(/<html([^>]*)>/i,'<html$1 class="club-mobile club-starting">');
+  html=html.replace(/<head>/i,'<head>\n<link rel="stylesheet" href="startup.css">\n<script src="session-runtime.js"></script>\n<script defer src="native-runtime.js"></script>');
   html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="native.css">\n<link rel="stylesheet" href="mobile-design.css">\n</head>');
   html=html.replace(/<body(?=[\s>])/i,'<body data-native-page="'+path.basename(file,'.html')+'"');
   html=html.replace(/(<meta[^>]*name="viewport"[^>]*content=")([^"]*)(")/i,(_,start,value,end)=>start+(value.includes('viewport-fit')?value:value+', viewport-fit=cover')+end);
   await writeFile(filePath,html);
 }
+await cp(path.join(root,'scripts/startup.css'),path.join(dest,'startup.css'));
 await cp(path.join(root,'scripts/native.css'),path.join(dest,'native.css'));
 await cp(path.join(root,'scripts/mobile-design.css'),path.join(dest,'mobile-design.css'));
 console.log('App empaquetada: pantallas y librerías locales en www/.');

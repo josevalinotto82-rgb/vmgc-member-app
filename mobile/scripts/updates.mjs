@@ -1,8 +1,8 @@
 import {updatePolicy} from './update-policy.mjs';
 export function setupUpdates(Capacitor,App,Browser){
  const platform=Capacitor.getPlatform();if(!['ios','android'].includes(platform))return;
- // Android se distribuye actualmente por la prueba cerrada Alpha.
- const channel=platform==='android'?'alpha':'production';
+ // Ambas tiendas ya distribuyen la app en producción.
+ const channel='production';
  let checking=false,lastCheck=0,dialog=null;
  async function check(){
   if(checking||Date.now()-lastCheck<15*60*1000||navigator.onLine===false||!window.db)return;

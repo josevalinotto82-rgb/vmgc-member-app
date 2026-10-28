@@ -1,6 +1,8 @@
 // Esta identidad se incorpora únicamente al paquete nativo.
 export function setupMobileDesign(){
  document.documentElement.classList.add('club-mobile');
+ if(document.body.dataset.clubDesignReady==='true')return;
+ document.body.dataset.clubDesignReady='true';
  const page=location.pathname.split('/').pop()?.replace('.html','')||'index';
  document.body.dataset.nativePage=page;
  if(['torneos_para_anotarse','grilla_interactiva'].includes(page)){

@@ -17,7 +17,7 @@
   </div>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    const client=createClient("https://bnnfolhrqxgxjmobclrm.supabase.co","sb_publishable_pNxU4AFpAZPpeJ0wICLvIw_6nW90njQ",{auth:{detectSessionInUrl:false}});
+    const client=createClient("https://bnnfolhrqxgxjmobclrm.supabase.co","sb_publishable_pNxU4AFpAZPpeJ0wICLvIw_6nW90njQ",{auth:{detectSessionInUrl:false,...window.clubAuthOptions}});
     const params=new URLSearchParams(location.search);
     const code=params.get('code');
     history.replaceState({},document.title,location.pathname);
