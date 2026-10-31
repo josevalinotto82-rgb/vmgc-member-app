@@ -39,7 +39,7 @@ if(native){
    if(error){unblock();return;}
    if(['index','login'].includes(page)&&data.session&&!window.vmgcAuthNavigating){location.replace('panel.html');return;}
    if(page==='index'){location.replace('login.html');return;}
-   if(['panel','mi_perfil','grilla_interactiva','estadisticas','resultados','torneos_para_anotarse','torneos'].includes(page)&&!data.session){location.replace('login.html');return;}
+   if(['panel','mi_perfil','consultas','grilla_interactiva','estadisticas','resultados','torneos_para_anotarse','torneos'].includes(page)&&!data.session){location.replace('login.html');return;}
   }
   requestAnimationFrame(()=>requestAnimationFrame(unblock));
   if(page==='mi_perfil')await profileBiometrics(vault).catch(()=>console.warn('No se pudo consultar el acceso biométrico.'));
@@ -47,7 +47,7 @@ if(native){
  async function profileBiometrics(plugin){
   const {data}=await window.db.auth.getSession();if(!data.session)return;
   const info=await plugin.status();
-  const box=document.createElement('section');box.className='card club-biometric-settings';
+  const box=document.getElementById('biometricSettings')||document.createElement('section');box.id='biometricSettings';box.className='card club-biometric-settings';
   box.innerHTML='<h2>Acceso al club</h2><p>Desbloqueá la app con la biometría de este teléfono. Se vuelve a solicitar al abrirla o después de un minuto fuera de la app.</p><button type="button"></button><p role="status"></p>';
   const button=box.querySelector('button'),message=box.querySelector('[role=status]');let enabled=info.enabled;
   const label=info.label||'huella o reconocimiento facial';

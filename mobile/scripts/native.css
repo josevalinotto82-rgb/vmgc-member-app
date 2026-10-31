@@ -16,7 +16,7 @@ body[data-native-page="panel"] .footer{margin:12px 0 0}
 body[data-native-page="panel"] .sponsor-bar{height:calc(60px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));padding-bottom:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px))}
 body[data-native-page="panel"] .sponsor-track{height:60px}
 body[data-native-page="panel"] .sponsor-track img{max-height:46px;object-fit:contain}
-body[data-native-page="mi_perfil"] .page-head{padding-top:12px}
+body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .page-head{padding-top:12px}
 body[data-native-page="torneos_para_anotarse"] .header{padding-top:12px}
 body[data-native-page="estadisticas"] header{padding-top:12px}
 body[data-native-page="grilla_interactiva"]{padding-left:16px;padding-right:16px}
