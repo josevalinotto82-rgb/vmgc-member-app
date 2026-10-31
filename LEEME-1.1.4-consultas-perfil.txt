@@ -1,0 +1,38 @@
+VILLA MARIA GOLF - 1.1.4 (ANDROID CODIGO 14)
+Preparado: 30 de octubre de 2026. No publicado.
+
+NAVEGACION
+- Panel > Consultas: tarjeta del jugador (matricula, index, low index, cumpleanos, DNI), HCP propio por tee, consulta de otro jugador, consulta para pareja. Sin email, telefono ni ajustes de cuenta.
+- Tocar la bienvenida del panel > Mi perfil: email registrado, cambiar email/telefono, cambiar contrasena y acceso biometrico.
+- Nombres simplificados: Tee negros, Tee amarillos, Tee blancos, Tee rojos. Las valoraciones y calculos no se modificaron.
+
+ACCESIBILIDAD
+- Las letras grandes conservan su tamano; las tarjetas crecen y el panel puede pasar a una columna y permitir desplazamiento vertical.
+- Reflujo de datos personales, valores HCP, botones y dialogos.
+- Zoom con dos dedos conservado. El gesto de volver del perfil ignora toques con varios dedos.
+
+VISTA PREVIA
+Abrir outputs/Vista-previa-mobile/panel.html con Live Server. Recargar con Ctrl+F5.
+Consultas y Mi perfil usan la cuenta real. La vista previa no ejecuta Face ID/huella; la opcion se indica como disponible en la app instalada.
+Web: outputs/Vista-previa-web/panel.html.
+
+ENTREGA
+Mobile-1.1.4-consultas-perfil.zip: subir mobile y codemagic.yaml al repositorio movil.
+Compilar-Google-Play.cmd ahora genera Villa-Maria-Golf-1.1.4-14.apk y .aab desde los archivos locales.
+Codemagic: iOS 1.1.4 con numero de compilacion automatico.
+Web-consultas-perfil-2026-10-30.zip: actualizar los archivos en la raiz del hosting/repositorio web, conservando mobile y codemagic.yaml si estan en el mismo repositorio.
+
+VERIFICACION
+Pruebas locales: separacion real de pantallas, navegacion, sugerencias mientras se escribe, etiquetas de tees, edicion de email/telefono y cambio de contrasena con datos ficticios, acceso biometrico simulado, letras al 200% a 320/393/667 px y zoom 150%, panel horizontal y grilla.
+Pendiente: comprobar el APK en Android con el tamano de letra grande real del usuario y la compilacion iOS en TestFlight antes de publicar.
+TEE RECOMENDADO
+Tabla creada en Supabase: public.tee_recommendation_settings, fila aag_field_id=1466.
+La columna rules guarda rangos por categoria; revision y updated_at se actualizan automaticamente.
+Valores iniciales: caballeros Negro hasta 9, Amarillo hasta 15, Blanco hasta 54; damas Rojo hasta 54.
+Solo administradores activos pueden modificar rules desde el cliente autenticado.
+La app lee la configuracion al entrar a Consultas, al volver a la pantalla, al recuperar conexion,
+al abrir una consulta individual y antes de calcular parejas. Actualiza cada 60 segundos mientras la pantalla esta visible.
+Si no puede verificar la configuracion no inventa una recomendacion. Conserva los HCP por tee.
+La version ya instalada debe actualizarse una vez para incorporar esta lectura.
+Despues, cambiar los limites no requiere otra publicacion. No cambia reglas ni resultados historicos de torneos.
+Integracion del sistema: ver Configuracion-tee-recomendado.md y mobile/backend/TEE-RECOMENDADO.md.

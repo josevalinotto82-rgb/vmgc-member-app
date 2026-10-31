@@ -51,17 +51,17 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 .club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-card{padding:23px;border-left:1px solid #e1dfd4}
 .club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-fecha{background:#f0ead6;color:#93762e;border-radius:10px;font-size:12px;letter-spacing:.3px}
 .club-mobile body[data-native-page="torneos_para_anotarse"] .torneo-nombre{font-size:23px;letter-spacing:-.8px;color:#153c2e}
-.club-mobile body[data-native-page="mi_perfil"] .page-head h1{font-size:33px;letter-spacing:-1.2px;margin-top:12px}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card{background:linear-gradient(130deg,#173f32,#092d28)!important;color:#edf0dd;border:0!important;padding:27px;border-radius:26px!important}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .club-line{color:#d8bf77;font-size:9px;letter-spacing:1.5px}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .person-name{color:#fffdf1;font-size:32px;font-weight:600;margin-bottom:24px}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .mini-label,.club-mobile body[data-native-page="mi_perfil"] .profile-card .contact-label{color:#adbfa6}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .mini-value{color:#ebcf87;font-size:30px}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .contact-value{color:#fffdf1}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .member-row,.club-mobile body[data-native-page="mi_perfil"] .profile-card .contact-line{border-color:#ffffff24}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .change-link{color:#e7d299;text-decoration:none;border:1px solid #c9d3ae44;border-radius:9px;padding:8px;font-size:11px;background:transparent}
-.club-mobile body[data-native-page="mi_perfil"] .mode-selector{background:#eae9da;border-radius:14px;padding:5px}
-.club-mobile body[data-native-page="mi_perfil"] .mode-btn.active{background:#143e32;color:white;border-radius:10px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .page-head h1{font-size:33px;letter-spacing:-1.2px;margin-top:12px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card{background:linear-gradient(130deg,#173f32,#092d28)!important;color:#edf0dd;border:0!important;padding:27px;border-radius:26px!important}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .club-line{color:#d8bf77;font-size:9px;letter-spacing:1.5px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .person-name{color:#fffdf1;font-size:32px;font-weight:600;margin-bottom:24px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .mini-label,.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .contact-label{color:#adbfa6}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .mini-value{color:#ebcf87;font-size:30px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .contact-value{color:#fffdf1}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .member-row,.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .contact-line{border-color:#ffffff24}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .change-link{color:#e7d299;text-decoration:none;border:1px solid #c9d3ae44;border-radius:9px;padding:8px;font-size:11px;background:transparent}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mode-selector{background:#eae9da;border-radius:14px;padding:5px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mode-btn.active{background:#143e32;color:white;border-radius:10px}
 .club-mobile body[data-native-page="estadisticas"] .metric{border-radius:20px;background:#fffdf8;border:1px solid #dfdfcf;box-shadow:none}
 .club-mobile body[data-native-page="estadisticas"] .metric strong{color:#143e32}
 .club-mobile body[data-native-page="estadisticas"] .metric:first-child{background:#143e32;color:#fffdf2;border-color:#143e32}
@@ -153,23 +153,23 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 .club-mobile body[data-native-page="grilla_interactiva"] .header-torneo{background:#fffdf8;border:1px solid #e1dfd4;border-radius:24px;padding:23px;text-align:left;box-shadow:0 6px 18px #143e3209}
 .club-mobile body[data-native-page="grilla_interactiva"] #tituloPrincipal{font-size:23px;letter-spacing:-.8px;line-height:1.2;font-weight:900;color:#153c2e;text-align:left;overflow-wrap:anywhere}
 .club-mobile body[data-native-page="grilla_interactiva"] #subTituloTorneo{font-size:12px;line-height:1.5;color:#74806e;margin:10px 0 0}
-.club-mobile body[data-native-page="mi_perfil"] .member-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
-.club-mobile body[data-native-page="mi_perfil"] .member-row>div{min-width:0;text-align:center}
-.club-mobile body[data-native-page="mi_perfil"] .mini-label{font-size:9px;letter-spacing:.5px;white-space:nowrap;line-height:14px;min-height:14px;margin-bottom:6px}
-.club-mobile body[data-native-page="mi_perfil"] .profile-card .mini-value{font-size:21px;line-height:26px;font-variant-numeric:tabular-nums}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-card{border:1px solid #dfdfcf;border-radius:20px;background:#fffdf8;padding:18px 16px;grid-template-columns:minmax(0,1fr) auto;gap:12px;--tee-color:#648664}
-.club-mobile body[data-native-page="mi_perfil"] .stone-negras{--tee-color:#222b26}
-.club-mobile body[data-native-page="mi_perfil"] .stone-amarillas{--tee-color:#e3bd32}
-.club-mobile body[data-native-page="mi_perfil"] .stone-blancas{--tee-color:#fffdf4}
-.club-mobile body[data-native-page="mi_perfil"] .stone-rojas{--tee-color:#bd4940}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-title{display:flex;align-items:center;gap:9px;color:#143e32;font-size:16px;line-height:1.3}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-title::before{content:'';display:block;width:15px;height:15px;flex:none;border-radius:50%;background:var(--tee-color);border:1px solid #143e3238;box-shadow:0 0 0 4px #eaece2}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-detail{font-size:11px;line-height:1.5;margin-top:10px;color:#74806e}
-.club-mobile body[data-native-page="mi_perfil"] .tee-index{margin-bottom:5px}
-.club-mobile body[data-native-page="mi_perfil"] .tee-course{display:flex;gap:12px;white-space:nowrap}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-detail strong{color:#344d3b;font-weight:650}
-.club-mobile body[data-native-page="mi_perfil"] .hcp-number{min-width:36px;text-align:center;font-size:25px;color:#143e32;background:#eaf0e3;border-radius:13px;padding:10px 8px;font-variant-numeric:tabular-nums}
-@media(max-width:350px){.club-mobile body[data-native-page="mi_perfil"] .tee-course{gap:8px;font-size:10px}.club-mobile body[data-native-page="mi_perfil"] .hcp-card{padding:16px 12px;gap:8px}}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .member-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .member-row>div{min-width:0;text-align:center}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mini-label{font-size:9px;letter-spacing:.5px;white-space:nowrap;line-height:14px;min-height:14px;margin-bottom:6px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .profile-card .mini-value{font-size:21px;line-height:26px;font-variant-numeric:tabular-nums}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-card{border:1px solid #dfdfcf;border-radius:20px;background:#fffdf8;padding:18px 16px;grid-template-columns:minmax(0,1fr) auto;gap:12px;--tee-color:#648664}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .stone-negras{--tee-color:#222b26}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .stone-amarillas{--tee-color:#e3bd32}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .stone-blancas{--tee-color:#fffdf4}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .stone-rojas{--tee-color:#bd4940}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-title{display:flex;align-items:center;gap:9px;color:#143e32;font-size:16px;line-height:1.3}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-title::before{content:'';display:block;width:15px;height:15px;flex:none;border-radius:50%;background:var(--tee-color);border:1px solid #143e3238;box-shadow:0 0 0 4px #eaece2}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-detail{font-size:11px;line-height:1.5;margin-top:10px;color:#74806e}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .tee-index{margin-bottom:5px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .tee-course{display:flex;gap:12px;white-space:nowrap}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-detail strong{color:#344d3b;font-weight:650}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-number{min-width:36px;text-align:center;font-size:25px;color:#143e32;background:#eaf0e3;border-radius:13px;padding:10px 8px;font-variant-numeric:tabular-nums}
+@media(max-width:350px){.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .tee-course{gap:8px;font-size:10px}.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-card{padding:16px 12px;gap:8px}}
 
 @media(max-height:620px){.club-mobile body[data-native-page="panel"] .app-card{padding:9px 12px}.club-mobile body[data-native-page="panel"] .mobile-card-icon{margin-bottom:4px}.club-mobile body[data-native-page="panel"] .app-card-title{margin-bottom:4px}}
 
@@ -240,3 +240,61 @@ html.club-mobile{background:#f4f1e9;color-scheme:light;--club-ink:#143e32;--club
 .club-mobile body[data-native-page="panel"] .mobile-card-arrow{top:8px;right:8px;font-size:15px}
 .club-mobile body[data-native-page="panel"] .logout{grid-column:1/-1;grid-row:3;min-height:0;height:34px;margin:0;padding:7px;font-size:12px}
 }
+/* Shared account/consultation hierarchy and accessible text reflow. */
+.club-mobile .welcome{text-decoration:none;cursor:pointer}
+.club-mobile .welcome-profile-link{display:inline-block;color:#e5cc85;font-size:11px;line-height:1.3;margin-top:6px;font-weight:600}
+.club-mobile .welcome:focus-visible{outline:3px solid #b9913b;outline-offset:4px}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .account-intro{background:#143e32;color:#fffdf1;border:0}
+.club-mobile .account-intro h2{color:#fffdf1;font-size:26px;margin:10px 0}
+.club-mobile .account-intro p{color:#d0ddce;line-height:1.5}
+.club-mobile .account-card .contact-line{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 14px}
+.club-mobile .account-card .contact-label{grid-column:1/-1}
+.club-mobile .account-card .contact-value{overflow-wrap:anywhere;white-space:normal;min-width:0;max-width:100%}
+.club-mobile .account-card .change-link{white-space:normal;line-height:1.35}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mini-label{white-space:normal;line-height:1.4;min-height:0}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mini-value{line-height:1.4!important;overflow-wrap:anywhere}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .tee-course{flex-wrap:wrap;white-space:normal;gap:6px 12px}
+.club-mobile .tee-course span{white-space:nowrap}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) :is(.person-name,.hcp-title,.page-head h1,.card h2,.player-picker-title){overflow-wrap:anywhere;max-width:100%;height:auto}
+.club-mobile .account-card p{line-height:1.5;color:#718078}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) :is(.contact-line,.member-row,.hcp-card,.player-search-grid,.player-picker,.mode-selector,.pair-result){min-width:0;max-width:100%}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .mode-btn{white-space:normal;height:auto;min-height:48px;line-height:1.4}
+html.club-mobile{ -webkit-text-size-adjust:100%;text-size-adjust:100% }
+.club-mobile :is(button,input,select,textarea){max-width:100%;box-sizing:border-box}
+.club-mobile :is(button,.app-card-title,.app-card-desc){overflow-wrap:anywhere}
+.club-mobile .club-biometric-settings{box-sizing:border-box;min-width:0}
+.club-mobile .club-biometric-settings button{white-space:normal;line-height:1.4;height:auto}
+/* Large system fonts: content may scroll; controls never overlap to preserve a fixed height. */
+html.club-large-text body[data-native-page="panel"]>.app{display:flex!important;flex-direction:column;height:auto!important;min-height:calc(100dvh - 60px);padding-bottom:18px;gap:14px}
+html.club-large-text body[data-native-page="panel"] .header{min-height:58px;height:auto;flex:none;flex-wrap:wrap}
+html.club-large-text body[data-native-page="panel"] .club{max-width:none!important;overflow-wrap:anywhere}
+html.club-large-text body[data-native-page="panel"] .welcome{height:auto!important;min-height:190px;padding:22px!important;margin:0!important;flex:none;box-sizing:border-box}
+html.club-large-text body[data-native-page="panel"] .welcome :is(h2,.member-name,.mobile-eyebrow){white-space:normal;overflow-wrap:anywhere;line-height:1.35;height:auto}
+html.club-large-text body[data-native-page="panel"] .mobile-hero-caption{position:static;display:block;margin-top:18px;line-height:1.4;white-space:normal}
+html.club-large-text body[data-native-page="panel"] .grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:none!important;grid-auto-rows:auto;min-height:0;flex:none;gap:14px}
+html.club-large-text body[data-native-page="panel"] .app-card{height:auto!important;min-height:0;padding:20px!important;gap:8px;align-items:flex-start}
+html.club-large-text body[data-native-page="panel"] .app-card-title{padding-right:22px;line-height:1.35}
+html.club-large-text body[data-native-page="panel"] .app-card-desc{line-height:1.5}
+html.club-large-text body[data-native-page="panel"] .mobile-card-icon{display:grid;flex:none}
+html.club-large-text body[data-native-page="panel"] .logout{height:auto!important;min-height:48px;margin:0;padding:16px;flex:none}
+html.club-large-text body[data-native-page="panel"] .sponsor-bar{position:relative;bottom:auto;height:auto;min-height:60px}
+html.club-large-text body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .member-row{grid-template-columns:minmax(0,1fr);gap:14px}
+html.club-large-text .member-row>div{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;text-align:left!important}
+html.club-large-text body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .hcp-card{grid-template-columns:minmax(0,1fr)}
+html.club-large-text .hcp-number{justify-self:start;min-width:45px}
+html.club-large-text .mode-selector,html.club-large-text .player-search-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+html.club-large-text body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .contact-line{grid-template-columns:minmax(0,1fr)!important;gap:10px}
+html.club-large-text .contact-line>button{justify-self:start}
+html.club-large-text :is(.hcp-player-dialog,.modal){box-sizing:border-box;width:calc(100% - 24px)!important;max-width:620px;max-height:90dvh;overflow:auto;padding:20px}
+html.club-large-text body[data-native-page="grilla_interactiva"] #tituloPrincipal,html.club-large-text body[data-native-page="torneos_para_anotarse"] .torneo-nombre{white-space:normal!important;overflow-wrap:anywhere!important}
+html.club-large-text .desktop-grid .tabla-wrap{max-width:100%;overflow:auto!important}
+html.club-large-text .desktop-grid .tabla-wrap table{min-width:860px}
+@media(max-height:650px){.club-mobile .welcome-profile-link{font-size:9px;margin-top:2px}}
+.club-mobile body[data-native-page="mi_perfil"] .account-intro h2{color:#fffdf1}
+.club-mobile body:is([data-native-page="mi_perfil"],[data-native-page="consultas"]) .contact-line{height:auto;min-height:54px;padding:14px 0;align-items:center}
+.club-mobile body[data-native-page="consultas"] .profile-card .contact-line{grid-template-columns:minmax(100px,.9fr) minmax(0,1.1fr);gap:10px}
+.club-mobile body[data-native-page="consultas"] .profile-card .contact-line>span:empty{display:none}
+.club-mobile .contact-label{overflow-wrap:anywhere;line-height:1.4}
+.club-mobile .welcome-profile-link{position:absolute;top:14px;right:14px;margin:0;font-size:10px}
+@media(orientation:landscape) and (max-width:700px){.club-mobile body[data-native-page="panel"] .welcome .mobile-eyebrow{visibility:hidden}.club-mobile .welcome-profile-link{font-size:9px;top:10px;right:10px}}
+html.club-large-text .welcome-profile-link{position:static;display:block;margin-top:10px}
