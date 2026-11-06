@@ -17,6 +17,41 @@ const esConsultas = document.body.dataset.section === 'consultas';
         let refrescarConsultaAbierta = null;
         let calculoParejaRevision = 0;
         let modalidadPareja = "americana";
+        let configuracionClasico = null;
+        async function cargarConfiguracionClasico() {
+            try {
+                const {data,error}=await db.from('pair_handicap_settings').select('*').eq('aag_field_id',AAG_FIELD_ADULTOS).eq('modality','clasico').single();
+                if(error || !data)throw new Error('No se pudo consultar la configuración del Clásico.');
+                const c={...data,factor:Number(data.factor),max_base_difference:data.max_base_difference===null?null:Number(data.max_base_difference)};
+                if(c.config_version!==1 || !['fixed_by_gender','individual_recommended','most_demanding_pair'].includes(c.tee_strategy) ||
+                    !['Negro','Amarillo','Blanco'].includes(c.male_fixed_tee) || c.female_fixed_tee!=='Rojo' || c.female_tee_strategy!=='fixed' ||
+                    c.base_formula!=='index_slope_113_plus_rating_minus_par' || c.individual_rounding!=='none' || c.combination!=='sum_adjusted_bases' ||
+                    c.difference_adjustment!=='reduce_higher_base' || c.final_rounding!=='half_toward_positive_infinity' ||
+                    !Number.isFinite(c.factor) || c.factor<=0 || c.factor>1 || (c.max_base_difference!==null && (!Number.isFinite(c.max_base_difference)||c.max_base_difference<0||c.max_base_difference>108)))
+                    throw new Error('La configuración del Clásico requiere una versión compatible de la app.');
+                configuracionClasico=c;
+                document.getElementById('modeClasico').textContent=c.factor===0.375?'Fourball Clásico 3/8':'Fourball Clásico '+fmt(c.factor*100,2)+'%';
+                if(modalidadPareja==='clasico')document.getElementById('pairHelp').textContent='Se usan las condiciones vigentes del club, sin redondear las bases individuales. Factor '+fmt(c.factor,3)+'.';
+                return c;
+            }catch(e){configuracionClasico=null;throw e;}
+        }
+        function teesCalculoClasico(c) {
+            const players=[jugadoresPareja[1],jugadoresPareja[2]];
+            let male=c.male_fixed_tee;
+            if(c.tee_strategy==='most_demanding_pair'){
+                const rank=['Negro','Amarillo','Blanco'];
+                const choices=players.filter(j=>normalizarGeneroJugador(j.gender)==='male').map(j=>teeRecomendado(indexDeJugador(j),'male'));
+                if(choices.some(t=>!rank.includes(t)))throw new Error('No se pudo verificar el tee recomendado de los caballeros.');
+                male=rank.find(t=>choices.includes(t));
+            }
+            return players.map(j=>{
+                if(!limpiar(j.gender))throw new Error('Falta la categoría de un jugador.');
+                if(normalizarGeneroJugador(j.gender)==='female')return c.female_fixed_tee;
+                const tee=c.tee_strategy==='individual_recommended'?teeRecomendado(indexDeJugador(j),'male'):male;
+                if(!tee)throw new Error('No se pudo verificar el tee de cálculo.');
+                return tee;
+            });
+        }
         const jugadoresPareja = { 1: null, 2: null };
         let detalleUltimoCalculo = null;
         const searchTimers = { 1: null, 2: null };
@@ -110,6 +145,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
             if (document.hidden) return;
             try { await cargarRecomendacionesTee(); }
             catch { /* No inventar una recomendación si no se puede verificar la configuración. */ }
+            try { await cargarConfiguracionClasico(); } catch {}
             await cargarTeesYHcp();
             calcularPareja(true);
             if (document.getElementById('hcpPlayerDialog')?.open && refrescarConsultaAbierta)
@@ -152,7 +188,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
                 : AAG_CATEGORY_MALE;
         }
 
-        function buscarReglaJugador(j) {
+        function buscarReglaJugador(j, teeFijo = null) {
             const index = indexDeJugador(j);
             const genero = normalizarGeneroJugador(j?.gender);
 
@@ -161,7 +197,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
                 return { error: `El Index ${fmt(index, 1)} está fuera del rango local (-10 a 54).` };
             }
 
-            const teeNombre = teeRecomendado(index, genero);
+            const teeNombre = teeFijo || teeRecomendado(index, genero);
             if (!teeNombre) return { error: "No se pudo verificar el tee recomendado del club. Comprobá tu conexión y volvé a intentar." };
             const claveBuscada = claveColorTeeAag(teeNombre);
             const categoriaAag = categoriaAagPorGenero(genero);
@@ -361,6 +397,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
         }
 
         function quitarJugadorPareja(slot) {
+            ++calculoParejaRevision;
             jugadoresPareja[slot] = null;
             const input = document.getElementById(`playerSearch${slot}`);
             input.style.display = "block";
@@ -374,8 +411,8 @@ const esConsultas = document.body.dataset.section === 'consultas';
             input.focus();
         }
 
-        function datosCalculoJugador(j) {
-            const encontrada = buscarReglaJugador(j);
+        function datosCalculoJugador(j, teeFijo = null) {
+            const encontrada = buscarReglaJugador(j, teeFijo);
             if (encontrada.error) return encontrada;
             const { regla, index, teeNombre } = encontrada;
             const base = calcularHcpBase(index, regla.slope, regla.course_rating, regla.par);
@@ -411,8 +448,20 @@ const esConsultas = document.body.dataset.section === 'consultas';
                 if (revision !== calculoParejaRevision) return;
             }
 
-            const a = datosCalculoJugador(jugadoresPareja[1]);
-            const b = datosCalculoJugador(jugadoresPareja[2]);
+            let c=null,tees=[null,null];
+            if(modalidadPareja==='clasico'){
+                try {
+                    c=configuracionVerificada?configuracionClasico:await cargarConfiguracionClasico();
+                    if(revision!==calculoParejaRevision)return;
+                    if(!c)throw new Error('No se pudo verificar la configuración vigente del Clásico. Comprobá tu conexión.');
+                    tees=teesCalculoClasico(c);
+                }catch(e){
+                    if(revision!==calculoParejaRevision)return;
+                    detalleUltimoCalculo=null;result.className='pair-result';result.innerHTML='';status('pairStatus',e.message,false);return;
+                }
+            }
+            const a = datosCalculoJugador(jugadoresPareja[1],tees[0]);
+            const b = datosCalculoJugador(jugadoresPareja[2],tees[1]);
             const errores = [a.error, b.error].filter(Boolean);
             if (errores.length) {
                 detalleUltimoCalculo = null;
@@ -459,22 +508,23 @@ const esConsultas = document.body.dataset.section === 'consultas';
                 const diferenciaOriginal = Math.abs(a.base - b.base);
                 let huboAjuste = false;
 
-                if (diferenciaOriginal > 5) {
+                if (c.max_base_difference !== null && diferenciaOriginal > c.max_base_difference) {
                     huboAjuste = true;
 
                     if (a.base > b.base) {
-                        a.baseAjustado = b.base + 5;
+                        a.baseAjustado = b.base + c.max_base_difference;
                     } else {
-                        b.baseAjustado = a.base + 5;
+                        b.baseAjustado = a.base + c.max_base_difference;
                     }
                 }
 
                 const suma = a.baseAjustado + b.baseAjustado;
-                const aplicado = suma * 0.375;
-                const final = roundHalfUp(aplicado);
+                const aplicado = suma * c.factor;
+                const final = Math.floor(aplicado + 0.5);
 
                 detalleUltimoCalculo = {
                     modalidad: "clasico",
+                    config: {...c},
                     jugadores: [a, b],
                     diferenciaOriginal,
                     huboAjuste,
@@ -489,7 +539,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
                 La diferencia entre los HCP era de
                 <strong>${fmt(diferenciaOriginal, 2)}</strong> golpes.
                 Para Fourball Clásico se redujo el HCP más alto,
-                dejando una diferencia máxima de 5 golpes.
+                dejando una diferencia máxima de ${fmt(c.max_base_difference,2)} golpes.
             </div>
         `
                     : "";
@@ -571,7 +621,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
                     "Cálculo Fourball Clásico";
 
                 document.getElementById("formulaIntro").textContent =
-                    "Primero se limita a 5 golpes la diferencia entre ambos HCP base. Luego se suman y se aplica 3/8.";
+                    `Se suman las bases sin redondear${detalleUltimoCalculo.config.max_base_difference===null?'':', con diferencia máxima de '+fmt(detalleUltimoCalculo.config.max_base_difference,2)+' golpes'}. Se aplica el factor ${fmt(detalleUltimoCalculo.config.factor,3)} y se redondea al final: 0,5 hacia arriba.`;
 
                 const ajusteHtml = detalleUltimoCalculo.huboAjuste
                     ? `
@@ -582,7 +632,7 @@ const esConsultas = document.body.dataset.section === 'consultas';
             Diferencia original:
             ${fmt(detalleUltimoCalculo.diferenciaOriginal, 2)} golpes.<br>
 
-            Como supera los 5 golpes permitidos,
+            Como supera los ${fmt(detalleUltimoCalculo.config.max_base_difference,2)} golpes permitidos,
             el HCP más alto se reduce.<br><br>
 
             HCP utilizados para la suma:<br>
@@ -615,10 +665,10 @@ const esConsultas = document.body.dataset.section === 'consultas';
         <strong>Cálculo de la pareja</strong><br>
 
         (${fmt(a.baseAjustado, 4)} + ${fmt(b.baseAjustado, 4)})
-        × 0,375<br>
+        × ${fmt(detalleUltimoCalculo.config.factor,3)}<br>
 
         ${fmt(detalleUltimoCalculo.suma, 4)}
-        × 0,375 =
+        × ${fmt(detalleUltimoCalculo.config.factor,3)} =
         ${fmt(detalleUltimoCalculo.aplicado, 4)}<br>
 
         Redondeo final:
