@@ -750,12 +750,32 @@
         #btnManualPopup {
             flex: 0 0 auto;
         }
+        #btnManualPopup[hidden] {
+            display: none;
+        }
 
         #playerSearchResults {
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
             margin-top: 8px;
+        }
+
+        @media (max-width: 760px), (pointer: coarse) {
+            #playerSearchPopup { box-sizing: border-box; }
+            #playerSearchInput { order: 2; font-size: max(16px, 1rem); }
+            #btnManualPopup { order: 3; }
+            #playerSearchResults {
+                order: 1;
+                display: flex;
+                flex-direction: column-reverse;
+                margin: 0 0 8px;
+                overflow-wrap: anywhere;
+                overscroll-behavior: contain;
+            }
+            #playerSearchResults:empty { margin: 0; }
+            #playerSearchResults > * { flex-shrink: 0; }
+            #playerSearchResults .slot-result-btn { white-space: normal; height: auto; }
         }
 
         #playerManualPopup {
@@ -975,18 +995,17 @@
                 width: calc(100vw - 24px) !important;
                 left: 12px !important;
                 right: 12px !important;
-                max-height: 75vh !important;
                 border-radius: 16px;
             }
 
             #playerSearchInput {
-                font-size: 16px;
+                font-size: max(16px, 1rem);
                 padding: 12px;
             }
 
             .slot-result-btn {
                 padding: 12px;
-                font-size: 14px;
+                font-size: .875rem;
             }
 
             .manual-form input,
@@ -1157,7 +1176,7 @@
     <div id="playerSearchPopup" class="player-search-popup hidden">
         <input id="playerSearchInput" type="text" placeholder="Buscar jugador...">
 
-        <button id="btnManualPopup" type="button" class="slot-inline-manual-btn" style="width:100%; margin-top:8px;">
+        <button id="btnManualPopup" type="button" class="slot-inline-manual-btn" style="width:100%; margin-top:8px;" hidden>
             Carga manual
         </button>
 
@@ -1240,6 +1259,7 @@
         };
 
         sessionStorage.setItem("vmg_lock_session", APP.sessionLockId);
+        document.getElementById("btnManualPopup").hidden = !APP.esAdmin;
 
         // ==============================
         // DOM
@@ -1405,6 +1425,13 @@
             popup.style.maxHeight = "360px";
             popup.style.overflow = "hidden";
 
+            if (matchMedia('(max-width: 760px), (pointer: coarse)').matches) {
+                reposicionarBuscadorJugador();
+                popup.style.visibility = "visible";
+                input.focus({ preventScroll: true });
+                return;
+            }
+
             requestAnimationFrame(() => {
                 if (window.innerWidth <= 760) {
                     const visualHeight = window.visualViewport?.height || window.innerHeight;
@@ -1454,7 +1481,7 @@
 
             if (!popup || !input || popup.classList.contains("hidden")) return;
 
-            if (window.innerWidth <= 760) {
+            if (matchMedia('(max-width: 760px), (pointer: coarse)').matches) {
                 const visualHeight = window.visualViewport?.height || window.innerHeight;
                 const visualTop = window.visualViewport?.offsetTop || 0;
 
@@ -1462,10 +1489,10 @@
                 popup.style.left = "12px";
                 popup.style.right = "12px";
                 popup.style.width = "auto";
-                popup.style.top = `${visualTop + 12}px`;
-                popup.style.bottom = "auto";
+                popup.style.top = "auto";
+                popup.style.bottom = `${Math.max(0, window.innerHeight - visualTop - visualHeight) + 4}px`;
                 popup.style.transform = "";
-                popup.style.maxHeight = `${Math.max(260, visualHeight - 24)}px`;
+                popup.style.maxHeight = `${Math.max(0, visualHeight - 8)}px`;
 
                 return;
             }
@@ -1497,6 +1524,7 @@
             }
         }
 
+        window.addEventListener("resize", reposicionarBuscadorJugador);
         if (window.visualViewport) {
             window.visualViewport.addEventListener("resize", reposicionarBuscadorJugador);
             window.visualViewport.addEventListener("scroll", reposicionarBuscadorJugador);
@@ -2965,7 +2993,7 @@
             <button class="slot-inline-close" data-close-inline="${slotId}">×</button>
           </div>
           <div class="slot-inline-actions">
-            <button class="slot-inline-manual-btn" data-manual-inline="${slotId}">Carga manual</button>
+            ${APP.esAdmin ? `<button class="slot-inline-manual-btn" data-manual-inline="${slotId}">Carga manual</button>` : ""}
           </div>
           <div class="slot-inline-results" id="results-${slotId}"></div>
           <div class="slot-inline-manual-wrap" id="manual-${slotId}" style="display:none;"></div>
@@ -4663,6 +4691,7 @@ Gracias.
                 const manualPopupBtn = e.target.closest("#btnManualPopup");
                 if (manualPopupBtn) {
                     e.preventDefault();
+                    if (!APP.esAdmin) return;
                     abrirCargaManualPopup();
                     return;
                 }
@@ -4986,6 +5015,7 @@ Gracias.
 
                 const manualInlineTrigger = e.target.closest("[data-manual-inline]");
                 if (manualInlineTrigger) {
+                    if (!APP.esAdmin) return;
                     e.preventDefault();
                     e.stopPropagation();
                     renderManualInline(manualInlineTrigger.dataset.manualInline);
